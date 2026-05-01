@@ -22,10 +22,11 @@ function AppProvider({ children }) {
   const [history, setHistory]     = useState(['home']);
 
   // ── Domain state ──
-  const [mode, setMode]           = useState(null);       // 'study'|'work'|'play'
-  const [detailApp, setDetailApp] = useState(null);       // app obj for detail screen
-  const [viewerApp, setViewerApp] = useState(null);       // app obj for viewer
-  const [searchQ, setSearchQ]     = useState('');
+  const [mode, setMode]                   = useState(null);  // 'study'|'work'|'play'
+  const [exploreCategory, setExploreCat] = useState(null);  // homeCategory id | null = All
+  const [detailApp, setDetailApp]         = useState(null);
+  const [viewerApp, setViewerApp]         = useState(null);
+  const [searchQ, setSearchQ]             = useState('');
 
   // ── Persistent ──
   const [recents, setRecents]     = useState(() => ls('zero_recents', []));
@@ -35,9 +36,10 @@ function AppProvider({ children }) {
 
   // ── Navigate ──
   const go = useCallback((s, extra = {}) => {
-    if (extra.mode !== undefined)   setMode(extra.mode);
-    if (extra.detailApp !== undefined) setDetailApp(extra.detailApp);
-    if (extra.viewerApp !== undefined) setViewerApp(extra.viewerApp);
+    if (extra.mode             !== undefined) setMode(extra.mode);
+    if (extra.exploreCategory  !== undefined) setExploreCat(extra.exploreCategory);
+    if (extra.detailApp        !== undefined) setDetailApp(extra.detailApp);
+    if (extra.viewerApp        !== undefined) setViewerApp(extra.viewerApp);
     setHistory(h => [...h, s]);
     setScreen(s);
   }, []);
@@ -57,6 +59,7 @@ function AppProvider({ children }) {
     setScreen('home');
     setHistory(['home']);
     setMode(null);
+    setExploreCat(null);
     setDetailApp(null);
     setViewerApp(null);
     setSearchQ('');
@@ -118,7 +121,7 @@ function AppProvider({ children }) {
   const clearRecents = useCallback(() => { setRecents([]); lsSet('zero_recents', []); }, []);
 
   const value = {
-    screen, mode, detailApp, viewerApp,
+    screen, mode, exploreCategory, detailApp, viewerApp,
     searchQ, setSearchQ,
     recents, favorites, wsApps, wsActive, setWsActive,
     go, goBack, goHome, openDetail, launchApp,
