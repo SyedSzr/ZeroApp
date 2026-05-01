@@ -1,0 +1,54 @@
+// ── APP DATA ──────────────────────────────────────────────────────────────────
+const APPS = [
+  // STUDY
+  {id:'s1', name:'Notion',        category:'Notes',      mode:'study', icon:'https://www.notion.so/images/favicon.ico',        emoji:'📝', url:'https://www.notion.so',            tags:['notes','productivity','wiki'],      rating:4.9, reviews:'98K', desc:'All-in-one workspace for notes, docs, and databases.'},
+  {id:'s2', name:'SimpleNote',    category:'Notes',      mode:'study', icon:'',                                                emoji:'🗒️', url:'https://simplenote.com',            tags:['notes','simple'],                  rating:4.6, reviews:'12K', desc:'The simplest way to keep notes.'},
+  {id:'s3', name:'Google Docs',   category:'Documents',  mode:'study', icon:'',                                                emoji:'📄', url:'https://docs.google.com',           tags:['docs','writing','google'],          rating:4.8, reviews:'500K', desc:'Create and collaborate on documents in real time.'},
+  {id:'s4', name:'ChatGPT',       category:'AI',         mode:'study', icon:'',                                                emoji:'🤖', url:'https://chat.openai.com',           tags:['ai','assistant','gpt'],             rating:4.8, reviews:'12.5K', desc:'Chat, ask questions, get instant answers and write anything.'},
+  {id:'s5', name:'Desmos',        category:'Calculator', mode:'study', icon:'',                                                emoji:'📐', url:'https://www.desmos.com',            tags:['math','graphing','calculator'],     rating:4.7, reviews:'8K', desc:'Powerful graphing calculator for math and science.'},
+  {id:'s6', name:'Symbolab',      category:'Math',       mode:'study', icon:'',                                                emoji:'🔣', url:'https://www.symbolab.com',          tags:['math','solver','equations'],       rating:4.7, reviews:'20K', desc:'Step-by-step math solutions for algebra, calculus and more.'},
+  {id:'s7', name:'Khan Academy',  category:'Learning',   mode:'study', icon:'',                                                emoji:'📚', url:'https://www.khanacademy.org',       tags:['learning','math','science'],       rating:4.8, reviews:'45K', desc:'Free world-class education for anyone, anywhere.'},
+  {id:'s8', name:'Smallpdf',      category:'PDF Tools',  mode:'study', icon:'',                                                emoji:'📋', url:'https://smallpdf.com',              tags:['pdf','compress','convert'],        rating:4.6, reviews:'30K', desc:'All-in-one PDF tool — compress, convert, edit.'},
+  {id:'s9', name:'iLovePDF',      category:'PDF Toolkit',mode:'study', icon:'',                                                emoji:'❤️', url:'https://www.ilovepdf.com',          tags:['pdf','merge','split'],             rating:4.7, reviews:'18K', desc:'Merge, split, compress and convert PDFs with ease.'},
+  {id:'s10',name:'Pomofocus',     category:'Focus Timer',mode:'study', icon:'',                                                emoji:'🍅', url:'https://pomofocus.io',              tags:['pomodoro','focus','timer'],        rating:4.5, reviews:'6K', desc:'A Pomodoro timer app to stay focused on your tasks.'},
+  {id:'s11',name:'Duolingo',      category:'Language',   mode:'study', icon:'',                                                emoji:'🦉', url:'https://www.duolingo.com',          tags:['language','learning','practice'],  rating:4.8, reviews:'200K', desc:'Learn a new language in just 5 minutes a day.'},
+  {id:'s12',name:'Quizlet',       category:'Flashcards', mode:'study', icon:'',                                                emoji:'🃏', url:'https://quizlet.com',               tags:['flashcards','memory','study'],     rating:4.7, reviews:'55K', desc:'Make flashcards and study smarter.'},
+  // WORK
+  {id:'w1', name:'Trello',        category:'Kanban',     mode:'work',  icon:'',                                                emoji:'📋', url:'https://trello.com',                tags:['tasks','kanban','project'],        rating:4.7, reviews:'80K', desc:'Organize your work with boards, lists and cards.'},
+  {id:'w2', name:'Figma',         category:'Design',     mode:'work',  icon:'',                                                emoji:'🎨', url:'https://www.figma.com',             tags:['design','ui','prototype'],         rating:4.9, reviews:'60K', desc:'The collaborative interface design tool.'},
+  {id:'w3', name:'GitHub',        category:'Code',       mode:'work',  icon:'',                                                emoji:'🐙', url:'https://github.com',                tags:['code','git','repository'],        rating:4.8, reviews:'100K', desc:'Where the world builds software together.'},
+  {id:'w4', name:'Google Sheets', category:'Spreadsheet',mode:'work',  icon:'',                                                emoji:'📊', url:'https://sheets.google.com',         tags:['spreadsheet','data'],             rating:4.7, reviews:'300K', desc:'Create and collaborate on spreadsheets online.'},
+  {id:'w5', name:'Slack',         category:'Chat',       mode:'work',  icon:'',                                                emoji:'💬', url:'https://slack.com',                 tags:['chat','team','messaging'],        rating:4.6, reviews:'120K', desc:'Your productivity platform for team collaboration.'},
+  {id:'w6', name:'Linear',        category:'Projects',   mode:'work',  icon:'',                                                emoji:'🔷', url:'https://linear.app',                tags:['issues','sprints','engineering'], rating:4.8, reviews:'15K', desc:'The issue tracker built for modern software teams.'},
+  {id:'w7', name:'Loom',          category:'Video',      mode:'work',  icon:'',                                                emoji:'🎥', url:'https://www.loom.com',              tags:['video','record','async'],         rating:4.7, reviews:'25K', desc:'Record quick video messages for your team.'},
+  {id:'w8', name:'Canva',         category:'Design',     mode:'work',  icon:'',                                                emoji:'✏️', url:'https://www.canva.com',             tags:['design','graphics','templates'],  rating:4.8, reviews:'180K', desc:'Design anything with thousands of templates.'},
+  {id:'w9', name:'Miro',          category:'Whiteboard', mode:'work',  icon:'',                                                emoji:'🖼️', url:'https://miro.com',                  tags:['whiteboard','brainstorm','collab'],rating:4.7, reviews:'40K', desc:'The collaborative online whiteboard platform.'},
+  {id:'w10',name:'Cal.com',       category:'Scheduling', mode:'work',  icon:'',                                                emoji:'📅', url:'https://cal.com',                   tags:['calendar','scheduling','meetings'],rating:4.6, reviews:'8K', desc:'Open-source scheduling, quickly and for free.'},
+  // PLAY
+  {id:'p1', name:'YouTube',       category:'Video',      mode:'play',  icon:'',                                                emoji:'▶️', url:'https://www.youtube.com',           tags:['video','music','entertainment'],  rating:4.8, reviews:'1M', desc:'Watch, share and discover videos worldwide.'},
+  {id:'p2', name:'Spotify',       category:'Music',      mode:'play',  icon:'',                                                emoji:'🎵', url:'https://open.spotify.com',          tags:['music','podcast','audio'],        rating:4.9, reviews:'900K', desc:'Music for everyone, free and ad-supported.'},
+  {id:'p3', name:'Chess.com',     category:'Game',       mode:'play',  icon:'',                                                emoji:'♟️', url:'https://www.chess.com',             tags:['chess','game','strategy'],        rating:4.8, reviews:'200K', desc:'Play chess online against players worldwide.'},
+  {id:'p4', name:'Lichess',       category:'Game',       mode:'play',  icon:'',                                                emoji:'♞', url:'https://lichess.org',                tags:['chess','free','open source'],     rating:4.7, reviews:'80K', desc:'Free, open-source chess server. No ads.'},
+  {id:'p5', name:'Wordle',        category:'Puzzle',     mode:'play',  icon:'',                                                emoji:'🟩', url:'https://www.nytimes.com/games/wordle/index.html', tags:['word','puzzle','daily'], rating:4.6, reviews:'50K', desc:'Guess the 5-letter word in 6 tries.'},
+  {id:'p6', name:'GeoGuessr',     category:'Game',       mode:'play',  icon:'',                                                emoji:'🌍', url:'https://www.geoguessr.com',         tags:['geography','maps','explore'],     rating:4.7, reviews:'30K', desc:'Explore the world through Google Street View.'},
+  {id:'p7', name:'Reddit',        category:'Social',     mode:'play',  icon:'',                                                emoji:'🤖', url:'https://www.reddit.com',            tags:['social','community','news'],      rating:4.5, reviews:'400K', desc:'The front page of the internet.'},
+  {id:'p8', name:'SoundCloud',    category:'Music',      mode:'play',  icon:'',                                                emoji:'🔊', url:'https://soundcloud.com',            tags:['music','indie','upload'],         rating:4.6, reviews:'60K', desc:'Discover and share music from independent artists.'},
+  {id:'p9', name:'Twitch',        category:'Streaming',  mode:'play',  icon:'',                                                emoji:'🟣', url:'https://www.twitch.tv',             tags:['streaming','gaming','live'],      rating:4.7, reviews:'150K', desc:'Watch live game streams and connect with creators.'},
+  {id:'p10',name:'Tenor GIFs',    category:'Fun',        mode:'play',  icon:'',                                                emoji:'🎭', url:'https://tenor.com',                 tags:['gifs','fun','memes'],             rating:4.4, reviews:'20K', desc:'Search and share the perfect GIF for any moment.'},
+];
+
+const ALL_APPS = APPS;
+
+const MODE_CFG = {
+  study:{label:'Study', emoji:'🎓', subtitle:'Notes, calculators, AI tools and more', grad:'from-violet-600 to-indigo-800', light:'bg-violet-600', textLight:'text-violet-400'},
+  work: {label:'Work',  emoji:'💼', subtitle:'Documents, tools, productivity',         grad:'from-blue-600 to-blue-900',    light:'bg-blue-600',   textLight:'text-blue-400'},
+  play: {label:'Play',  emoji:'🎮', subtitle:'Games, fun tools and entertainment',     grad:'from-emerald-500 to-green-800',light:'bg-emerald-500',textLight:'text-emerald-400'},
+};
+
+const STUDY_FILTERS = ['All','Notes','Math','AI','PDF','Calculator','Language','Flashcards','Focus Timer','Learning'];
+const WORK_FILTERS  = ['All','Design','Code','Chat','Kanban','Spreadsheet','Video','Whiteboard','Scheduling'];
+const PLAY_FILTERS  = ['All','Video','Music','Game','Puzzle','Social','Streaming','Fun'];
+
+function getModeFilters(mode) {
+  return {study:STUDY_FILTERS, work:WORK_FILTERS, play:PLAY_FILTERS}[mode] || ['All'];
+}

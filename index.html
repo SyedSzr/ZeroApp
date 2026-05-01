@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="theme-color" content="#0d0d14"/>
+  <title>ZeroApp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter','sans-serif'] },
+          colors: {
+            bg:'#0d0d14', surface:'#16161f', card:'#1c1c28',
+            border:'#252535', accent:'#7c6af7', muted:'#5a5a7a',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
+    *{-webkit-tap-highlight-color:transparent;box-sizing:border-box;margin:0;padding:0}
+    html,body,#root{height:100%;overflow:hidden}
+    body{background:#0d0d14;font-family:'Inter',sans-serif}
+    .no-sb::-webkit-scrollbar{display:none}
+    .no-sb{-ms-overflow-style:none;scrollbar-width:none}
+    /* Transitions */
+    .fade-in{animation:fi .25s ease both}
+    .slide-up{animation:su .3s cubic-bezier(.22,1,.36,1) both}
+    .slide-right{animation:sr .3s cubic-bezier(.22,1,.36,1) both}
+    @keyframes fi{from{opacity:0}to{opacity:1}}
+    @keyframes su{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+    @keyframes sr{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+    /* tap */
+    .tap{transition:transform .1s ease,opacity .1s ease;cursor:pointer}
+    .tap:active{transform:scale(.95);opacity:.8}
+    /* glow */
+    .glow-purple{box-shadow:0 4px 24px rgba(124,106,247,.45)}
+    /* spinner */
+    .spin{width:36px;height:36px;border-radius:50%;border:3px solid rgba(124,106,247,.2);border-top-color:#7c6af7;animation:ro .7s linear infinite}
+    @keyframes ro{to{transform:rotate(360deg)}}
+    /* safe areas */
+    .pt-safe{padding-top:var(--sat)}
+    .pb-safe{padding-bottom:calc(var(--sab) + 4px)}
+    /* pill */
+    .pill{display:inline-flex;align-items:center;padding:6px 14px;border-radius:999px;font-size:.75rem;font-weight:600;white-space:nowrap;transition:all .15s}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel" src="js/data.js"></script>
+<script type="text/babel" src="js/store.js"></script>
+<script type="text/babel" src="js/components.js"></script>
+<script type="text/babel" src="js/screens/home.js"></script>
+<script type="text/babel" src="js/screens/explore.js"></script>
+<script type="text/babel" src="js/screens/detail.js"></script>
+<script type="text/babel" src="js/screens/viewer.js"></script>
+<script type="text/babel" src="js/screens/workspace.js"></script>
+<script type="text/babel" src="js/screens/search.js"></script>
+<script type="text/babel" src="js/screens/recent.js"></script>
+<script type="text/babel" src="js/screens/profile.js"></script>
+<script type="text/babel" src="js/app.js"></script>
+</body>
+</html>
