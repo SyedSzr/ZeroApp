@@ -1,6 +1,6 @@
 // ── APP DETAIL SCREEN ─────────────────────────────────────────────────────────
 function AppDetailScreen() {
-  const { detailApp: app, launchApp, toggleFav, isFav, addToWorkspace, goBack } = useApp();
+  const { detailApp: app, launchApp, toggleFav, isFav, toggleSaveApp, isSaved, goBack } = useApp();
   if (!app) return null;
   const fav = isFav(app.id);
 
@@ -59,10 +59,14 @@ function AppDetailScreen() {
           ))}
         </div>
 
-        {/* ── Add to Workspace ── */}
-        <button onClick={() => addToWorkspace(app)}
-          className="tap w-full py-3.5 rounded-2xl bg-card border border-border text-white/70 text-sm font-semibold hover:border-accent transition-colors mb-2">
-          📌 Add to Workspace
+        {/* ── Save App ── */}
+        <button onClick={() => toggleSaveApp(app)}
+          className={`tap w-full py-3.5 rounded-2xl border text-sm font-semibold transition-colors mb-2 ${
+            isSaved(app.id) 
+              ? 'bg-accent/20 border-accent text-accent' 
+              : 'bg-card border-border text-white/70 hover:border-accent'
+          }`}>
+          {isSaved(app.id) ? '💾 Saved to My Apps' : '💾 Save App'}
         </button>
 
         {/* ── App Preview ── */}

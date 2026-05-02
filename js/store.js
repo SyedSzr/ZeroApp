@@ -32,8 +32,8 @@ function AppProvider({ children }) {
   // ── Persistent ──
   const [recents, setRecents]     = useState(() => ls('zero_recents', []));
   const [favorites, setFavorites] = useState(() => ls('zero_favs', []));
-  const [wsApps, setWsApps]       = useState(() => ls('zero_ws', []));   // workspace tabs
-  const [wsActive, setWsActive]   = useState(null);
+  const [savedApps, setSavedApps] = useState(() => ls('zero_saved_apps', []));
+  const [folders, setFolders]     = useState(() => ls('zero_folders', []));
 
   // ── Navigate ──
   const go = useCallback((s, extra = {}) => {
@@ -98,37 +98,90 @@ function AppProvider({ children }) {
   }, []);
   const isFav = useCallback((id) => favorites.some(f => f.id === id), [favorites]);
 
-  // ── Workspace ──
-  const addToWorkspace = useCallback((app) => {
-    setWsApps(prev => {
-      if (prev.find(a => a.id === app.id)) { setWsActive(app.id); return prev; }
-      const next = [...prev, app];
-      lsSet('zero_ws', next);
-      setWsActive(app.id);
+  // ── Saved Apps ──
+  const toggleSaveApp = useCallback((app) => {
+    setSavedApps(prev => {
+      const has = prev.find(s => s.id === app.id);
+      if (has) {
+        // If un-saving, also remove from any folders
+        setFolders(oldFolders => {
+          const nextFolders = oldFolders.map(f => ({...f, appIds: f.appIds.filter(id => id !== app.id)}));
+          lsSet('zero_folders', nextFolders);
+          return nextFolders;
+        });
+      }
+      const next = has ? prev.filter(s => s.id !== app.id) : [app, ...prev];
+      lsSet('zero_saved_apps', next);
       return next;
     });
-    go('workspace');
-  }, [go]);
+  }, []);
+  const isSaved = useCallback((id) => savedApps.some(s => s.id === id), [savedApps]);
 
-  const removeFromWorkspace = useCallback((id) => {
-    setWsApps(prev => {
-      const next = prev.filter(a => a.id !== id);
-      lsSet('zero_ws', next);
-      if (wsActive === id) setWsActive(next[0]?.id ?? null);
+  // ── Folders ──
+  const createFolder = useCallback((name, appIds = []) => {
+    setFolders(prev => {
+      // Ensure apps can only exist in one folder at a time:
+      // Remove these appIds from all existing folders first.
+      const cleaned = prev.map(f => ({
+        ...f,
+        appIds: f.appIds.filter(id => !appIds.includes(id))
+      }));
+      const next = [{ id: 'f_' + Date.now(), name, appIds }, ...cleaned];
+      lsSet('zero_folders', next);
       return next;
     });
-  }, [wsActive]);
+  }, []);
+
+  const moveAppToFolder = useCallback((appId, targetFolderId) => {
+    setFolders(prev => {
+      // Remove from all folders first
+      let next = prev.map(f => ({ ...f, appIds: f.appIds.filter(id => id !== appId) }));
+      // Add to target folder
+      next = next.map(f => {
+        if (f.id === targetFolderId && !f.appIds.includes(appId)) {
+          return { ...f, appIds: [...f.appIds, appId] };
+        }
+        return f;
+      });
+      lsSet('zero_folders', next);
+      return next;
+    });
+  }, []);
+
+  const removeAppFromFolder = useCallback((appId, folderId) => {
+    setFolders(prev => {
+      const next = prev.map(f => {
+        if (f.id === folderId) return { ...f, appIds: f.appIds.filter(id => id !== appId) };
+        return f;
+      });
+      lsSet('zero_folders', next);
+      return next;
+    });
+  }, []);
+
+  const deleteFolder = useCallback((folderId) => {
+    setFolders(prev => {
+      const next = prev.filter(f => f.id !== folderId);
+      lsSet('zero_folders', next);
+      return next;
+    });
+  }, []);
 
   // ── Clear recents ──
   const clearRecents = useCallback(() => { setRecents([]); lsSet('zero_recents', []); }, []);
 
   const value = {
-    screen, mode, exploreCategory, detailApp, viewerApp,
-    searchQ, setSearchQ,
+    screen, history, go, goBack, goHome,
     mainTab, setMainTab,
-    recents, favorites, wsApps, wsActive, setWsActive,
-    go, goBack, goHome, openDetail, launchApp,
-    toggleFav, isFav, addToWorkspace, removeFromWorkspace, clearRecents,
+    mode, setMode,
+    exploreCategory, setExploreCat,
+    detailApp, setDetailApp, openDetail,
+    viewerApp, setViewerApp, launchApp,
+    searchQ, setSearchQ,
+    recents, clearRecents,
+    favorites, toggleFav, isFav,
+    savedApps, folders, toggleSaveApp, isSaved, 
+    createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder,
     greeting: getGreeting(),
   };
 

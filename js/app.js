@@ -9,7 +9,6 @@ function AppShell() {
     explore:   <ExploreScreen />,
     detail:    <AppDetailScreen />,
     viewer:    <AppViewerScreen />,
-    workspace: <WorkspaceScreen />,
     search:    <SearchScreen />,
     recent:    <RecentScreen />,
     profile:   <ProfileScreen />,

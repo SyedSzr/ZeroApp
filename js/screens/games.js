@@ -1,8 +1,11 @@
 // ── GAMES SCREEN — PlayScroll Immersive Feed (Pixel Perfect Figma) ────────────
+const { useState, useRef } = React;
+
 function GamesScreen() {
-  const { openDetail, go } = useApp();
+  const { greeting, openDetail, go, toggleSaveApp, isSaved } = useApp();
   const [viewMode, setViewMode] = useState('feed'); 
   const [activeCategory, setActiveCategory] = useState(null);
+  const [activeOverlay, setActiveOverlay] = useState(null); // 'comments' | 'leaderboard'
   const sectionRefs = useRef({});
 
   const featuredGames = GAMES.slice(0, 10);
@@ -14,25 +17,29 @@ function GamesScreen() {
   return (
     <div className="relative h-full w-full bg-black overflow-hidden font-sans">
       
-      {/* ── TOP NAV (Coins & Discover) ── */}
-      <div className="absolute top-0 left-0 right-0 pt-safe px-5 pt-4 flex items-center justify-between z-40">
-         {/* Coins Pill */}
-         <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-full py-1.5 pl-1.5 pr-2 pointer-events-auto">
-            <div className="w-5 h-5 rounded-full bg-[#FFB800] flex items-center justify-center text-[10px] font-black text-black">₿</div>
-            <span className="text-white text-[13px] font-bold">1250</span>
-            <div className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center ml-0.5">
-               <span className="text-white/60 text-[10px]">+</span>
+      {/* ── TOP NAV (Header & Discover) ── */}
+      <div className="absolute top-0 left-0 right-0 pt-safe px-5 pt-5 pb-1 z-40 pointer-events-none">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 pointer-events-auto">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-2xl">⚡</span>
+              <span className="text-white font-black text-xl tracking-tight font-sans">ZeroApp</span>
             </div>
-         </div>
+            <p className="text-white text-2xl font-bold leading-tight">{greeting}, Ali 👋</p>
+            <p className="text-white/60 text-sm mt-0.5">What would you like to play today?</p>
+            
+            {/* Discover Button - On the Left */}
+            <button onClick={() => setViewMode('discover')} 
+                    className="mt-4 flex items-center gap-1.5 bg-[#6b4eff] rounded-full py-1.5 px-3.5 shadow-[0_0_20px_rgba(107,78,255,0.4)] pointer-events-auto active:scale-95 transition-transform">
+               <span className="text-white text-[13px]">🔍</span>
+               <span className="text-white text-[13px] font-bold">Discover</span>
+            </button>
+          </div>
 
-         {/* Discover Button */}
-         <button onClick={() => setViewMode('discover')} 
-                 className="flex items-center gap-1.5 bg-[#6b4eff] rounded-full py-1.5 px-3.5 shadow-[0_0_15px_rgba(107,78,255,0.4)] pointer-events-auto">
-            <span className="text-white text-[13px]">🔍</span>
-            <span className="text-white text-[13px] font-bold">Discover</span>
-         </button>
-
-         <div className="w-10" /> 
+          <button className="tap mt-1 w-10 h-10 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center pointer-events-auto">
+            <span className="text-xl">🔔</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Feed Container (Vertical Snap) ── */}
@@ -71,17 +78,17 @@ function GamesScreen() {
                   <span className="text-white text-[12px] font-bold drop-shadow-md">1206</span>
                </div>
                
-               <div className="flex flex-col items-center gap-1">
+               <div className="flex flex-col items-center gap-1" onClick={() => setActiveOverlay('comments')}>
                   <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                   <span className="text-white text-[12px] font-bold drop-shadow-md">45</span>
                </div>
 
-               <div className="flex flex-col items-center gap-1">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+               <div className="flex flex-col items-center gap-1" onClick={() => toggleSaveApp(game)}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill={isSaved(game.id) ? "#fff" : "none"} stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
                   <span className="text-white text-[12px] font-bold drop-shadow-md">Save</span>
                </div>
 
-               <div className="flex flex-col items-center gap-1">
+               <div className="flex flex-col items-center gap-1" onClick={() => setActiveOverlay('leaderboard')}>
                   <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
                </div>
 
@@ -122,8 +129,79 @@ function GamesScreen() {
           </div>
         ))}
       </div>
-
       <BottomNav active="games" />
+
+      {/* ── Overlays ── */}
+      {activeOverlay === 'comments' && (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end pointer-events-auto">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setActiveOverlay(null)}></div>
+          <div className="bg-[#111] w-full h-[65%] rounded-t-3xl relative flex flex-col slide-up shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+            <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-2"></div>
+            <h3 className="text-white font-bold text-center py-2 border-b border-white/10">45 Comments</h3>
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+              <div className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-xs text-white font-bold">JD</div>
+                <div className="flex-1">
+                  <div className="text-white/60 text-xs font-semibold">John Doe</div>
+                  <div className="text-white text-sm mt-0.5">This game is incredibly addictive! I can't stop playing it.</div>
+                  <div className="text-white/40 text-[10px] mt-1">2h ago</div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-xs text-white font-bold">AS</div>
+                <div className="flex-1">
+                  <div className="text-white/60 text-xs font-semibold">Alice Smith</div>
+                  <div className="text-white text-sm mt-0.5">The graphics are insane. Love the new update!</div>
+                  <div className="text-white/40 text-[10px] mt-1">5h ago</div>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t border-white/10 flex gap-2">
+              <input type="text" placeholder="Add comment..." className="flex-1 bg-white/10 border-none rounded-full px-4 py-2 text-sm text-white focus:outline-none" />
+              <button className="bg-[#6b4eff] text-white p-2 rounded-full w-10 h-10 flex items-center justify-center">➤</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeOverlay === 'leaderboard' && (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end pointer-events-auto">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setActiveOverlay(null)}></div>
+          <div className="bg-[#111] w-full h-[75%] rounded-t-3xl relative flex flex-col slide-up shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+            <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-2"></div>
+            <h3 className="text-white font-bold text-center py-2 border-b border-white/10">Leaderboard</h3>
+            <div className="flex-1 overflow-y-auto px-4 py-6">
+              <div className="flex justify-center items-end gap-4 mb-8">
+                {/* 2nd Place */}
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-gray-400 border-4 border-[#111] z-10 flex items-center justify-center text-white font-bold">S</div>
+                  <div className="bg-gradient-to-t from-gray-500 to-gray-300 w-16 h-20 rounded-t-xl mt-[-10px] flex items-center justify-center text-xl font-black text-white/50">2</div>
+                </div>
+                {/* 1st Place */}
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 rounded-full bg-yellow-400 border-4 border-[#111] z-10 flex items-center justify-center text-black text-xl font-black">👑</div>
+                  <div className="bg-gradient-to-t from-yellow-600 to-yellow-400 w-20 h-28 rounded-t-xl mt-[-15px] flex items-center justify-center text-3xl font-black text-white/50">1</div>
+                </div>
+                {/* 3rd Place */}
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-amber-700 border-4 border-[#111] z-10 flex items-center justify-center text-white font-bold">B</div>
+                  <div className="bg-gradient-to-t from-amber-800 to-amber-600 w-16 h-16 rounded-t-xl mt-[-10px] flex items-center justify-center text-xl font-black text-white/50">3</div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[4,5,6,7,8].map(rank => (
+                  <div key={rank} className="flex items-center gap-4 bg-white/5 p-3 rounded-2xl">
+                    <span className="text-white/40 font-bold w-4 text-center">{rank}</span>
+                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold text-white">U</div>
+                    <span className="text-white font-medium flex-1">User {rank}29</span>
+                    <span className="text-white font-bold">{10000 - rank * 450} pts</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

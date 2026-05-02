@@ -46,6 +46,9 @@
     /* spinner */
     .spin{width:36px;height:36px;border-radius:50%;border:3px solid rgba(124,106,247,.2);border-top-color:#7c6af7;animation:ro .7s linear infinite}
     @keyframes ro{to{transform:rotate(360deg)}}
+    /* jiggle */
+    .jiggle{animation: jiggle 0.3s ease-in-out infinite}
+    @keyframes jiggle{0%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}100%{transform:rotate(-2deg)}}
     /* safe areas */
     .pt-safe{padding-top:var(--sat)}
     .pb-safe{padding-bottom:calc(var(--sab) + 4px)}
@@ -58,18 +61,17 @@
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script type="text/babel" src="js/data.js?v=18"></script>
-<script type="text/babel" src="js/store.js?v=18"></script>
-<script type="text/babel" src="js/components.js?v=18"></script>
-<script type="text/babel" src="js/screens/home.js?v=18"></script>
-<script type="text/babel" src="js/screens/games.js?v=18"></script>
-<script type="text/babel" src="js/screens/explore.js?v=18"></script>
-<script type="text/babel" src="js/screens/detail.js?v=18"></script>
-<script type="text/babel" src="js/screens/viewer.js?v=18"></script>
-<script type="text/babel" src="js/screens/workspace.js?v=18"></script>
-<script type="text/babel" src="js/screens/search.js?v=18"></script>
-<script type="text/babel" src="js/screens/recent.js?v=18"></script>
-<script type="text/babel" src="js/screens/profile.js?v=18"></script>
-<script type="text/babel" src="js/app.js?v=18"></script>
+<script type="text/babel" src="js/data.js?v=28"></script>
+<script type="text/babel" src="js/store.js?v=28"></script>
+<script type="text/babel" src="js/components.js?v=28"></script>
+<script type="text/babel" src="js/screens/home.js?v=28"></script>
+<script type="text/babel" src="js/screens/games.js?v=28"></script>
+<script type="text/babel" src="js/screens/explore.js?v=28"></script>
+<script type="text/babel" src="js/screens/detail.js?v=28"></script>
+<script type="text/babel" src="js/screens/viewer.js?v=28"></script>
+<script type="text/babel" src="js/screens/search.js?v=28"></script>
+<script type="text/babel" src="js/screens/recent.js?v=28"></script>
+<script type="text/babel" src="js/screens/profile.js?v=28"></script>
+<script type="text/babel" src="js/app.js?v=28"></script>
 </body>
 </html>
