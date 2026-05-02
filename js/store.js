@@ -18,8 +18,9 @@ function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val));
 
 function AppProvider({ children }) {
   // ── Navigation state ──
-  const [screen, setScreen]       = useState('home');
-  const [history, setHistory]     = useState(['home']);
+  const [screen, setScreen]       = useState('apps');
+  const [history, setHistory]     = useState(['apps']);
+  const [mainTab, setMainTab]     = useState('apps'); // 'apps' | 'games'
 
   // ── Domain state ──
   const [mode, setMode]                   = useState(null);  // 'study'|'work'|'play'
@@ -56,8 +57,9 @@ function AppProvider({ children }) {
   }, []);
 
   const goHome = useCallback(() => {
-    setScreen('home');
-    setHistory(['home']);
+    setScreen('apps');
+    setHistory(['apps']);
+    setMainTab('apps');
     setMode(null);
     setExploreCat(null);
     setDetailApp(null);
@@ -123,6 +125,7 @@ function AppProvider({ children }) {
   const value = {
     screen, mode, exploreCategory, detailApp, viewerApp,
     searchQ, setSearchQ,
+    mainTab, setMainTab,
     recents, favorites, wsApps, wsActive, setWsActive,
     go, goBack, goHome, openDetail, launchApp,
     toggleFav, isFav, addToWorkspace, removeFromWorkspace, clearRecents,

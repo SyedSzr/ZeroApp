@@ -1,18 +1,29 @@
 // ── APP DATA ──────────────────────────────────────────────────────────────────
 
 const HOME_CATEGORIES = [
-  { id:'ai',           label:'AI',            emoji:'🤖', grad:'from-violet-600 to-purple-700' },
-  { id:'kids',         label:'Kids',          emoji:'👶', grad:'from-yellow-400 to-orange-500' },
-  { id:'ecommerce',    label:'E-Commerce',    emoji:'🛒', grad:'from-orange-500 to-red-600'    },
-  { id:'business',     label:'Business',      emoji:'💼', grad:'from-blue-600 to-indigo-700'   },
-  { id:'beauty',       label:'Beauty',        emoji:'💄', grad:'from-pink-500 to-rose-600'     },
-  { id:'artdesign',    label:'Art & Design',  emoji:'🎨', grad:'from-purple-500 to-fuchsia-600'},
-  { id:'finance',      label:'Finance',       emoji:'💰', grad:'from-green-500 to-emerald-700' },
-  { id:'education',    label:'Education',     emoji:'📚', grad:'from-indigo-500 to-blue-700'   },
-  { id:'entertainment',label:'Entertainment', emoji:'🎬', grad:'from-red-500 to-pink-600'      },
-  { id:'tools',        label:'Tools',         emoji:'🔧', grad:'from-slate-500 to-gray-700'    },
-  { id:'health',       label:'Health',        emoji:'🏃', grad:'from-teal-500 to-cyan-600'     },
-  { id:'social',       label:'Social',        emoji:'💬', grad:'from-sky-500 to-blue-600'      },
+  { id:'ai',           label:'AI',            emoji:'🤖', grad:'from-violet-600 to-purple-700', type:'app' },
+  { id:'kids',         label:'Kids',          emoji:'👶', grad:'from-yellow-400 to-orange-500', type:'app' },
+  { id:'ecommerce',    label:'E-Commerce',    emoji:'🛒', grad:'from-orange-500 to-red-600',    type:'app' },
+  { id:'business',     label:'Business',      emoji:'💼', grad:'from-blue-600 to-indigo-700',   type:'app' },
+  { id:'beauty',       label:'Beauty',        emoji:'💄', grad:'from-pink-500 to-rose-600',     type:'app' },
+  { id:'artdesign',    label:'Art & Design',  emoji:'🎨', grad:'from-purple-500 to-fuchsia-600',type:'app' },
+  { id:'finance',      label:'Finance',       emoji:'💰', grad:'from-green-500 to-emerald-700', type:'app' },
+  { id:'education',    label:'Education',     emoji:'📚', grad:'from-indigo-500 to-blue-700',   type:'app' },
+  { id:'entertainment',label:'Entertainment', emoji:'🎬', grad:'from-red-500 to-pink-600',      type:'app' },
+  { id:'tools',        label:'Tools',         emoji:'🔧', grad:'from-slate-500 to-gray-700',    type:'app' },
+  { id:'health',       label:'Health',        emoji:'🏃', grad:'from-teal-500 to-cyan-600',     type:'app' },
+  { id:'social',       label:'Social',        emoji:'💬', grad:'from-sky-500 to-blue-600',      type:'app' },
+];
+
+const GAME_CATEGORIES = [
+  { id:'puzzle',    label:'Puzzle',    emoji:'🧩', grad:'from-violet-500 to-indigo-600',  type:'game' },
+  { id:'action',    label:'Action',    emoji:'⚔️', grad:'from-red-500 to-orange-600',     type:'game' },
+  { id:'strategy',  label:'Strategy',  emoji:'♟️', grad:'from-blue-600 to-cyan-600',      type:'game' },
+  { id:'arcade',    label:'Arcade',    emoji:'🕹️', grad:'from-pink-500 to-fuchsia-600',   type:'game' },
+  { id:'word',      label:'Word',      emoji:'📝', grad:'from-green-500 to-teal-600',     type:'game' },
+  { id:'casual',    label:'Casual',    emoji:'🎲', grad:'from-amber-400 to-orange-500',   type:'game' },
+  { id:'sports',    label:'Sports',    emoji:'⚽', grad:'from-emerald-500 to-green-700',  type:'game' },
+  { id:'adventure', label:'Adventure', emoji:'🗺️', grad:'from-orange-500 to-amber-600',   type:'game' },
 ];
 
 const APPS = [
@@ -102,6 +113,67 @@ const APPS = [
   {id:'soc6', name:'Mastodon',      domain:'mastodon.social',       homeCategory:'social',       mode:'play',  emoji:'🐘', url:'https://mastodon.social',           category:'Social',      tags:['social','open source','fediverse'],rating:4.3, reviews:'15K',  desc:'Free and open-source decentralized social network.'},
 ];
 
+
+// ── GAMES DATA ────────────────────────────────────────────────────────────────
+const GAMES = [
+  // PUZZLE
+  {id:'g-puz1', name:'2048',           domain:'play2048.co',        gameCategory:'puzzle',   emoji:'🔢', url:'https://play2048.co',              category:'Puzzle',   tags:['puzzle','numbers','merge'],      rating:4.8, reviews:'200K', desc:'Merge tiles to reach 2048 in this addictive number puzzle.'},
+  {id:'g-puz2', name:'Jigsaw Planet',  domain:'jigsawplanet.com',   gameCategory:'puzzle',   emoji:'🧩', url:'https://www.jigsawplanet.com',     category:'Puzzle',   tags:['jigsaw','puzzle','relax'],       rating:4.6, reviews:'80K',  desc:'Play thousands of free jigsaw puzzles online.'},
+  {id:'g-puz3', name:'Unblock Me',     domain:'coolmathgames.com',  gameCategory:'puzzle',   emoji:'📦', url:'https://www.coolmathgames.com/0-unblock-me', category:'Puzzle', tags:['sliding','block','puzzle'], rating:4.5, reviews:'50K',  desc:'Slide blocks to clear the path — satisfying brain teaser.'},
+  {id:'g-puz4', name:'Sudoku.com',     domain:'sudoku.com',         gameCategory:'puzzle',   emoji:'🔣', url:'https://sudoku.com',               category:'Logic',    tags:['sudoku','logic','numbers'],      rating:4.9, reviews:'1M',   desc:'The classic Sudoku puzzle with millions of unique boards.'},
+  {id:'g-puz5', name:'Nonograms',      domain:'nonograms.org',      gameCategory:'puzzle',   emoji:'🎯', url:'https://www.nonograms.org',        category:'Puzzle',   tags:['nonogram','picross','logic'],    rating:4.7, reviews:'30K',  desc:'Solve pixel art logic puzzles with number clues.'},
+  {id:'g-puz6', name:'Mahjong',        domain:'mahjong.com',        gameCategory:'puzzle',   emoji:'🀄', url:'https://www.mahjong.com',          category:'Puzzle',   tags:['mahjong','tiles','classic'],     rating:4.6, reviews:'120K', desc:'Classic Mahjong solitaire tile matching game.'},
+  // ACTION
+  {id:'g-act1', name:'Shell Shockers', domain:'shellshock.io',      gameCategory:'action',   emoji:'🥚', url:'https://shellshock.io',            category:'Shooter',  tags:['fps','eggs','multiplayer'],      rating:4.7, reviews:'500K', desc:'Egg-based FPS game — battle other players online.'},
+  {id:'g-act2', name:'Krunker.io',     domain:'krunker.io',         gameCategory:'action',   emoji:'🎯', url:'https://krunker.io',               category:'FPS',      tags:['fps','shooter','online'],        rating:4.8, reviews:'800K', desc:'Fast-paced browser FPS with pixel-art style graphics.'},
+  {id:'g-act3', name:'Bullet Force',   domain:'bulletforce.io',     gameCategory:'action',   emoji:'💥', url:'https://www.bulletforce.io',       category:'FPS',      tags:['fps','3d','multiplayer'],        rating:4.6, reviews:'200K', desc:'3D multiplayer FPS with realistic weapons and maps.'},
+  {id:'g-act4', name:'Venge.io',       domain:'venge.io',           gameCategory:'action',   emoji:'⚔️', url:'https://venge.io',                 category:'FPS',      tags:['fps','3d','competitive'],        rating:4.7, reviews:'150K', desc:'Competitive 3D FPS with smooth browser gameplay.'},
+  {id:'g-act5', name:'Stabfish 2',     domain:'stabfish2.io',       gameCategory:'action',   emoji:'🐡', url:'https://stabfish2.io',             category:'Action',   tags:['fish','battle','io'],            rating:4.4, reviews:'40K',  desc:'Spear other fish in this chaotic underwater battle.'},
+  {id:'g-act6', name:'Warbrokers',     domain:'warbrokers.io',      gameCategory:'action',   emoji:'🪖', url:'https://warbrokers.io',            category:'Battle',   tags:['war','vehicles','fps'],          rating:4.5, reviews:'60K',  desc:'Team-based battle royale with vehicles and weapons.'},
+  // STRATEGY
+  {id:'g-str1', name:'Chess.com',      domain:'chess.com',          gameCategory:'strategy', emoji:'♟️', url:'https://www.chess.com/play/online', category:'Chess',   tags:['chess','classic','strategy'],    rating:4.9, reviews:'5M',   desc:'Play chess online against players worldwide or AI.'},
+  {id:'g-str2', name:'Lichess',        domain:'lichess.org',        gameCategory:'strategy', emoji:'🏰', url:'https://lichess.org',              category:'Chess',    tags:['chess','free','open-source'],    rating:4.9, reviews:'3M',   desc:'Free, open-source chess server. No ads, no tracking.'},
+  {id:'g-str3', name:'Colonist.io',    domain:'colonist.io',        gameCategory:'strategy', emoji:'🏝️', url:'https://colonist.io',              category:'Board',    tags:['catan','settlers','strategy'],   rating:4.8, reviews:'400K', desc:'Play Settlers of Catan online with friends for free.'},
+  {id:'g-str4', name:'Skribbl.io',     domain:'skribbl.io',         gameCategory:'strategy', emoji:'✏️', url:'https://skribbl.io',               category:'Drawing',  tags:['drawing','guess','party'],       rating:4.7, reviews:'700K', desc:'Multiplayer drawing and guessing game — play with friends.'},
+  {id:'g-str5', name:'Risiko Online',  domain:'warzone.com',        gameCategory:'strategy', emoji:'🌍', url:'https://www.warzone.com',          category:'Strategy', tags:['risk','world','domination'],     rating:4.6, reviews:'100K', desc:'Conquer the world in this online Risk strategy game.'},
+  {id:'g-str6', name:'Generals.io',   domain:'generals.io',         gameCategory:'strategy', emoji:'🗺️', url:'https://generals.io',              category:'RTS',      tags:['rts','strategy','conquest'],     rating:4.7, reviews:'80K',  desc:'Real-time strategy game — expand your territory and conquer.'},
+  // ARCADE
+  {id:'g-arc1', name:'Pac-Man',        domain:'google.com',         gameCategory:'arcade',   emoji:'👾', url:'https://www.google.com/logos/2010/pacman10-i.html', category:'Classic', tags:['pacman','classic','arcade'], rating:4.9, reviews:'2M',   desc:'The timeless Google Pac-Man — eat dots, dodge ghosts.'},
+  {id:'g-arc2', name:'Agar.io',        domain:'agar.io',            gameCategory:'arcade',   emoji:'🔵', url:'https://agar.io',                  category:'io Game',  tags:['cells','eat','grow'],            rating:4.6, reviews:'2M',   desc:'Grow your cell by eating others in this classic io game.'},
+  {id:'g-arc3', name:'Slither.io',     domain:'slither.io',         gameCategory:'arcade',   emoji:'🐍', url:'https://slither.io',               category:'Snake',    tags:['snake','grow','io'],             rating:4.5, reviews:'3M',   desc:'Grow your snake and dominate the leaderboard.'},
+  {id:'g-arc4', name:'Diep.io',        domain:'diep.io',            gameCategory:'arcade',   emoji:'🔫', url:'https://diep.io',                  category:'io Game',  tags:['tanks','shoot','upgrade'],       rating:4.6, reviews:'1M',   desc:'Upgrade your tank and defeat enemies in Diep.io.'},
+  {id:'g-arc5', name:'Curvefever',     domain:'curvefever.pro',     gameCategory:'arcade',   emoji:'〰️', url:'https://curvefever.pro',           category:'Arcade',   tags:['curve','trails','multiplayer'],  rating:4.5, reviews:'200K', desc:'Draw curves and trap your opponents in this fun game.'},
+  {id:'g-arc6', name:'Wings.io',       domain:'wings.io',           gameCategory:'arcade',   emoji:'✈️', url:'https://wings.io',                 category:'Aerial',   tags:['planes','shoot','aerial'],       rating:4.4, reviews:'150K', desc:'Fly and shoot down enemy planes in this aerial io game.'},
+  // WORD
+  {id:'g-wrd1', name:'Wordle',         domain:'nytimes.com',        gameCategory:'word',     emoji:'📰', url:'https://www.nytimes.com/games/wordle/index.html', category:'Word', tags:['wordle','word','daily'],    rating:4.9, reviews:'10M',  desc:'Guess the 5-letter word in 6 tries. Daily challenge.'},
+  {id:'g-wrd2', name:'Typeracer',      domain:'typeracer.com',      gameCategory:'word',     emoji:'⌨️', url:'https://play.typeracer.com',       category:'Typing',   tags:['typing','speed','race'],         rating:4.7, reviews:'500K', desc:'Race against others by typing text as fast as you can.'},
+  {id:'g-wrd3', name:'Codenames',      domain:'codenames.game',     gameCategory:'word',     emoji:'🕵️', url:'https://codenames.game',           category:'Party',    tags:['codenames','spy','clues'],       rating:4.8, reviews:'200K', desc:'Spy-themed word guessing game for teams.'},
+  {id:'g-wrd4', name:'WordHurdle',     domain:'wordhurdle.in',      gameCategory:'word',     emoji:'🏃', url:'https://wordhurdle.in',            category:'Word',     tags:['word','hurdle','puzzle'],        rating:4.6, reviews:'80K',  desc:'A challenging 6-letter word guessing game.'},
+  {id:'g-wrd5', name:'Heardle',        domain:'heardle.app',        gameCategory:'word',     emoji:'🎵', url:'https://www.spotify.com/heardle',  category:'Music',    tags:['music','guess','audio'],         rating:4.7, reviews:'300K', desc:'Guess the song from its intro — daily music game.'},
+  {id:'g-wrd6', name:'Worldle',        domain:'worldle.teuteuf.fr', gameCategory:'word',     emoji:'🌐', url:'https://worldle.teuteuf.fr',       category:'Geography',tags:['country','geography','daily'],   rating:4.7, reviews:'400K', desc:'Guess the country by its shape. Daily geography challenge.'},
+  // CASUAL
+  {id:'g-cas1', name:'Cookie Clicker', domain:'orteil.dashnet.org', gameCategory:'casual',   emoji:'🍪', url:'https://orteil.dashnet.org/cookieclicker', category:'Idle', tags:['idle','clicker','cookies'],     rating:4.7, reviews:'2M',   desc:'Click cookies to build your cookie empire.'},
+  {id:'g-cas2', name:'Numberle',       domain:'numberle.net',       gameCategory:'casual',   emoji:'🔢', url:'https://numberle.net',             category:'Numbers',  tags:['numbers','math','casual'],       rating:4.4, reviews:'50K',  desc:'Wordle but for equations — guess the math formula.'},
+  {id:'g-cas3', name:'Gartic Phone',   domain:'garticphone.com',    gameCategory:'casual',   emoji:'📞', url:'https://garticphone.com',          category:'Party',    tags:['drawing','telephone','party'],   rating:4.8, reviews:'1M',   desc:'Broken Telephone with drawings — hilarious party game.'},
+  {id:'g-cas4', name:'Geoguessr',      domain:'geoguessr.com',      gameCategory:'casual',   emoji:'📍', url:'https://www.geoguessr.com',        category:'Geography',tags:['maps','explore','travel'],       rating:4.8, reviews:'500K', desc:'Guess your location from Street View images.'},
+  {id:'g-cas5', name:'Sporcle',        domain:'sporcle.com',        gameCategory:'casual',   emoji:'📚', url:'https://www.sporcle.com',          category:'Trivia',   tags:['trivia','quiz','facts'],         rating:4.6, reviews:'300K', desc:'Thousands of trivia quizzes on every topic imaginable.'},
+  {id:'g-cas6', name:'Akinator',       domain:'akinator.com',       gameCategory:'casual',   emoji:'🧞', url:'https://en.akinator.com',          category:'AI',       tags:['guess','ai','characters'],       rating:4.7, reviews:'400K', desc:'Can the AI genie guess who you are thinking of?'},
+  // SPORTS
+  {id:'g-spt1', name:'Penalty Shootout',domain:'penaltyshootouttournament.com',gameCategory:'sports',emoji:'⚽',url:'https://www.penaltyshootouttournament.com',category:'Football',tags:['soccer','penalty','kick'],rating:4.5,reviews:'100K',desc:'Take penalties in this intense browser football game.'},
+  {id:'g-spt2', name:'Basketball Stars',domain:'poki.com',          gameCategory:'sports',   emoji:'🏀', url:'https://poki.com/en/g/basketball-stars', category:'Basketball',tags:['basketball','dunk','sport'],  rating:4.6, reviews:'200K', desc:'Play basketball against opponents in this slick arcade game.'},
+  {id:'g-spt3', name:'Table Tennis',   domain:'miniclip.com',       gameCategory:'sports',   emoji:'🏓', url:'https://www.miniclip.com/games/table-tennis/en/', category:'Ping Pong',tags:['table tennis','ping pong','sport'],rating:4.5,reviews:'80K',desc:'Fast-paced online table tennis with smooth controls.'},
+  {id:'g-spt4', name:'Golf Online',    domain:'minigolf.com',       gameCategory:'sports',   emoji:'⛳', url:'https://www.minigolf.com',         category:'Golf',     tags:['golf','mini','sport'],           rating:4.4, reviews:'60K',  desc:'Play mini golf with friends online in the browser.'},
+  {id:'g-spt5', name:'Dino Chrome',    domain:'google.com',         gameCategory:'sports',   emoji:'🦕', url:'chrome://dino',                    category:'Endless',  tags:['dino','chrome','run'],           rating:4.9, reviews:'∞',    desc:"Google Chrome's hidden offline dinosaur runner game."},
+  {id:'g-spt6', name:'8 Ball Pool',    domain:'miniclip.com',       gameCategory:'sports',   emoji:'🎱', url:'https://www.miniclip.com/games/8-ball-pool/en/', category:'Pool',tags:['billiards','pool','8-ball'],    rating:4.7, reviews:'5M',   desc:'Play pool online against players worldwide.'},
+  // ADVENTURE
+  {id:'g-adv1', name:'Little Alchemy 2',domain:'littlealchemy2.com',gameCategory:'adventure',emoji:'⚗️', url:'https://littlealchemy2.com',       category:'Crafting', tags:['combine','craft','elements'],    rating:4.8, reviews:'1M',   desc:'Combine elements to discover hundreds of new items.'},
+  {id:'g-adv2', name:'Torn City',      domain:'torn.com',           gameCategory:'adventure',emoji:'🏙️', url:'https://www.torn.com',             category:'RPG',      tags:['rpg','crime','city'],            rating:4.4, reviews:'50K',  desc:'Browser-based crime RPG set in a persistent city.'},
+  {id:'g-adv3', name:'Incredibox',     domain:'incredibox.com',     gameCategory:'adventure',emoji:'🎧', url:'https://www.incredibox.com',       category:'Music',    tags:['music','beats','creative'],      rating:4.8, reviews:'2M',   desc:'Create your own beatbox music with animated characters.'},
+  {id:'g-adv4', name:'Idle Breakout',  domain:'kodiqi.com',         gameCategory:'adventure',emoji:'🧱', url:'https://kodiqi.com/game/idle-breakout', category:'Idle',tags:['breakout','idle','bricks'],      rating:4.6, reviews:'300K', desc:'Idle Breakout — upgrade your balls to smash all the bricks.'},
+  {id:'g-adv5', name:'Doodle God',     domain:'doodlegod.com',      gameCategory:'adventure',emoji:'⚡', url:'https://www.doodlegod.com',        category:'God Game', tags:['combine','create','universe'],   rating:4.5, reviews:'200K', desc:'Combine elements to create the universe from scratch.'},
+  {id:'g-adv6', name:'Evolvo.io',      domain:'evolvo.io',          gameCategory:'adventure',emoji:'🐠', url:'https://evolvo.io',                category:'Evolution',tags:['evolve','eat','grow'],           rating:4.5, reviews:'80K',  desc:'Eat food, evolve your creature, and dominate the ocean.'},
+];
+
 const ALL_APPS = APPS;
 
 const MODE_CFG = {
@@ -112,4 +184,8 @@ const MODE_CFG = {
 
 function getAppsByHomeCategory(catId) {
   return APPS.filter(a => a.homeCategory === catId);
+}
+
+function getGamesByCategory(catId) {
+  return GAMES.filter(g => g.gameCategory === catId);
 }

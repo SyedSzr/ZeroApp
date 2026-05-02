@@ -1,0 +1,210 @@
+// ── GAMES SCREEN — PlayScroll Immersive Feed (Pixel Perfect Figma) ────────────
+function GamesScreen() {
+  const { openDetail, go } = useApp();
+  const [viewMode, setViewMode] = useState('feed'); 
+  const [activeCategory, setActiveCategory] = useState(null);
+  const sectionRefs = useRef({});
+
+  const featuredGames = GAMES.slice(0, 10);
+
+  if (viewMode === 'discover') {
+    return <GamesDiscoveryView onBack={() => setViewMode('feed')} activeCategory={activeCategory} setActiveCategory={setActiveCategory} sectionRefs={sectionRefs} openDetail={openDetail} go={go} />;
+  }
+
+  return (
+    <div className="relative h-full w-full bg-black overflow-hidden font-sans">
+      
+      {/* ── TOP NAV (Coins & Discover) ── */}
+      <div className="absolute top-0 left-0 right-0 pt-safe px-5 pt-4 flex items-center justify-between z-40">
+         {/* Coins Pill */}
+         <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-full py-1.5 pl-1.5 pr-2 pointer-events-auto">
+            <div className="w-5 h-5 rounded-full bg-[#FFB800] flex items-center justify-center text-[10px] font-black text-black">₿</div>
+            <span className="text-white text-[13px] font-bold">1250</span>
+            <div className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center ml-0.5">
+               <span className="text-white/60 text-[10px]">+</span>
+            </div>
+         </div>
+
+         {/* Discover Button */}
+         <button onClick={() => setViewMode('discover')} 
+                 className="flex items-center gap-1.5 bg-[#6b4eff] rounded-full py-1.5 px-3.5 shadow-[0_0_15px_rgba(107,78,255,0.4)] pointer-events-auto">
+            <span className="text-white text-[13px]">🔍</span>
+            <span className="text-white text-[13px] font-bold">Discover</span>
+         </button>
+
+         <div className="w-10" /> 
+      </div>
+
+      {/* ── Feed Container (Vertical Snap) ── */}
+      <div className="h-full w-full overflow-y-auto snap-y snap-mandatory no-sb">
+        {featuredGames.map((game, idx) => (
+          <div key={game.id} className="h-full w-full snap-start relative flex flex-col justify-end">
+            
+            {/* Background Visual */}
+            <div className="absolute inset-0 z-0">
+               <div className={`absolute inset-0 bg-[#0d0d12]`} />
+               <div className="absolute inset-0 flex items-center justify-center opacity-10 blur-3xl">
+                  <span style={{ fontSize: '350px' }}>{game.emoji}</span>
+               </div>
+               {/* Simulating the dark warehouse background from the screenshot */}
+               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+            </div>
+
+            {/* Pagination Dots (from screenshot) */}
+            <div className="absolute bottom-52 left-5 flex gap-1 z-20 opacity-50">
+               <div className="w-2 h-1 bg-white rounded-full"></div>
+               <div className="w-1 h-1 bg-white/50 rounded-full"></div>
+               <div className="w-1 h-1 bg-white/50 rounded-full"></div>
+            </div>
+
+            {/* ── Right Side Action Stack (All Icons) ── */}
+            <div className="absolute right-4 bottom-24 flex flex-col items-center gap-6 z-20 pointer-events-auto">
+               <div className="relative mb-2">
+                  <div className="w-12 h-12 rounded-full border-[1.5px] border-white flex items-center justify-center bg-transparent overflow-hidden">
+                     {/* Empty profile circle */}
+                  </div>
+                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#FF2D55] border-2 border-black flex items-center justify-center text-white text-[10px] font-bold">+</div>
+               </div>
+               
+               <div className="flex flex-col items-center gap-1">
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="#FF2D55" stroke="#FF2D55" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                  <span className="text-white text-[12px] font-bold drop-shadow-md">1206</span>
+               </div>
+               
+               <div className="flex flex-col items-center gap-1">
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                  <span className="text-white text-[12px] font-bold drop-shadow-md">45</span>
+               </div>
+
+               <div className="flex flex-col items-center gap-1">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                  <span className="text-white text-[12px] font-bold drop-shadow-md">Save</span>
+               </div>
+
+               <div className="flex flex-col items-center gap-1">
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
+               </div>
+
+               <div className="flex flex-col items-center gap-1 mt-1">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+               </div>
+            </div>
+
+            {/* ── Bottom Info Section ── */}
+            <div className="px-5 pb-24 pt-20 bg-gradient-to-t from-black via-black/80 to-transparent z-10 flex items-end justify-between pointer-events-none">
+               <div className="flex-1 pr-16 pointer-events-auto">
+                  <div className="flex items-center gap-2 mb-1">
+                     <span className="text-white font-bold text-[15px] drop-shadow-md">PixelStudios</span>
+                     <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full text-white text-[10px] font-bold tracking-wide">Developer</span>
+                  </div>
+                  <h2 className="text-white text-[26px] font-black leading-tight mb-2 drop-shadow-lg">{game.name}</h2>
+                  <p className="text-white/80 text-[13px] font-medium leading-snug mb-3 line-clamp-2 drop-shadow-md">
+                     {game.desc || "High speed racing in a neon city.\nDodge traffic and hit the checkpoints!"}
+                  </p>
+                  
+                  {/* Tags */}
+                  <div className="flex gap-2 mb-5">
+                     {['#Racing', '#Action', '#Cyberpunk'].map(tag => (
+                        <span key={tag} className="bg-black/40 border border-white/10 backdrop-blur-sm px-2.5 py-1 rounded-md text-white/90 text-[11px] font-semibold">
+                           {tag}
+                        </span>
+                     ))}
+                  </div>
+
+                  {/* Play Button */}
+                  <button onClick={() => openDetail(game)}
+                          className="w-[85%] py-3.5 rounded-xl bg-gradient-to-r from-[#5a3eff] to-[#7b5cff] text-white font-bold text-[16px] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(90,62,255,0.4)] active:scale-[0.97] transition-transform">
+                     <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                     Play Now
+                  </button>
+               </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <BottomNav active="games" />
+    </div>
+  );
+}
+
+// ── DISCOVERY VIEW (The previous grid layout) ──────────────────────────────────
+function GamesDiscoveryView({ onBack, activeCategory, setActiveCategory, sectionRefs, openDetail, go }) {
+  function handleCategoryPress(catId) {
+    if (activeCategory === catId) { setActiveCategory(null); return; }
+    setActiveCategory(catId);
+    setTimeout(() => {
+      const el = sectionRefs.current[catId];
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  }
+
+  const categoriesToShow = activeCategory
+    ? GAME_CATEGORIES.filter(c => c.id === activeCategory)
+    : GAME_CATEGORIES;
+
+  return (
+    <div className="slide-up flex flex-col h-full" style={{background:'#000'}}>
+       <div className="flex-1 overflow-y-auto no-sb pb-24">
+          <div className="pt-safe px-5 pt-6 pb-2">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                 <button onClick={onBack} className="text-white/40 text-2xl">←</button>
+                 <h1 className="text-white text-2xl font-black tracking-tight">Discover</h1>
+              </div>
+              <button className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xl">🏆</button>
+            </div>
+            <div className="relative mb-6" onClick={() => go('search')}>
+              <div className="flex items-center gap-3 bg-[#1A1A1A] border border-white/5 rounded-2xl py-4 px-5">
+                <span className="text-white/40">🔍</span>
+                <span className="text-white/40 text-sm font-medium">Search for games...</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-5 mb-8">
+             <h2 className="text-white text-lg font-bold mb-4">Categories</h2>
+             <div className="flex gap-4 overflow-x-auto no-sb">
+               {GAME_CATEGORIES.map(cat => (
+                 <button key={cat.id} onClick={() => handleCategoryPress(cat.id)}
+                   className="tap flex-shrink-0 flex flex-col items-center gap-2">
+                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${activeCategory === cat.id ? 'bg-accent shadow-[0_0_20px_rgba(155,132,255,0.4)]' : 'bg-[#1A1A1A]'}`}>
+                      <span className="text-2xl">{cat.emoji}</span>
+                   </div>
+                   <span className={`text-[10px] font-bold ${activeCategory === cat.id ? 'text-white' : 'text-white/40'}`}>{cat.label}</span>
+                 </button>
+               ))}
+             </div>
+          </div>
+
+          <div className="px-5">
+            {categoriesToShow.map(cat => {
+              const catGames = getGamesByCategory(cat.id);
+              if (catGames.length === 0) return null;
+              return (
+                <div key={cat.id} ref={el => sectionRefs.current[cat.id] = el} className="mb-10">
+                  <h3 className="text-white/80 font-bold text-sm uppercase mb-4 tracking-widest">{cat.label}</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    {catGames.slice(0, 6).map(game => (
+                      <button key={game.id} onClick={() => openDetail(game)} className="tap group flex flex-col items-center w-full">
+                        <div className="aspect-square w-full rounded-2xl bg-[#1A1A1A] border border-white/5 flex items-center justify-center mb-2 group-hover:border-accent/50 transition-colors">
+                          <AppLogo app={game} size="md" />
+                        </div>
+                        <div className="w-full text-center px-0.5">
+                           <div className="text-white text-[11px] font-bold truncate">{game.name}</div>
+                           <div className="flex items-center justify-center gap-0.5 mt-0.5 text-[9px] text-amber-400 font-medium">
+                             <span>★</span> {game.rating || "4.8"} <span className="text-white/40 font-normal">(10k)</span>
+                           </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+       </div>
+       <BottomNav active="games" />
+    </div>
+  );
+}

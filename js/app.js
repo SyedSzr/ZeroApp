@@ -3,7 +3,9 @@ function AppShell() {
   const { screen } = useApp();
 
   const screenMap = {
-    home:      <HomeScreen />,
+    apps:      <AppsScreen />,
+    games:     <GamesScreen />,
+    home:      <AppsScreen />,   // backward-compat alias
     explore:   <ExploreScreen />,
     detail:    <AppDetailScreen />,
     viewer:    <AppViewerScreen />,
@@ -15,7 +17,7 @@ function AppShell() {
 
   return (
     <div className="relative w-full h-full bg-bg overflow-hidden" style={{ maxWidth: 480, margin: '0 auto' }}>
-      {screenMap[screen] || <HomeScreen />}
+      {screenMap[screen] || <AppsScreen />}
     </div>
   );
 }

@@ -62,7 +62,7 @@ function ExploreScreen() {
       {/* ── Header ── */}
       <div className="pt-safe flex-shrink-0" style={{background:'#000', borderBottom:'1px solid #1a1a1a'}}>
         <div className="flex items-center justify-between px-4 pt-3 pb-2">
-          <button onClick={() => go('home')} className="tap text-white text-xl">←</button>
+          <button onClick={() => go('apps')} className="tap text-white text-xl">←</button>
           <span className="text-white font-extrabold text-base tracking-tight">{headerLabel}</span>
           <button onClick={() => go('search')} className="tap text-gray-400 text-xl">🔍</button>
         </div>

@@ -1,5 +1,5 @@
 // ── HOME SCREEN — Redesigned ──────────────────────────────────────────────────
-function HomeScreen() {
+function AppsScreen() {
   const { greeting, recents, openDetail, go } = useApp();
   const [activeCategory, setActiveCategory] = useState(null);
   const sectionRefs = useRef({});
@@ -141,7 +141,7 @@ function HomeScreen() {
 
       </div>
 
-      <BottomNav active="home" />
+      <BottomNav active="apps" />
     </div>
   );
 }
