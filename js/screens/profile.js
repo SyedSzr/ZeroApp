@@ -10,6 +10,7 @@ function ProfileScreen() {
   
   const [isEditing, setIsEditing] = useState(false);
   const [activeFolderView, setActiveFolderView] = useState(null); // folder id or null
+  const [movingAppId, setMovingAppId] = useState(null);
 
   const menuItems = [
     { icon: '⭐', label: 'Favorites',     badge: null,  action: () => {} },
@@ -27,7 +28,7 @@ function ProfileScreen() {
     }
   };
 
-  // Drag and Drop
+  // Drag and Drop (Desktop)
   const handleDragStart = (e, appId) => {
     e.dataTransfer.setData('appId', appId);
   };
@@ -38,6 +39,24 @@ function ProfileScreen() {
     e.preventDefault();
     const appId = e.dataTransfer.getData('appId');
     if (appId) moveAppToFolder(appId, folderId);
+  };
+
+  // Tap-to-Move (Mobile Friendly)
+  const onAppTap = (app) => {
+    if (isEditing) {
+      setMovingAppId(movingAppId === app.id ? null : app.id);
+    } else {
+      openDetail(app);
+    }
+  };
+
+  const onFolderTap = (folderId) => {
+    if (isEditing && movingAppId) {
+      moveAppToFolder(movingAppId, folderId);
+      setMovingAppId(null);
+    } else {
+      setActiveFolderView(folderId);
+    }
   };
 
   // Only show apps that are NOT inside any folder in the main grid
@@ -104,10 +123,10 @@ function ProfileScreen() {
               {folders.map(folder => (
                 <div key={folder.id} className="relative group">
                   <div 
-                    onClick={() => setActiveFolderView(folder.id)}
+                    onClick={() => onFolderTap(folder.id)}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, folder.id)}
-                    className={`bg-card border ${isEditing ? 'border-dashed border-white/20' : 'border-border'} rounded-2xl p-4 flex items-center gap-3 transition-colors hover:border-accent cursor-pointer`}
+                    className={`bg-card border ${isEditing ? 'border-dashed border-white/20' : 'border-border'} ${movingAppId ? 'hover:border-accent animate-pulse' : ''} rounded-2xl p-4 flex items-center gap-3 transition-colors cursor-pointer`}
                   >
                     <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center text-xl">📁</div>
                     <div className="flex-1 min-w-0">
@@ -140,10 +159,12 @@ function ProfileScreen() {
               {unassignedApps.map(app => (
                 <div key={app.id} className="relative group flex flex-col items-center">
                   <button 
-                    onClick={() => !isEditing && openDetail(app)} 
+                    onClick={() => onAppTap(app)} 
                     draggable={isEditing ? "false" : "true"}
                     onDragStart={(e) => handleDragStart(e, app.id)}
-                    className={`tap w-full aspect-square rounded-2xl bg-surface border border-border flex items-center justify-center mb-2 overflow-hidden ${isEditing ? 'jiggle' : ''}`}
+                    className={`tap w-full aspect-square rounded-2xl bg-surface border flex items-center justify-center mb-2 overflow-hidden transition-all ${
+                      movingAppId === app.id ? 'border-accent glow-purple scale-110' : 'border-border'
+                    } ${isEditing && movingAppId !== app.id ? 'jiggle' : ''}`}
                   >
                     <AppLogo app={app} size="md" />
                   </button>
@@ -179,7 +200,9 @@ function ProfileScreen() {
               <div className="grid grid-cols-4 gap-x-3 gap-y-5">
                 {activeFolderApps.map(app => (
                   <div key={app.id} className="relative group flex flex-col items-center">
-                    <button onClick={() => !isEditing && openDetail(app)} className={`tap w-full aspect-square rounded-2xl bg-surface border border-border flex items-center justify-center mb-2 overflow-hidden ${isEditing ? 'jiggle' : ''}`}>
+                    <button onClick={() => onAppTap(app)} className={`tap w-full aspect-square rounded-2xl bg-surface border flex items-center justify-center mb-2 overflow-hidden transition-all ${
+                      movingAppId === app.id ? 'border-accent glow-purple scale-110' : 'border-border'
+                    } ${isEditing && movingAppId !== app.id ? 'jiggle' : ''}`}>
                       <AppLogo app={app} size="md" />
                     </button>
                     <div className="w-full text-center px-0.5">
