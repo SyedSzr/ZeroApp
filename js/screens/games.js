@@ -2,13 +2,13 @@
 const { useState, useRef } = React;
 
 function GamesScreen() {
-  const { greeting, openDetail, go, toggleSaveApp, isSaved } = useApp();
+  const { greeting, openDetail, go, toggleSaveApp, isSaved, liveGames } = useApp();
   const [viewMode, setViewMode] = useState('feed'); 
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeOverlay, setActiveOverlay] = useState(null); // 'comments' | 'leaderboard'
   const sectionRefs = useRef({});
 
-  const featuredGames = GAMES.slice(0, 10);
+  const featuredGames = liveGames.slice(0, 10);
 
   if (viewMode === 'discover') {
     return <GamesDiscoveryView onBack={() => setViewMode('feed')} activeCategory={activeCategory} setActiveCategory={setActiveCategory} sectionRefs={sectionRefs} openDetail={openDetail} go={go} />;

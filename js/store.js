@@ -16,7 +16,16 @@ function getGreeting() {
 function ls(key, def) { try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? def; } catch { return def; } }
 function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
 
+// ── SUPABASE CLIENT ───────────────────────────────────────────────────────────
+const SB_URL = 'https://sjotifqahfcylcooaqxm.supabase.co';
+const SB_KEY = 'sb_publishable_3h4-HTzlMANQA-T2FMaavQ_uso2rIGj';
+const supabase = (typeof window.supabase !== 'undefined') ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+
 function AppProvider({ children }) {
+  // ── Catalog State (Live from Supabase) ──
+  const [liveApps, setLiveApps]   = useState(typeof APPS !== 'undefined' ? APPS : []);
+  const [liveGames, setLiveGames] = useState(typeof GAMES !== 'undefined' ? GAMES : []);
+
   // ── Navigation state ──
   const [screen, setScreen]       = useState('apps');
   const [history, setHistory]     = useState(['apps']);
@@ -34,6 +43,32 @@ function AppProvider({ children }) {
   const [favorites, setFavorites] = useState(() => ls('zero_favs', []));
   const [savedApps, setSavedApps] = useState(() => ls('zero_saved_apps', []));
   const [folders, setFolders]     = useState(() => ls('zero_folders', []));
+
+  // ── Real-time Catalog Logic ──
+  useEffect(() => {
+    if (!supabase) return;
+
+    // 1. Initial Fetch
+    const fetchAll = async () => {
+      const { data: a } = await supabase.from('apps').select('*');
+      const { data: g } = await supabase.from('games').select('*');
+      if (a) setLiveApps(a);
+      if (g) setLiveGames(g);
+    };
+    fetchAll();
+
+    // 2. Real-time Subscription
+    const channel = supabase.channel('catalog_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'apps' }, (payload) => {
+        fetchAll(); // Refresh all on change for simplicity
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, (payload) => {
+        fetchAll();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   // ── Navigate ──
   const go = useCallback((s, extra = {}) => {
@@ -182,6 +217,7 @@ function AppProvider({ children }) {
     favorites, toggleFav, isFav,
     savedApps, folders, toggleSaveApp, isSaved, 
     createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder,
+    liveApps, liveGames,
     greeting: getGreeting(),
   };
 

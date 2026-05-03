@@ -1,6 +1,6 @@
 // ── EXPLORE SCREEN — All 12 Categories ────────────────────────────────────────
 function ExploreScreen() {
-  const { exploreCategory, openDetail, go } = useApp();
+  const { exploreCategory, openDetail, go, liveApps } = useApp();
 
   // Build tab list: 'All' + every home category label
   const ALL_TAB = 'All';
@@ -29,8 +29,8 @@ function ExploreScreen() {
 
   // Filter apps by selected tab
   const listApps = activeCat
-    ? APPS.filter(a => a.homeCategory === activeCat.id)
-    : APPS;
+    ? liveApps.filter(a => a.homeCategory === activeCat.id)
+    : liveApps;
 
   // Card gradient backgrounds
   const heroBgs = [

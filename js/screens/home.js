@@ -1,6 +1,6 @@
 // ── HOME SCREEN — Redesigned ──────────────────────────────────────────────────
 function AppsScreen() {
-  const { greeting, recents, openDetail, go } = useApp();
+  const { greeting, recents, openDetail, go, liveApps } = useApp();
   const [activeCategory, setActiveCategory] = useState(null);
   const sectionRefs = useRef({});
 

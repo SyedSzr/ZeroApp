@@ -1,6 +1,6 @@
 // ── SEARCH SCREEN ─────────────────────────────────────────────────────────────
 function SearchScreen() {
-  const { goBack, searchQ, setSearchQ, openDetail } = useApp();
+  const { goBack, searchQ, setSearchQ, openDetail, liveApps } = useApp();
   const inputRef = useRef(null);
 
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 150); }, []);
@@ -9,12 +9,12 @@ function SearchScreen() {
 
   const results = useMemo(() => {
     if (!q) return [];
-    return ALL_APPS.filter(a =>
+    return liveApps.filter(a =>
       a.name.toLowerCase().includes(q) ||
       a.category.toLowerCase().includes(q) ||
-      a.tags.some(t => t.includes(q))
+      (a.tags && a.tags.some(t => t.includes(q)))
     );
-  }, [q]);
+  }, [q, liveApps]);
 
   const topResults = results.slice(0, 4);
   const moreResults = results.slice(4);
@@ -50,9 +50,9 @@ function SearchScreen() {
         {/* Empty state */}
         {!q && (
           <div className="px-5 pt-6">
-            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">All Apps ({ALL_APPS.length})</p>
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">All Apps ({liveApps.length})</p>
             <div className="flex flex-col gap-2">
-              {ALL_APPS.map(app => (
+              {liveApps.map(app => (
                 <ListAppRow key={app.id} app={app} onPress={openDetail} />
               ))}
             </div>
