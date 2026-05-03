@@ -10,15 +10,27 @@ let data = { apps: [], games: [], categories: [], settings: {} };
 let editingId = null;
 
 // ── INITIALIZATION ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof window.supabase === 'undefined') {
+    alert('Critical Error: Supabase SDK failed to load. Please check your internet connection.');
+    return;
+  }
+  init();
+});
+
 async function init() {
-  await fetchAllData();
-  setRoute('dashboard');
-  setupRealtime();
-  setupEventListeners();
+  try {
+    await fetchAllData();
+    setRoute('dashboard');
+    setupRealtime();
+    setupEventListeners();
+  } catch (err) {
+    console.error('Init failed:', err);
+  }
 }
 
-async function testConnection() {
-  const btn = event.currentTarget;
+async function testConnection(e) {
+  const btn = e ? e.currentTarget : event.currentTarget;
   const originalText = btn.innerHTML;
   btn.innerHTML = '<span>⏳</span> Testing...';
   
