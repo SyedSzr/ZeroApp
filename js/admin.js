@@ -17,6 +17,23 @@ async function init() {
   setupEventListeners();
 }
 
+async function testConnection() {
+  const btn = event.currentTarget;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<span>⏳</span> Testing...';
+  
+  try {
+    const { data, error } = await supabase.from('apps').select('id').limit(1);
+    if (error) throw error;
+    alert('🎉 CONNECTION SUCCESSFUL!\n\nYour Supabase setup is correct. You can now use the Sync Data tool to upload your catalog.');
+  } catch (err) {
+    console.error('Connection failed:', err);
+    alert('❌ CONNECTION FAILED\n\nReason: ' + err.message + '\n\nMake sure you have:\n1. Created the tables in Supabase.\n2. Enabled the RLS policies I provided.');
+  } finally {
+    btn.innerHTML = originalText;
+  }
+}
+
 async function fetchAllData() {
   const syncEl = document.getElementById('sync-status');
   try {
