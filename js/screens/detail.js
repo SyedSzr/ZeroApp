@@ -40,7 +40,7 @@ function AppDetailScreen() {
         </div>
 
         {/* ── Description ── */}
-        <p className="text-white/70 text-sm leading-relaxed mb-6">{app.desc}</p>
+        <p className="text-white/70 text-sm leading-relaxed mb-6">{app.description}</p>
 
         {/* ── Launch Button ── */}
         <button onClick={() => launchApp(app)}

@@ -1,8 +1,10 @@
 // ── HOME SCREEN — Redesigned ──────────────────────────────────────────────────
 function AppsScreen() {
-  const { greeting, recents, openDetail, go, liveApps } = useApp();
+  const { greeting, recents, openDetail, go, liveApps, liveCats, settings } = useApp();
   const [activeCategory, setActiveCategory] = useState(null);
   const sectionRefs = useRef({});
+
+  const homeCategories = liveCats.filter(c => c.type === 'app');
 
   // When a category pill is tapped, scroll to its section
   function handleCategoryPress(catId) {
@@ -20,8 +22,8 @@ function AppsScreen() {
 
   // Which categories to render (all, or just selected)
   const categoriesToShow = activeCategory
-    ? HOME_CATEGORIES.filter(c => c.id === activeCategory)
-    : HOME_CATEGORIES;
+    ? homeCategories.filter(c => c.id === activeCategory)
+    : homeCategories;
 
   return (
     <div className="slide-up flex flex-col h-full">
@@ -61,7 +63,7 @@ function AppsScreen() {
             )}
           </div>
           <div className="flex gap-4 pl-5 pr-3 overflow-x-auto no-sb pb-2">
-            {HOME_CATEGORIES.map(cat => (
+            {homeCategories.map(cat => (
               <CategoryPill
                 key={cat.id}
                 cat={cat}

@@ -25,6 +25,8 @@ function AppProvider({ children }) {
   // ── Catalog State (Live from Supabase) ──
   const [liveApps, setLiveApps]   = useState(typeof APPS !== 'undefined' ? APPS : []);
   const [liveGames, setLiveGames] = useState(typeof GAMES !== 'undefined' ? GAMES : []);
+  const [liveCats, setLiveCats]   = useState(typeof HOME_CATEGORIES !== 'undefined' ? [...HOME_CATEGORIES.map(c=>({...c,type:'app'})), ...GAME_CATEGORIES.map(c=>({...c,type:'game'}))] : []);
+  const [settings, setSettings]   = useState({ app_name: 'ZeroApp' });
 
   // ── Navigation state ──
   const [screen, setScreen]       = useState('apps');
@@ -48,23 +50,28 @@ function AppProvider({ children }) {
   useEffect(() => {
     if (!supabase) return;
 
-    // 1. Initial Fetch
     const fetchAll = async () => {
-      const { data: a } = await supabase.from('apps').select('*');
-      const { data: g } = await supabase.from('games').select('*');
-      if (a) setLiveApps(a);
-      if (g) setLiveGames(g);
+      const [a, g, c, s] = await Promise.all([
+        supabase.from('apps').select('*'),
+        supabase.from('games').select('*'),
+        supabase.from('categories').select('*'),
+        supabase.from('settings').select('*')
+      ]);
+
+      if (a.data) setLiveApps(a.data);
+      if (g.data) setLiveGames(g.data);
+      if (c.data) setLiveCats(c.data);
+      
+      if (s.data) {
+        const sMap = {};
+        s.data.forEach(item => sMap[item.key] = item.value);
+        setSettings(sMap);
+      }
     };
     fetchAll();
 
-    // 2. Real-time Subscription
     const channel = supabase.channel('catalog_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'apps' }, (payload) => {
-        fetchAll(); // Refresh all on change for simplicity
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, (payload) => {
-        fetchAll();
-      })
+      .on('postgres_changes', { event: '*', schema: 'public' }, () => fetchAll())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -217,8 +224,8 @@ function AppProvider({ children }) {
     favorites, toggleFav, isFav,
     savedApps, folders, toggleSaveApp, isSaved, 
     createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder,
-    liveApps, liveGames,
-    greeting: getGreeting(),
+    liveApps, liveGames, liveCats, settings,
+    greeting: settings.greeting_override || getGreeting(),
   };
 
   return React.createElement(Ctx.Provider, { value }, children);

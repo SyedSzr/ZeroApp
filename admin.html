@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>ZeroApp Portal | Management Dashboard</title>
+  <title>ZeroApp Portal | Command Center</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -27,6 +27,7 @@
     .no-sb::-webkit-scrollbar { display: none; }
     input, textarea, select { background: #161622 !important; border-color: #252535 !important; color: #fff !important; }
     input:focus { border-color: #7c6af7 !important; outline: none; box-shadow: 0 0 0 2px rgba(124, 106, 247, 0.2); }
+    .tab-active { background: rgba(124, 106, 247, 0.1); color: #7c6af7; font-weight: 700; border-right: 3px solid #7c6af7; }
   </style>
 </head>
 <body class="font-sans min-h-screen flex overflow-hidden">
@@ -41,21 +42,21 @@
       </div>
     </div>
     
-    <nav class="flex-1 p-4 space-y-2">
-      <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-accent/10 text-accent font-semibold text-sm">
+    <nav id="sidebar-nav" class="flex-1 p-4 space-y-1">
+      <button data-route="dashboard" onclick="setRoute('dashboard')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-muted hover:text-white transition-all text-sm font-medium">
         <span>📊</span> Dashboard
       </button>
-      <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-muted hover:text-white transition-colors text-sm font-medium">
+      <button data-route="apps" onclick="setRoute('apps')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-muted hover:text-white transition-all text-sm font-medium">
         <span>📱</span> App Catalog
       </button>
-      <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-muted hover:text-white transition-colors text-sm font-medium">
+      <button data-route="games" onclick="setRoute('games')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-muted hover:text-white transition-all text-sm font-medium">
         <span>🎮</span> Game Feed
       </button>
-      <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-muted hover:text-white transition-colors text-sm font-medium">
-        <span>🎨</span> App Design
+      <button data-route="categories" onclick="setRoute('categories')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-muted hover:text-white transition-all text-sm font-medium">
+        <span>🏷️</span> Categories
       </button>
-      <div class="pt-4 pb-2 px-4 text-xs font-bold text-muted uppercase tracking-widest">Settings</div>
-      <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-muted hover:text-white transition-colors text-sm font-medium">
+      <div class="pt-6 pb-2 px-4 text-[10px] font-black text-muted uppercase tracking-[0.2em]">System</div>
+      <button data-route="settings" onclick="setRoute('settings')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-muted hover:text-white transition-all text-sm font-medium">
         <span>⚙️</span> Configuration
       </button>
     </nav>
@@ -63,9 +64,9 @@
     <div class="p-4 border-t border-border">
       <div class="flex items-center gap-3 px-3 py-2 bg-card rounded-xl border border-border">
         <div class="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-blue-400 flex items-center justify-center font-bold text-xs text-white">A</div>
-        <div class="flex-1 min-w-0">
+        <div class="flex-1 min-w-0 text-left">
           <p class="text-white text-xs font-bold truncate">Ali Hassan</p>
-          <p class="text-muted text-[10px] truncate">Admin Account</p>
+          <p class="text-muted text-[10px] truncate">Cloud Administrator</p>
         </div>
       </div>
     </div>
@@ -74,133 +75,118 @@
   <!-- ── Main Content ── -->
   <main class="flex-1 flex flex-col h-screen overflow-hidden bg-bg">
     
-    <!-- Top Header -->
+    <!-- Real-time Status Header -->
     <header class="h-20 border-b border-border bg-surface/50 backdrop-blur-xl flex items-center justify-between px-8 flex-shrink-0">
-      <div>
-        <h2 class="text-white font-bold text-lg">Catalog Management</h2>
-        <p class="text-muted text-xs">Update your live app and game listings</p>
+      <div id="route-header">
+        <h2 class="text-white font-bold text-lg">Dashboard Overview</h2>
+        <p class="text-muted text-xs">Real-time stats from Supabase</p>
       </div>
       <div class="flex items-center gap-4">
-        <div id="sync-status" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
+        <div id="sync-status" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold transition-all opacity-0">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          Supabase Connected
+          Live Sync Active
         </div>
-        <button id="add-btn" class="bg-accent hover:bg-accent/80 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all shadow-lg glow-purple">
-          + Add New Item
+        <button id="main-add-btn" class="bg-accent hover:bg-accent/80 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all shadow-lg glow-purple active:scale-95">
+          + New Item
         </button>
       </div>
     </header>
 
-    <!-- Content Area -->
-    <div class="flex-1 overflow-y-auto p-8 no-sb">
-      
-      <!-- Stats Row -->
-      <div class="grid grid-cols-4 gap-6 mb-10">
-        <div class="glass p-6 rounded-3xl">
-          <p class="text-muted text-xs font-bold uppercase tracking-widest mb-1">Total Apps</p>
-          <h3 id="stat-apps" class="text-3xl font-black text-white">--</h3>
-          <p class="text-emerald-400 text-xs font-bold mt-2">Live Catalog</p>
-        </div>
-        <div class="glass p-6 rounded-3xl">
-          <p class="text-muted text-xs font-bold uppercase tracking-widest mb-1">Live Games</p>
-          <h3 id="stat-games" class="text-3xl font-black text-white">--</h3>
-          <p class="text-muted text-xs font-bold mt-2">Active in feed</p>
-        </div>
-        <div class="glass p-6 rounded-3xl">
-          <p class="text-muted text-xs font-bold uppercase tracking-widest mb-1">Catalog Syncs</p>
-          <h3 class="text-3xl font-black text-white">∞</h3>
-          <p class="text-emerald-400 text-xs font-bold mt-2">Real-time active</p>
-        </div>
-        <div class="glass p-6 rounded-3xl">
-          <p class="text-muted text-xs font-bold uppercase tracking-widest mb-1">Status</p>
-          <h3 class="text-xl font-black text-white">Online</h3>
-          <p class="text-emerald-400 text-xs font-bold mt-2">Cloud-Ready</p>
-        </div>
-      </div>
-
-      <!-- Main Management Table -->
-      <div class="glass rounded-[32px] overflow-hidden">
-        <div class="px-8 py-6 border-b border-white/5 flex items-center justify-between">
-          <h3 class="text-white font-bold">Live App Catalog</h3>
-          <div class="flex items-center gap-3">
-            <input type="text" placeholder="Filter apps..." class="px-4 py-2 rounded-xl text-sm w-64 bg-bg border border-border"/>
-          </div>
-        </div>
-        
-        <table class="w-full text-left">
-          <thead>
-            <tr class="text-muted text-[11px] font-black uppercase tracking-widest border-b border-white/5">
-              <th class="px-8 py-4">App/Game</th>
-              <th class="px-8 py-4">Type</th>
-              <th class="px-8 py-4">Category</th>
-              <th class="px-8 py-4">Rating</th>
-              <th class="px-8 py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="catalog-list">
-            <!-- Items injected by JS -->
-          </tbody>
-        </table>
-      </div>
-
+    <!-- Content Area (Routed Views) -->
+    <div id="view-container" class="flex-1 overflow-y-auto p-8 no-sb">
+      <!-- Views will be injected here -->
     </div>
   </main>
 
-  <!-- ── Add/Edit Modal (Hidden by default) ── -->
-  <div id="modal" class="fixed inset-0 z-50 flex items-center justify-center px-5 hidden">
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeModal()"></div>
-    <div class="bg-surface border border-border rounded-[40px] w-full max-w-[600px] relative z-10 shadow-2xl p-8 max-h-[90vh] overflow-y-auto no-sb">
-      <h3 id="modal-title" class="text-2xl font-black text-white mb-6">Add New Item</h3>
-      
-      <form id="app-form" class="space-y-6">
+  <!-- ── ITEM MODAL (Apps & Games) ── -->
+  <div id="item-modal" class="fixed inset-0 z-50 flex items-center justify-center px-5 hidden">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeModal('item-modal')"></div>
+    <div class="bg-surface border border-border rounded-[40px] w-full max-w-[640px] relative z-10 shadow-2xl p-8 max-h-[90vh] overflow-y-auto no-sb">
+      <h3 id="item-modal-title" class="text-2xl font-black text-white mb-6">Add New Item</h3>
+      <form id="item-form" class="space-y-6">
+        <input type="hidden" name="type" value="apps"/>
         <div class="grid grid-cols-2 gap-6">
           <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Item Type</label>
-            <select name="type" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm">
-              <option value="apps">Application</option>
-              <option value="games">Game (Feed)</option>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Internal ID</label>
+            <input type="text" name="id" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="e.g. chatgpt"/>
+          </div>
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Display Name</label>
+            <input type="text" name="name" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="e.g. ChatGPT"/>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Category</label>
+            <select name="category_select" id="item-category-select" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm">
+              <!-- Dynamically populated -->
             </select>
           </div>
           <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Internal ID</label>
-            <input type="text" name="id" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="e.g. canva"/>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Emoji Icon</label>
+            <input type="text" name="emoji" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="🤖"/>
           </div>
         </div>
-
         <div class="grid grid-cols-2 gap-6">
           <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Display Name</label>
-            <input type="text" name="name" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="e.g. Photoshop"/>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Rating (0-5)</label>
+            <input type="number" step="0.1" name="rating" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="4.8"/>
           </div>
           <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Category</label>
-            <input type="text" name="category" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="e.g. Design"/>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Reviews Text</label>
+            <input type="text" name="reviews" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="12.5K"/>
           </div>
         </div>
-
-        <div class="grid grid-cols-3 gap-6">
-          <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Icon (Emoji)</label>
-            <input type="text" name="emoji" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="🎨"/>
-          </div>
-          <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Rating</label>
-            <input type="number" step="0.1" name="rating" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="4.5"/>
-          </div>
-          <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Reviews</label>
-            <input type="text" name="reviews" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="10k"/>
-          </div>
-        </div>
-
         <div>
-          <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">URL</label>
+          <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Application URL</label>
           <input type="url" name="url" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="https://app.com"/>
         </div>
-
+        <div>
+          <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Description</label>
+          <textarea name="description" rows="3" class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="Short description for details page..."></textarea>
+        </div>
         <div class="flex gap-4 pt-4">
-          <button type="button" onclick="closeModal()" class="flex-1 py-4 rounded-2xl bg-card border border-border text-white font-bold">Cancel</button>
-          <button type="submit" class="flex-1 py-4 rounded-2xl bg-accent text-white font-black shadow-lg glow-purple">Push to Cloud</button>
+          <button type="button" onclick="closeModal('item-modal')" class="flex-1 py-4 rounded-2xl bg-card border border-border text-white font-bold">Cancel</button>
+          <button type="submit" class="flex-1 py-4 rounded-2xl bg-accent text-white font-black shadow-lg glow-purple active:scale-95">Push to Cloud</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── CATEGORY MODAL ── -->
+  <div id="cat-modal" class="fixed inset-0 z-50 flex items-center justify-center px-5 hidden">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeModal('cat-modal')"></div>
+    <div class="bg-surface border border-border rounded-[40px] w-full max-w-[500px] relative z-10 shadow-2xl p-8 max-h-[90vh] overflow-y-auto no-sb">
+      <h3 id="cat-modal-title" class="text-2xl font-black text-white mb-6">New Category</h3>
+      <form id="cat-form" class="space-y-6">
+        <div>
+          <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Internal ID</label>
+          <input type="text" name="id" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="e.g. puzzle"/>
+        </div>
+        <div>
+          <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Display Label</label>
+          <input type="text" name="label" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="e.g. Action Games"/>
+        </div>
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Emoji</label>
+            <input type="text" name="emoji" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="🎮"/>
+          </div>
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Type</label>
+            <select name="type" class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm">
+              <option value="app">Apps Category</option>
+              <option value="game">Games Category</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Tailwind Gradient Classes</label>
+          <input type="text" name="grad" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="from-blue-500 to-indigo-600"/>
+        </div>
+        <div class="flex gap-4 pt-4">
+          <button type="button" onclick="closeModal('cat-modal')" class="flex-1 py-4 rounded-2xl bg-card border border-border text-white font-bold">Cancel</button>
+          <button type="submit" class="flex-1 py-4 rounded-2xl bg-accent text-white font-black shadow-lg glow-purple active:scale-95">Save Category</button>
         </div>
       </form>
     </div>

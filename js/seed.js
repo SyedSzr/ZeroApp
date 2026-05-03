@@ -10,13 +10,23 @@ async function seedSupabase() {
     return;
   }
 
-  // 1. Push Apps
+  // 1. Push Categories
+  console.log('📦 Pushing Categories...');
+  const catsToPush = [
+    ...HOME_CATEGORIES.map(c => ({ ...c, type: 'app' })),
+    ...GAME_CATEGORIES.map(c => ({ ...c, type: 'game' }))
+  ];
+  const { error: catErr } = await supabase.from('categories').upsert(catsToPush);
+  if (catErr) console.error('❌ Error pushing categories:', catErr);
+  else console.log('✅ Categories synced successfully!');
+
+  // 2. Push Apps
   console.log('📦 Pushing Apps...');
   const { error: appErr } = await supabase.from('apps').upsert(APPS);
   if (appErr) console.error('❌ Error pushing apps:', appErr);
   else console.log('✅ Apps synced successfully!');
 
-  // 2. Push Games
+  // 3. Push Games
   console.log('📦 Pushing Games...');
   const { error: gameErr } = await supabase.from('games').upsert(GAMES);
   if (gameErr) console.error('❌ Error pushing games:', gameErr);

@@ -1,15 +1,15 @@
-// ── EXPLORE SCREEN — All 12 Categories ────────────────────────────────────────
 function ExploreScreen() {
-  const { exploreCategory, openDetail, go, liveApps } = useApp();
+  const { exploreCategory, openDetail, go, liveApps, liveCats } = useApp();
+  const homeCategories = liveCats.filter(c => c.type === 'app');
 
   // Build tab list: 'All' + every home category label
   const ALL_TAB = 'All';
-  const categoryTabs = HOME_CATEGORIES; // the 12 categories from data.js
+  const categoryTabs = homeCategories; // the categories from cloud
 
   // Find the initial active tab from exploreCategory context
   function getInitialTab() {
     if (!exploreCategory) return ALL_TAB;
-    const found = HOME_CATEGORIES.find(c => c.id === exploreCategory);
+    const found = homeCategories.find(c => c.id === exploreCategory);
     return found ? found.label : ALL_TAB;
   }
 
@@ -18,14 +18,14 @@ function ExploreScreen() {
   // Re-sync if context changes (e.g. navigating back then forward)
   useEffect(() => {
     if (!exploreCategory) { setActiveTab(ALL_TAB); return; }
-    const found = HOME_CATEGORIES.find(c => c.id === exploreCategory);
+    const found = homeCategories.find(c => c.id === exploreCategory);
     if (found) setActiveTab(found.label);
-  }, [exploreCategory]);
+  }, [exploreCategory, liveCats]);
 
   // Derive active category object
   const activeCat = activeTab === ALL_TAB
     ? null
-    : HOME_CATEGORIES.find(c => c.label === activeTab);
+    : homeCategories.find(c => c.label === activeTab);
 
   // Filter apps by selected tab
   const listApps = activeCat

@@ -11,7 +11,15 @@ function GamesScreen() {
   const featuredGames = liveGames.slice(0, 10);
 
   if (viewMode === 'discover') {
-    return <GamesDiscoveryView onBack={() => setViewMode('feed')} activeCategory={activeCategory} setActiveCategory={setActiveCategory} sectionRefs={sectionRefs} openDetail={openDetail} go={go} />;
+    return <GamesDiscoveryView 
+      onBack={() => setViewMode('feed')} 
+      activeCategory={activeCategory} 
+      setActiveCategory={setActiveCategory} 
+      sectionRefs={sectionRefs} 
+      openDetail={openDetail} 
+      go={go} 
+      liveCats={liveCats}
+    />;
   }
 
   return (
@@ -207,7 +215,9 @@ function GamesScreen() {
 }
 
 // ── DISCOVERY VIEW (The previous grid layout) ──────────────────────────────────
-function GamesDiscoveryView({ onBack, activeCategory, setActiveCategory, sectionRefs, openDetail, go }) {
+function GamesDiscoveryView({ onBack, activeCategory, setActiveCategory, sectionRefs, openDetail, go, liveCats }) {
+  const { liveGames } = useApp();
+  const gameCategories = liveCats.filter(c => c.type === 'game');
   function handleCategoryPress(catId) {
     if (activeCategory === catId) { setActiveCategory(null); return; }
     setActiveCategory(catId);
@@ -218,8 +228,8 @@ function GamesDiscoveryView({ onBack, activeCategory, setActiveCategory, section
   }
 
   const categoriesToShow = activeCategory
-    ? GAME_CATEGORIES.filter(c => c.id === activeCategory)
-    : GAME_CATEGORIES;
+    ? gameCategories.filter(c => c.id === activeCategory)
+    : gameCategories;
 
   return (
     <div className="slide-up flex flex-col h-full" style={{background:'#000'}}>
@@ -243,7 +253,7 @@ function GamesDiscoveryView({ onBack, activeCategory, setActiveCategory, section
           <div className="px-5 mb-8">
              <h2 className="text-white text-lg font-bold mb-4">Categories</h2>
              <div className="flex gap-4 overflow-x-auto no-sb">
-               {GAME_CATEGORIES.map(cat => (
+               {gameCategories.map(cat => (
                  <button key={cat.id} onClick={() => handleCategoryPress(cat.id)}
                    className="tap flex-shrink-0 flex flex-col items-center gap-2">
                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${activeCategory === cat.id ? 'bg-accent shadow-[0_0_20px_rgba(155,132,255,0.4)]' : 'bg-[#1A1A1A]'}`}>
@@ -257,7 +267,7 @@ function GamesDiscoveryView({ onBack, activeCategory, setActiveCategory, section
 
           <div className="px-5">
             {categoriesToShow.map(cat => {
-              const catGames = getGamesByCategory(cat.id);
+              const catGames = liveGames.filter(g => g.gameCategory === cat.id);
               if (catGames.length === 0) return null;
               return (
                 <div key={cat.id} ref={el => sectionRefs.current[cat.id] = el} className="mb-10">
