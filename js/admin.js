@@ -87,6 +87,10 @@ function setRoute(route) {
       header.innerHTML = `<h2 class="text-white font-bold text-lg">Classification</h2><p class="text-muted text-xs">Define app and game groups</p>`;
       addBtn.onclick = () => openCatModal();
       break;
+    case 'sync':
+      header.innerHTML = `<h2 class="text-white font-bold text-lg">Cloud Migration</h2><p class="text-muted text-xs">Push local data to Supabase</p>`;
+      addBtn.classList.add('hidden');
+      break;
     case 'settings':
       header.innerHTML = `<h2 class="text-white font-bold text-lg">System Configuration</h2><p class="text-muted text-xs">Global platform parameters</p>`;
       addBtn.classList.add('hidden');
@@ -185,6 +189,23 @@ function renderCurrentView() {
             </div>
           </div>
         `).join('')}
+      </div>
+    `;
+  } else if (currentRoute === 'sync') {
+    container.innerHTML = `
+      <div class="max-w-2xl mx-auto text-center py-10">
+        <div class="w-24 h-24 rounded-[40px] bg-accent/20 flex items-center justify-center text-4xl mx-auto mb-8 shadow-2xl glow-purple">☁️</div>
+        <h3 class="text-3xl font-black text-white mb-4">Migrate to Cloud</h3>
+        <p class="text-muted text-sm mb-10 px-10">This tool will take all 150+ apps and games from your local <b>data.js</b> and upload them to your Supabase project. Use this for the first-time setup.</p>
+        
+        <div class="glass p-10 rounded-[40px] border-accent/20">
+          <button onclick="seedSupabase()" id="sync-btn" class="w-full py-5 bg-accent text-white font-black rounded-3xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all text-lg">
+             START FULL DATA SYNC
+          </button>
+          <div id="sync-log" class="mt-8 text-left h-48 overflow-y-auto no-sb bg-bg/50 border border-border rounded-2xl p-5 text-[10px] font-mono text-emerald-400 space-y-1 hidden">
+             <!-- Progress logs will appear here -->
+          </div>
+        </div>
       </div>
     `;
   } else if (currentRoute === 'settings') {
@@ -351,25 +372,50 @@ function setupEventListeners() {
 // ── SEED LOGIC ─────────────────────────────────────────────────────────────────
 async function seedSupabase() {
   if (!confirm('This will overwrite cloud data with local data.js contents. Proceed?')) return;
-  console.log('🚀 Seeding everything...');
   
+  const logEl = document.getElementById('sync-log');
+  const btn = document.getElementById('sync-btn');
+  
+  logEl.classList.remove('hidden');
+  logEl.innerHTML = '';
+  btn.innerText = 'Syncing...';
+  btn.disabled = true;
+
+  const log = (msg) => {
+    const div = document.createElement('div');
+    div.innerText = `> ${msg}`;
+    logEl.appendChild(div);
+    logEl.scrollTop = logEl.scrollHeight;
+  };
+
   try {
     // 1. Categories
+    log('📦 Pushing Categories...');
     const catsToPush = [
       ...HOME_CATEGORIES.map(c => ({ ...c, type: 'app' })),
       ...GAME_CATEGORIES.map(c => ({ ...c, type: 'game' }))
     ];
     await supabase.from('categories').upsert(catsToPush);
+    log('✅ Categories synced.');
     
     // 2. Apps
+    log('📦 Pushing Apps...');
     await supabase.from('apps').upsert(APPS);
+    log('✅ Apps synced.');
     
     // 3. Games
+    log('📦 Pushing Games...');
     await supabase.from('games').upsert(GAMES);
+    log('✅ Games synced.');
     
+    log('🎉 FULL SYNC COMPLETE!');
     alert('✅ SEED SUCCESSFUL! Everything is now in the cloud.');
   } catch (err) {
+    log('❌ ERROR: ' + err.message);
     alert('❌ Seed failed: ' + err.message);
+  } finally {
+    btn.innerText = 'START FULL DATA SYNC';
+    btn.disabled = false;
   }
 }
 
