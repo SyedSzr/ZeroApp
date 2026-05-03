@@ -58,11 +58,11 @@ function AppProvider({ children }) {
         supabase.from('settings').select('*')
       ]);
 
-      if (a.data) setLiveApps(a.data);
-      if (g.data) setLiveGames(g.data);
-      if (c.data) setLiveCats(c.data);
+      if (a.data && a.data.length > 0) setLiveApps(a.data);
+      if (g.data && g.data.length > 0) setLiveGames(g.data);
+      if (c.data && c.data.length > 0) setLiveCats(c.data);
       
-      if (s.data) {
+      if (s.data && s.data.length > 0) {
         const sMap = {};
         s.data.forEach(item => sMap[item.key] = item.value);
         setSettings(sMap);

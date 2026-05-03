@@ -35,7 +35,6 @@ async function testConnection() {
 }
 
 async function fetchAllData() {
-  const syncEl = document.getElementById('sync-status');
   try {
     const [resApps, resGames, resCats, resSettings] = await Promise.all([
       supabase.from('apps').select('*'),
@@ -61,13 +60,19 @@ async function fetchAllData() {
   } catch (err) {
     console.error('Fetch error:', err);
     showSyncStatus('Error: Check RLS', 'bg-red-500');
-    // Still render with local data if possible or show empty state
     renderCurrentView();
   }
 }
 
+function setupRealtime() {
+  supabase.channel('admin_sync')
+    .on('postgres_changes', { event: '*', schema: 'public' }, () => fetchAllData())
+    .subscribe();
+}
+
 function showSyncStatus(msg, colorClass) {
   const el = document.getElementById('sync-status');
+  if (!el) return;
   el.className = `flex items-center gap-2 px-3 py-1.5 rounded-full ${colorClass}/10 border ${colorClass}/20 ${colorClass.replace('bg-','text-')} text-xs font-bold transition-all`;
   el.innerHTML = `<span class="w-2 h-2 rounded-full ${colorClass} animate-pulse"></span> ${msg}`;
   el.style.opacity = '1';
@@ -95,21 +100,21 @@ function setRoute(route) {
       addBtn.classList.add('hidden');
       break;
     case 'apps':
-      header.innerHTML = `<h2 class="text-white font-bold text-lg">App Catalog</h2><p class="text-muted text-xs">Manage ${data.apps.length} native-style apps</p>`;
+      header.innerHTML = `<h2 class="text-white font-bold text-lg">App Catalog</h2><p class="text-muted text-xs">Manage ${data.apps.length} apps</p>`;
       break;
     case 'games':
-      header.innerHTML = `<h2 class="text-white font-bold text-lg">Game Feed</h2><p class="text-muted text-xs">Manage ${data.games.length} immersive games</p>`;
+      header.innerHTML = `<h2 class="text-white font-bold text-lg">Game Feed</h2><p class="text-muted text-xs">Manage ${data.games.length} games</p>`;
       break;
     case 'categories':
-      header.innerHTML = `<h2 class="text-white font-bold text-lg">Classification</h2><p class="text-muted text-xs">Define app and game groups</p>`;
+      header.innerHTML = `<h2 class="text-white font-bold text-lg">Classification</h2><p class="text-muted text-xs">Define groups</p>`;
       addBtn.onclick = () => openCatModal();
       break;
     case 'sync':
-      header.innerHTML = `<h2 class="text-white font-bold text-lg">Cloud Migration</h2><p class="text-muted text-xs">Push local data to Supabase</p>`;
+      header.innerHTML = `<h2 class="text-white font-bold text-lg">Cloud Migration</h2><p class="text-muted text-xs">Push local data</p>`;
       addBtn.classList.add('hidden');
       break;
     case 'settings':
-      header.innerHTML = `<h2 class="text-white font-bold text-lg">System Configuration</h2><p class="text-muted text-xs">Global platform parameters</p>`;
+      header.innerHTML = `<h2 class="text-white font-bold text-lg">Configuration</h2><p class="text-muted text-xs">Global parameters</p>`;
       addBtn.classList.add('hidden');
       break;
   }
@@ -120,6 +125,7 @@ function setRoute(route) {
 // ── VIEW RENDERING ─────────────────────────────────────────────────────────────
 function renderCurrentView() {
   const container = document.getElementById('view-container');
+  if (!container) return;
   
   if (currentRoute === 'dashboard') {
     container.innerHTML = `
@@ -141,8 +147,8 @@ function renderCurrentView() {
         <div class="glass p-8 rounded-[32px]">
           <h3 class="text-white font-bold mb-4 text-center">Cloud Sync Tool</h3>
           <p class="text-muted text-sm text-center mb-6">Need to push your latest local data to the cloud?</p>
-          <button onclick="seedSupabase()" class="w-full py-4 bg-accent text-white font-black rounded-2xl shadow-lg glow-purple active:scale-95 transition-all">
-             RUN FULL SYNC (data.js → Supabase)
+          <button onclick="setRoute('sync')" class="w-full py-4 bg-accent text-white font-black rounded-2xl shadow-lg glow-purple active:scale-95 transition-all">
+             GO TO SYNC TOOL
           </button>
         </div>
       </div>
@@ -213,15 +219,13 @@ function renderCurrentView() {
       <div class="max-w-2xl mx-auto text-center py-10">
         <div class="w-24 h-24 rounded-[40px] bg-accent/20 flex items-center justify-center text-4xl mx-auto mb-8 shadow-2xl glow-purple">☁️</div>
         <h3 class="text-3xl font-black text-white mb-4">Migrate to Cloud</h3>
-        <p class="text-muted text-sm mb-10 px-10">This tool will take all 150+ apps and games from your local <b>data.js</b> and upload them to your Supabase project. Use this for the first-time setup.</p>
+        <p class="text-muted text-sm mb-10 px-10">This tool will take all apps from your local <b>data.js</b> and upload them to Supabase.</p>
         
         <div class="glass p-10 rounded-[40px] border-accent/20">
           <button onclick="seedSupabase()" id="sync-btn" class="w-full py-5 bg-accent text-white font-black rounded-3xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all text-lg">
              START FULL DATA SYNC
           </button>
-          <div id="sync-log" class="mt-8 text-left h-48 overflow-y-auto no-sb bg-bg/50 border border-border rounded-2xl p-5 text-[10px] font-mono text-emerald-400 space-y-1 hidden">
-             <!-- Progress logs will appear here -->
-          </div>
+          <div id="sync-log" class="mt-8 text-left h-48 overflow-y-auto no-sb bg-bg/50 border border-border rounded-2xl p-5 text-[10px] font-mono text-emerald-400 space-y-1 hidden"></div>
         </div>
       </div>
     `;
@@ -238,15 +242,15 @@ function renderCurrentView() {
               <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-3">Maintenance Mode</label>
               <select name="maintenance" class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm">
                 <option value="off" ${data.settings.maintenance === 'off' ? 'selected' : ''}>Active / Public</option>
-                <option value="on" ${data.settings.maintenance === 'on' ? 'selected' : ''}>Under Maintenance (Admin Only)</option>
+                <option value="on" ${data.settings.maintenance === 'on' ? 'selected' : ''}>Under Maintenance</option>
               </select>
            </div>
            <div>
-              <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-3">System Greeting (Override)</label>
-              <input type="text" name="greeting_override" value="${data.settings.greeting_override || ''}" placeholder="Leave empty for auto-greeting" class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm" />
+              <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-3">System Greeting</label>
+              <input type="text" name="greeting_override" value="${data.settings.greeting_override || ''}" class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm" />
            </div>
            <button type="submit" class="w-full py-5 bg-accent text-white font-black rounded-3xl shadow-lg glow-purple active:scale-95 transition-all">
-              SAVE GLOBAL CONFIGURATION
+              SAVE CONFIGURATION
            </button>
         </form>
       </div>
@@ -271,8 +275,7 @@ function renderStatCard(label, val, emoji, sub) {
 async function handleItemSubmit(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
-  const type = currentRoute; // 'apps' or 'games'
-  
+  const type = currentRoute;
   const payload = {
     id: fd.get('id'),
     name: fd.get('name'),
@@ -282,10 +285,8 @@ async function handleItemSubmit(e) {
     reviews: fd.get('reviews'),
     description: fd.get('description'),
   };
-
   if (type === 'apps') payload.homeCategory = fd.get('category_select');
   else payload.gameCategory = fd.get('category_select');
-
   const { error } = await supabase.from(type).upsert(payload);
   if (error) alert('Error: ' + error.message);
   else closeModal('item-modal');
@@ -294,13 +295,7 @@ async function handleItemSubmit(e) {
 async function handleCatSubmit(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
-  const payload = {
-    id: fd.get('id'),
-    label: fd.get('label'),
-    emoji: fd.get('emoji'),
-    type: fd.get('type'),
-    grad: fd.get('grad'),
-  };
+  const payload = { id: fd.get('id'), label: fd.get('label'), emoji: fd.get('emoji'), type: fd.get('type'), grad: fd.get('grad') };
   const { error } = await supabase.from('categories').upsert(payload);
   if (error) alert('Error: ' + error.message);
   else closeModal('cat-modal');
@@ -315,133 +310,64 @@ async function saveSettings(e) {
     { key: 'greeting_override', value: fd.get('greeting_override') },
   ];
   const { error } = await supabase.from('settings').upsert(updates);
-  if (error) alert('Error saving settings: ' + error.message);
-  else alert('Settings saved successfully!');
+  if (error) alert('Error: ' + error.message);
+  else alert('Settings saved!');
 }
 
-async function deleteItem(id, type) {
-  if (confirm('Delete this item?')) await supabase.from(type).delete().eq('id', id);
-}
-
-async function deleteCategory(id) {
-  if (confirm('Delete category? (This won\'t delete apps in it)')) await supabase.from('categories').delete().eq('id', id);
-}
+async function deleteItem(id, type) { if (confirm('Delete item?')) await supabase.from(type).delete().eq('id', id); }
+async function deleteCategory(id) { if (confirm('Delete category?')) await supabase.from('categories').delete().eq('id', id); }
 
 // ── MODALS ─────────────────────────────────────────────────────────────────────
 function openItemModal(item = null) {
   const form = document.getElementById('item-form');
   const select = document.getElementById('item-category-select');
-  
-  // Filter categories by type (app vs game)
   const catType = currentRoute === 'apps' ? 'app' : 'game';
   const filteredCats = data.categories.filter(c => c.type === catType);
-  
   select.innerHTML = filteredCats.map(c => `<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('');
-  
   if (item) {
-    editingId = item.id;
-    form.id.value = item.id;
-    form.name.value = item.name;
-    form.emoji.value = item.emoji;
-    form.url.value = item.url;
-    form.rating.value = item.rating;
-    form.reviews.value = item.reviews;
-    form.description.value = item.description || '';
-    select.value = item.homeCategory || item.gameCategory;
-    document.getElementById('item-modal-title').innerText = 'Edit Item';
-  } else {
-    editingId = null;
-    form.reset();
-    document.getElementById('item-modal-title').innerText = 'Add New ' + (currentRoute === 'apps' ? 'App' : 'Game');
-  }
-  
+    form.id.value = item.id; form.name.value = item.name; form.emoji.value = item.emoji;
+    form.url.value = item.url; form.rating.value = item.rating; form.reviews.value = item.reviews;
+    form.description.value = item.description || ''; select.value = item.homeCategory || item.gameCategory;
+  } else form.reset();
   document.getElementById('item-modal').classList.remove('hidden');
 }
 
 function openCatModal(cat = null) {
   const form = document.getElementById('cat-form');
-  if (cat) {
-    form.id.value = cat.id;
-    form.label.value = cat.label;
-    form.emoji.value = cat.emoji;
-    form.type.value = cat.type;
-    form.grad.value = cat.grad;
-  } else {
-    form.reset();
-  }
+  if (cat) { form.id.value = cat.id; form.label.value = cat.label; form.emoji.value = cat.emoji; form.type.value = cat.type; form.grad.value = cat.grad; }
+  else form.reset();
   document.getElementById('cat-modal').classList.remove('hidden');
 }
-
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-// ── UI HELPERS ─────────────────────────────────────────────────────────────────
-function showSyncStatus() {
-  const el = document.getElementById('sync-status');
-  el.style.opacity = '1';
-  setTimeout(() => el.style.opacity = '0.5', 2000);
-}
-
 function setupEventListeners() {
-  document.getElementById('item-form').onsubmit = handleItemSubmit;
-  document.getElementById('cat-form').onsubmit = handleCatSubmit;
+  const itemForm = document.getElementById('item-form');
+  if (itemForm) itemForm.onsubmit = handleItemSubmit;
+  const catForm = document.getElementById('cat-form');
+  if (catForm) catForm.onsubmit = handleCatSubmit;
 }
 
 // ── SEED LOGIC ─────────────────────────────────────────────────────────────────
 async function seedSupabase() {
-  if (!confirm('This will overwrite cloud data with local data.js contents. Proceed?')) return;
-  
+  if (!confirm('This will overwrite cloud data. Proceed?')) return;
   const logEl = document.getElementById('sync-log');
   const btn = document.getElementById('sync-btn');
-  
-  logEl.classList.remove('hidden');
-  logEl.innerHTML = '';
-  btn.innerText = 'Syncing...';
-  btn.disabled = true;
-
-  const log = (msg) => {
-    const div = document.createElement('div');
-    div.innerText = `> ${msg}`;
-    logEl.appendChild(div);
-    logEl.scrollTop = logEl.scrollHeight;
-  };
-
+  logEl.classList.remove('hidden'); logEl.innerHTML = '';
+  btn.innerText = 'Syncing...'; btn.disabled = true;
+  const log = (msg) => { const div = document.createElement('div'); div.innerText = `> ${msg}`; logEl.appendChild(div); logEl.scrollTop = logEl.scrollHeight; };
   try {
-    // 1. Categories
     log('📦 Pushing Categories...');
-    const catsToPush = [
-      ...HOME_CATEGORIES.map(c => ({ ...c, type: 'app' })),
-      ...GAME_CATEGORIES.map(c => ({ ...c, type: 'game' }))
-    ];
-    await supabase.from('categories').upsert(catsToPush);
+    const cats = [...HOME_CATEGORIES.map(c=>({...c,type:'app'})), ...GAME_CATEGORIES.map(c=>({...c,type:'game'}))];
+    await supabase.from('categories').upsert(cats);
     log('✅ Categories synced.');
-    
-    // 2. Apps
-    log('📦 Pushing Apps...');
-    await supabase.from('apps').upsert(APPS);
-    log('✅ Apps synced.');
-    
-    // 3. Games
-    log('📦 Pushing Games...');
-    await supabase.from('games').upsert(GAMES);
-    log('✅ Games synced.');
-    
-    log('🎉 FULL SYNC COMPLETE!');
-    alert('✅ SEED SUCCESSFUL! Everything is now in the cloud.');
-  } catch (err) {
-    log('❌ ERROR: ' + err.message);
-    alert('❌ Seed failed: ' + err.message);
-  } finally {
-    btn.innerText = 'START FULL DATA SYNC';
-    btn.disabled = false;
-  }
+    log('📦 Pushing Apps...'); await supabase.from('apps').upsert(APPS); log('✅ Apps synced.');
+    log('📦 Pushing Games...'); await supabase.from('games').upsert(GAMES); log('✅ Games synced.');
+    log('🎉 FULL SYNC COMPLETE!'); alert('✅ SUCCESS!');
+  } catch (err) { log('❌ ERROR: ' + err.message); alert('❌ Failed: ' + err.message); }
+  finally { btn.innerText = 'START FULL DATA SYNC'; btn.disabled = false; }
 }
 
-// Global exposure
-window.editItem = (id, type) => {
-  const list = type === 'apps' ? data.apps : data.games;
-  openItemModal(list.find(it => it.id === id));
-};
+window.editItem = (id, type) => { const list = type === 'apps' ? data.apps : data.games; openItemModal(list.find(it => it.id === id)); };
 window.editCategory = (id) => openCatModal(data.categories.find(c => c.id === id));
 
-// Launch
 init();
