@@ -16,21 +16,30 @@ async function seedSupabase() {
     ...HOME_CATEGORIES.map(c => ({ ...c, type: 'app' })),
     ...GAME_CATEGORIES.map(c => ({ ...c, type: 'game' }))
   ];
-  const { error: catErr } = await supabase.from('categories').upsert(catsToPush);
-  if (catErr) console.error('❌ Error pushing categories:', catErr);
-  else console.log('✅ Categories synced successfully!');
+  const { error: catErr } = await window.sb.from('categories').upsert(catsToPush);
+  if (catErr) {
+    console.error('❌ Error pushing categories:', catErr);
+    return;
+  }
+  console.log('✅ Categories synced successfully!');
 
   // 2. Push Apps
   console.log('📦 Pushing Apps...');
-  const { error: appErr } = await supabase.from('apps').upsert(APPS);
-  if (appErr) console.error('❌ Error pushing apps:', appErr);
-  else console.log('✅ Apps synced successfully!');
+  const { error: appErr } = await window.sb.from('apps').upsert(APPS);
+  if (appErr) {
+    console.error('❌ Error pushing apps:', appErr);
+    return;
+  }
+  console.log('✅ Apps synced successfully!');
 
   // 3. Push Games
   console.log('📦 Pushing Games...');
-  const { error: gameErr } = await supabase.from('games').upsert(GAMES);
-  if (gameErr) console.error('❌ Error pushing games:', gameErr);
-  else console.log('✅ Games synced successfully!');
+  const { error: gameErr } = await window.sb.from('games').upsert(GAMES);
+  if (gameErr) {
+    console.error('❌ Error pushing games:', gameErr);
+    return;
+  }
+  console.log('✅ Games synced successfully!');
 
   console.log('✨ Seeding Complete!');
 }

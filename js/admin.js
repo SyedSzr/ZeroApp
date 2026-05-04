@@ -2,12 +2,19 @@
 const SB_URL = 'https://sjotifqahfcylcooaqxm.supabase.co';
 const SB_KEY = 'sb_publishable_3h4-HTzlMANQA-T2FMaavQ_uso2rIGj';
 
-const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
 // ── STATE ──────────────────────────────────────────────────────────────────────
 let currentRoute = 'dashboard';
 let data = { apps: [], games: [], categories: [], settings: {} };
 let editingId = null;
+
+const EMOJI_LIST = [
+  '🤖','🎮','👶','🛒','💼','💄','🎨','💰','📚','🎬','🔧','🏃','💬','🧩','⚔️','♟️','🕹️','📝','🎲','⚽','🗺️','🖼️','🧠',
+  '🧒','🦉','🐱','🧸','🔡','📦','🏪','🎁','🔨','🛍️','💳','📋','📹','🔷','🎥','📌','✏️','📷','🌅','💅','🌸','🔵','🌀',
+  '🖌️','🌈','🏀','🌍','🦎','📈','📊','🪙','🎓','🃏','🔢','📐','🏛️','▶️','🎵','🟣','🔊','❤️','🍅','🐙','📄','🧘','😌',
+  '🚴','🥗','🌿','🐦','✈️','🐘','🔥','⚡','✨','🌟','🍀','🍎','🍔','🍕','🍦','🍺','🍹','🏠','🏢','🏥','🏫','🏛️'
+];
 
 // ── INITIALIZATION ─────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -35,7 +42,7 @@ async function testConnection(e) {
   btn.innerHTML = '<span>⏳</span> Testing...';
   
   try {
-    const { data, error } = await supabase.from('apps').select('id').limit(1);
+    const { data, error } = await sb.from('apps').select('id').limit(1);
     if (error) throw error;
     alert('🎉 CONNECTION SUCCESSFUL!\n\nYour Supabase setup is correct. You can now use the Sync Data tool to upload your catalog.');
   } catch (err) {
@@ -49,10 +56,10 @@ async function testConnection(e) {
 async function fetchAllData() {
   try {
     const [resApps, resGames, resCats, resSettings] = await Promise.all([
-      supabase.from('apps').select('*'),
-      supabase.from('games').select('*'),
-      supabase.from('categories').select('*'),
-      supabase.from('settings').select('*')
+      sb.from('apps').select('*'),
+      sb.from('games').select('*'),
+      sb.from('categories').select('*'),
+      sb.from('settings').select('*')
     ]);
 
     if (resApps.error) throw resApps.error;
@@ -77,7 +84,7 @@ async function fetchAllData() {
 }
 
 function setupRealtime() {
-  supabase.channel('admin_sync')
+  sb.channel('admin_sync')
     .on('postgres_changes', { event: '*', schema: 'public' }, () => fetchAllData())
     .subscribe();
 }
@@ -103,31 +110,33 @@ function setRoute(route) {
   const header = document.getElementById('route-header');
   const addBtn = document.getElementById('main-add-btn');
   
-  addBtn.classList.remove('hidden');
-  addBtn.onclick = () => openItemModal();
+  if (addBtn) {
+    addBtn.classList.remove('hidden');
+    addBtn.onclick = () => openItemModal();
+  }
 
   switch(route) {
     case 'dashboard':
-      header.innerHTML = `<h2 class="text-white font-bold text-lg">Command Center</h2><p class="text-muted text-xs">Overview of your platform</p>`;
-      addBtn.classList.add('hidden');
+      if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Command Center</h2><p class="text-muted text-xs">Overview of your platform</p>`;
+      if (addBtn) addBtn.classList.add('hidden');
       break;
     case 'apps':
-      header.innerHTML = `<h2 class="text-white font-bold text-lg">App Catalog</h2><p class="text-muted text-xs">Manage ${data.apps.length} apps</p>`;
+      if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">App Catalog</h2><p class="text-muted text-xs">Manage ${data.apps.length} apps</p>`;
       break;
     case 'games':
-      header.innerHTML = `<h2 class="text-white font-bold text-lg">Game Feed</h2><p class="text-muted text-xs">Manage ${data.games.length} games</p>`;
+      if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Game Feed</h2><p class="text-muted text-xs">Manage ${data.games.length} games</p>`;
       break;
     case 'categories':
-      header.innerHTML = `<h2 class="text-white font-bold text-lg">Classification</h2><p class="text-muted text-xs">Define groups</p>`;
-      addBtn.onclick = () => openCatModal();
+      if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Classification</h2><p class="text-muted text-xs">Define groups</p>`;
+      if (addBtn) addBtn.onclick = () => openCatModal();
       break;
     case 'sync':
-      header.innerHTML = `<h2 class="text-white font-bold text-lg">Cloud Migration</h2><p class="text-muted text-xs">Push local data</p>`;
-      addBtn.classList.add('hidden');
+      if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Cloud Migration</h2><p class="text-muted text-xs">Push local data</p>`;
+      if (addBtn) addBtn.classList.add('hidden');
       break;
     case 'settings':
-      header.innerHTML = `<h2 class="text-white font-bold text-lg">Configuration</h2><p class="text-muted text-xs">Global parameters</p>`;
-      addBtn.classList.add('hidden');
+      if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Configuration</h2><p class="text-muted text-xs">Global parameters</p>`;
+      if (addBtn) addBtn.classList.add('hidden');
       break;
   }
 
@@ -299,7 +308,7 @@ async function handleItemSubmit(e) {
   };
   if (type === 'apps') payload.homeCategory = fd.get('category_select');
   else payload.gameCategory = fd.get('category_select');
-  const { error } = await supabase.from(type).upsert(payload);
+  const { error } = await sb.from(type).upsert(payload);
   if (error) alert('Error: ' + error.message);
   else closeModal('item-modal');
 }
@@ -308,7 +317,7 @@ async function handleCatSubmit(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
   const payload = { id: fd.get('id'), label: fd.get('label'), emoji: fd.get('emoji'), type: fd.get('type'), grad: fd.get('grad') };
-  const { error } = await supabase.from('categories').upsert(payload);
+  const { error } = await sb.from('categories').upsert(payload);
   if (error) alert('Error: ' + error.message);
   else closeModal('cat-modal');
 }
@@ -321,13 +330,13 @@ async function saveSettings(e) {
     { key: 'maintenance', value: fd.get('maintenance') },
     { key: 'greeting_override', value: fd.get('greeting_override') },
   ];
-  const { error } = await supabase.from('settings').upsert(updates);
+  const { error } = await sb.from('settings').upsert(updates);
   if (error) alert('Error: ' + error.message);
   else alert('Settings saved!');
 }
 
-async function deleteItem(id, type) { if (confirm('Delete item?')) await supabase.from(type).delete().eq('id', id); }
-async function deleteCategory(id) { if (confirm('Delete category?')) await supabase.from('categories').delete().eq('id', id); }
+async function deleteItem(id, type) { if (confirm('Delete item?')) await sb.from(type).delete().eq('id', id); }
+async function deleteCategory(id) { if (confirm('Delete category?')) await sb.from('categories').delete().eq('id', id); }
 
 // ── MODALS ─────────────────────────────────────────────────────────────────────
 function openItemModal(item = null) {
@@ -335,22 +344,49 @@ function openItemModal(item = null) {
   const select = document.getElementById('item-category-select');
   const catType = currentRoute === 'apps' ? 'app' : 'game';
   const filteredCats = data.categories.filter(c => c.type === catType);
-  select.innerHTML = filteredCats.map(c => `<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('');
-  if (item) {
-    form.id.value = item.id; form.name.value = item.name; form.emoji.value = item.emoji;
+  if (select) select.innerHTML = filteredCats.map(c => `<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('');
+  
+  // Setup Emoji Picker
+  const grid = document.getElementById('emoji-grid');
+  if (grid) {
+    grid.innerHTML = EMOJI_LIST.map(e => `
+      <button type="button" onclick="selectEmoji('${e}')" class="w-10 h-10 rounded-xl hover:bg-white/10 flex-shrink-0 flex items-center justify-center text-xl transition-all active:scale-90">
+        ${e}
+      </button>
+    `).join('');
+  }
+
+  if (item && form) {
+    form.id.value = item.id; form.name.value = item.name; 
+    selectEmoji(item.emoji || '🤖');
     form.url.value = item.url; form.rating.value = item.rating; form.reviews.value = item.reviews;
-    form.description.value = item.description || ''; select.value = item.homeCategory || item.gameCategory;
-  } else form.reset();
-  document.getElementById('item-modal').classList.remove('hidden');
+    form.description.value = item.description || ''; if (select) select.value = item.homeCategory || item.gameCategory;
+  } else if (form) {
+    form.reset();
+    selectEmoji('🤖');
+  }
+  const modal = document.getElementById('item-modal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function selectEmoji(e) {
+  const input = document.getElementById('item-emoji-input');
+  const preview = document.getElementById('emoji-preview');
+  if (input) input.value = e;
+  if (preview) preview.innerText = e;
 }
 
 function openCatModal(cat = null) {
   const form = document.getElementById('cat-form');
-  if (cat) { form.id.value = cat.id; form.label.value = cat.label; form.emoji.value = cat.emoji; form.type.value = cat.type; form.grad.value = cat.grad; }
-  else form.reset();
-  document.getElementById('cat-modal').classList.remove('hidden');
+  if (cat && form) { form.id.value = cat.id; form.label.value = cat.label; form.emoji.value = cat.emoji; form.type.value = cat.type; form.grad.value = cat.grad; }
+  else if (form) form.reset();
+  const modal = document.getElementById('cat-modal');
+  if (modal) modal.classList.remove('hidden');
 }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function closeModal(id) { 
+  const modal = document.getElementById(id);
+  if (modal) modal.classList.add('hidden'); 
+}
 
 function setupEventListeners() {
   const itemForm = document.getElementById('item-form');
@@ -364,22 +400,45 @@ async function seedSupabase() {
   if (!confirm('This will overwrite cloud data. Proceed?')) return;
   const logEl = document.getElementById('sync-log');
   const btn = document.getElementById('sync-btn');
-  logEl.classList.remove('hidden'); logEl.innerHTML = '';
-  btn.innerText = 'Syncing...'; btn.disabled = true;
-  const log = (msg) => { const div = document.createElement('div'); div.innerText = `> ${msg}`; logEl.appendChild(div); logEl.scrollTop = logEl.scrollHeight; };
+  if (logEl) { logEl.classList.remove('hidden'); logEl.innerHTML = ''; }
+  if (btn) { btn.innerText = 'Syncing...'; btn.disabled = true; }
+  const log = (msg) => { 
+    if (!logEl) return;
+    const div = document.createElement('div'); div.innerText = `> ${msg}`; logEl.appendChild(div); logEl.scrollTop = logEl.scrollHeight; 
+  };
   try {
     log('📦 Pushing Categories...');
     const cats = [...HOME_CATEGORIES.map(c=>({...c,type:'app'})), ...GAME_CATEGORIES.map(c=>({...c,type:'game'}))];
-    await supabase.from('categories').upsert(cats);
+    const { error: catErr } = await sb.from('categories').upsert(cats);
+    if (catErr) throw catErr;
     log('✅ Categories synced.');
-    log('📦 Pushing Apps...'); await supabase.from('apps').upsert(APPS); log('✅ Apps synced.');
-    log('📦 Pushing Games...'); await supabase.from('games').upsert(GAMES); log('✅ Games synced.');
+
+    log('📦 Pushing Apps...'); 
+    const { error: appErr } = await sb.from('apps').upsert(APPS); 
+    if (appErr) throw appErr;
+    log('✅ Apps synced.');
+
+    log('📦 Pushing Games...'); 
+    const { error: gameErr } = await sb.from('games').upsert(GAMES); 
+    if (gameErr) throw gameErr;
+    log('✅ Games synced.');
+
     log('🎉 FULL SYNC COMPLETE!'); alert('✅ SUCCESS!');
   } catch (err) { log('❌ ERROR: ' + err.message); alert('❌ Failed: ' + err.message); }
-  finally { btn.innerText = 'START FULL DATA SYNC'; btn.disabled = false; }
+  finally { if (btn) { btn.innerText = 'START FULL DATA SYNC'; btn.disabled = false; } }
 }
 
+// ── EXPOSE TO WINDOW ───────────────────────────────────────────────────────────
+window.setRoute = setRoute;
+window.init = init;
+window.testConnection = testConnection;
 window.editItem = (id, type) => { const list = type === 'apps' ? data.apps : data.games; openItemModal(list.find(it => it.id === id)); };
 window.editCategory = (id) => openCatModal(data.categories.find(c => c.id === id));
-
-init();
+window.deleteItem = deleteItem;
+window.deleteCategory = deleteCategory;
+window.seedSupabase = seedSupabase;
+window.saveSettings = saveSettings;
+window.closeModal = closeModal;
+window.openItemModal = openItemModal;
+window.openCatModal = openCatModal;
+window.selectEmoji = selectEmoji;
