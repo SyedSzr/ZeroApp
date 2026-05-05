@@ -432,9 +432,9 @@ function openItemModal(item = null) {
   const filteredCats = data.categories.filter(c => c.type === catType);
   if (select) select.innerHTML = filteredCats.map(c => `<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('');
   
-  // Toggle sections
+  // Show featured image fields for both apps and games
   const gameFields = document.getElementById('game-only-fields');
-  if (gameFields) gameFields.classList.toggle('hidden', currentRoute !== 'games');
+  if (gameFields) gameFields.classList.remove('hidden');
 
   // Reset previews
   const iconPrev = document.getElementById('icon-preview');

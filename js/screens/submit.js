@@ -36,6 +36,7 @@ function SubmitScreen() {
         emoji: '🌐',
         reviews: '1',
         screenshots: [],
+        featured_image: null,
       };
 
       // 1. Handle Icon Upload
@@ -44,7 +45,13 @@ function SubmitScreen() {
         payload.icon_url = await uploadToSupabase(iconFile, 'icons');
       }
 
-      // 2. Handle Screenshots Upload
+      // 2. Handle Featured Graphic Upload
+      const featFile = document.getElementById('feat-input')?.files[0];
+      if (featFile) {
+        payload.featured_image = await uploadToSupabase(featFile, 'featured');
+      }
+
+      // 3. Handle Screenshots Upload
       const screenFiles = document.getElementById('screens-input')?.files;
       if (screenFiles && screenFiles.length > 0) {
         const urls = [];
@@ -203,6 +210,38 @@ function SubmitScreen() {
                    <span id="screens-count" className="text-[10px] text-muted font-bold text-center px-2">UPLOAD SCREENS</span>
                 </label>
               </div>
+            </div>
+          </div>
+
+          {/* Featured Graphic */}
+          <div>
+            <label className="block text-muted text-[10px] font-black uppercase tracking-widest mb-2 px-1">Featured Graphic (1024x500)</label>
+            <div className="relative">
+              <input 
+                type="file" 
+                id="feat-input"
+                accept="image/*"
+                className="hidden" 
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      document.getElementById('feat-preview').src = ev.target.result;
+                      document.getElementById('feat-preview').classList.remove('hidden');
+                      document.getElementById('feat-placeholder').classList.add('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+              <label htmlFor="feat-input" className="flex flex-col items-center justify-center w-full h-40 rounded-3xl bg-card border-2 border-dashed border-border hover:border-accent transition-all cursor-pointer overflow-hidden">
+                 <img id="feat-preview" className="w-full h-full object-cover hidden" />
+                 <div id="feat-placeholder" className="flex flex-col items-center">
+                   <span className="text-3xl mb-1">🎭</span>
+                   <span className="text-[10px] text-muted font-bold">UPLOAD FEATURED GRAPHIC (1024x500)</span>
+                 </div>
+              </label>
             </div>
           </div>
 
