@@ -2,9 +2,9 @@
 
 // ── AppLogo: real brand logo with emoji fallback ──────────────────────────────
 function AppLogo({ app, size = 'md' }) {
-  const px = { xs:40, sm:52, md:72, lg:96 }[size] || 72;
-  const radius = { xs:'rounded-xl', sm:'rounded-xl', md:'rounded-3xl', lg:'rounded-[32px]' }[size];
-  const fontSize = { xs:'text-xl', sm:'text-3xl', md:'text-4xl', lg:'text-6xl' }[size];
+  const px = { xs:48, sm:62, md:86, lg:115 }[size] || 86;
+  const radius = { xs:'rounded-xl', sm:'rounded-2xl', md:'rounded-[28px]', lg:'rounded-[38px]' }[size];
+  const fontSize = { xs:'text-2xl', sm:'text-4xl', md:'text-5xl', lg:'text-7xl' }[size];
 
   const primary = app.icon_url || (app.domain ? `https://logo.clearbit.com/${app.domain}` : null);
   
