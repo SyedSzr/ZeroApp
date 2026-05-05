@@ -1,10 +1,21 @@
 // ── APP DETAIL SCREEN ─────────────────────────────────────────────────────────
-function AppDetailScreen({ detailApp: app }) {
-  const { launchApp, toggleFav, isFav, toggleSaveApp, isSaved, goBack } = useApp();
+function AppDetailScreen({ detailApp: initialApp }) {
+  const { liveApps, liveGames, launchApp, toggleFav, isFav, toggleSaveApp, isSaved, goBack } = useApp();
+  
+  const app = React.useMemo(() => {
+    if (typeof initialApp === 'object' && initialApp !== null) return initialApp;
+    const all = [...(liveApps || []), ...(liveGames || [])];
+    return all.find(a => String(a.id) === String(initialApp));
+  }, [initialApp, liveApps, liveGames]);
+
   const [activeScreenshot, setActiveScreenshot] = React.useState(null);
   const [showFullDesc, setShowFullDesc] = React.useState(false);
   
-  if (!app) return null;
+  if (!app) return (
+    <div className="flex h-full items-center justify-center bg-bg">
+      <div className="spin" />
+    </div>
+  );
   const fav = isFav(app.id);
 
   const features = ['Instant Access', 'No Installation', 'Secure & Private', 'Works Everywhere'];

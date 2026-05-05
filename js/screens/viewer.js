@@ -1,18 +1,30 @@
 // ── APP VIEWER (WebView) ──────────────────────────────────────────────────────
-function AppViewerScreen({ viewerApp: app }) {
-  const { goBack } = useApp();
+function AppViewerScreen({ viewerApp: initialApp }) {
+  const { liveApps, liveGames, goBack } = useApp();
+
+  const app = React.useMemo(() => {
+    if (typeof initialApp === 'object' && initialApp !== null) return initialApp;
+    const all = [...(liveApps || []), ...(liveGames || [])];
+    return all.find(a => String(a.id) === String(initialApp));
+  }, [initialApp, liveApps, liveGames]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(false);
   const [ikey, setIkey]       = useState(0);
   const timer = useRef(null);
 
   useEffect(() => {
+    if (!app) return;
     setLoading(true); setError(false);
     timer.current = setTimeout(() => setError(true), 9000);
     return () => clearTimeout(timer.current);
   }, [ikey, app?.id]);
 
-  if (!app) return null;
+  if (!app) return (
+    <div className="flex h-full items-center justify-center bg-bg">
+      <div className="spin" />
+    </div>
+  );
 
   const reload  = () => { setIkey(k => k + 1); };
   const openExt = () => window.open(app.url, '_blank');

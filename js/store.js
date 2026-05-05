@@ -75,19 +75,84 @@ function AppProvider({ children }) {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  // ── URL Helpers ──
+  const getUrlForFrame = useCallback((frame) => {
+    if (!frame) return '#apps';
+    let url = '#' + frame.id;
+    const params = frame.params || {};
+    const query = [];
+    if (params.detailApp) query.push(`id=${params.detailApp.id || params.detailApp}`);
+    else if (params.viewerApp) query.push(`id=${params.viewerApp.id || params.viewerApp}`);
+    else if (params.exploreCategory) query.push(`id=${params.exploreCategory}`);
+    else if (frame.id === 'search' && searchQ) query.push(`q=${encodeURIComponent(searchQ)}`);
+    
+    return query.length > 0 ? `${url}?${query.join('&')}` : url;
+  }, [searchQ]);
+
   // ── Navigate ──
   const go = useCallback((s, extra = {}) => {
     const key = s + '-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-    setHistory(h => [...h, { key, id: s, params: extra }]);
-  }, []);
+    const frame = { key, id: s, params: extra };
+    setHistory(h => {
+      const next = [...h, frame];
+      window.history.pushState({ stackIndex: next.length - 1 }, '', getUrlForFrame(frame));
+      return next;
+    });
+  }, [getUrlForFrame]);
 
-  const goBack = useCallback(() => {
+  const goBack = useCallback((fromPopState = false) => {
     setHistory(h => {
       if (h.length <= 1) return h;
+      if (!fromPopState) window.history.back();
       const next = [...h];
       next.pop();
       return next;
     });
+  }, []);
+
+  // ── Browser Back Support ──
+  useEffect(() => {
+    const handlePop = (e) => {
+      // If we have a stackIndex, it means we're navigating back through our own history
+      goBack(true);
+    };
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, [goBack]);
+
+  // ── Initial Hydration ──
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash || hash === '#apps') return;
+
+    const [idPart, queryPart] = hash.slice(1).split('?');
+    const params = {};
+    if (queryPart) {
+      queryPart.split('&').forEach(p => {
+        const [k, v] = p.split('=');
+        params[k] = decodeURIComponent(v);
+      });
+    }
+
+    // Prepare the hydration frame
+    let frameId = idPart;
+    let extra = {};
+    if (frameId === 'detail' && params.id) extra = { detailApp: params.id };
+    else if (frameId === 'explore' && params.id) extra = { exploreCategory: params.id };
+    else if (frameId === 'viewer' && params.id) extra = { viewerApp: params.id };
+    else if (frameId === 'search' && params.q) {
+       extra = {};
+       setSearchQ(params.q);
+    }
+
+    // Boot with Home + the Deep Link screen so "back" works
+    setHistory([
+      { key: 'root-apps', id: 'apps', params: {} },
+      { key: 'deep-link-' + Date.now(), id: frameId, params: extra }
+    ]);
+    
+    // Replace current state so browser knows we are at index 1
+    window.history.replaceState({ stackIndex: 1 }, '', hash);
   }, []);
 
   const goHome = useCallback(() => {
