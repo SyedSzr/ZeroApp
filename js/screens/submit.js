@@ -37,6 +37,8 @@ function SubmitScreen() {
         reviews: '1',
         screenshots: [],
         featured_image: null,
+        status: 'pending',
+        rejection_comment: null,
       };
 
       // 1. Handle Icon Upload
@@ -100,8 +102,8 @@ function SubmitScreen() {
         </div>
         <h2 className="text-white text-2xl font-black mb-3">Submission Received!</h2>
         <p className="text-muted text-sm leading-relaxed">
-          Your app has been added to our catalog. <br/>
-          Redirecting you back...
+          Your app has been submitted for review. <br/>
+          It will appear live once approved by the admin.
         </p>
       </div>
     );

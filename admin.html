@@ -122,6 +122,31 @@
 
       <form id="item-form" class="space-y-6">
         <input type="hidden" name="type" value="apps"/>
+
+        <!-- Approval Workflow Header -->
+        <div id="approval-header" class="hidden p-4 rounded-[28px] border mb-6 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div id="status-icon-box" class="w-10 h-10 rounded-2xl flex items-center justify-center text-xl"></div>
+            <div>
+              <p id="status-label" class="text-white font-bold text-xs uppercase tracking-tight"></p>
+              <p id="status-subtext" class="text-muted text-[10px]"></p>
+            </div>
+          </div>
+          <div id="approval-buttons" class="flex gap-2">
+            <button type="button" onclick="handleQuickApprove()" class="px-4 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-xl shadow-lg shadow-emerald-500/20">Approve</button>
+            <button type="button" onclick="toggleRejectInput(true)" class="px-4 py-2 bg-red-500 text-white text-[10px] font-black uppercase rounded-xl shadow-lg shadow-red-500/20">Reject</button>
+          </div>
+        </div>
+
+        <div id="reject-box" class="hidden p-5 rounded-[28px] bg-red-500/5 border border-red-500/20 space-y-3">
+          <label class="block text-red-400 text-[10px] font-black uppercase tracking-widest px-1">Rejection Comment</label>
+          <textarea id="rejection-comment" class="w-full bg-bg border border-border rounded-xl p-3 text-white text-sm" placeholder="Why is this being rejected?"></textarea>
+          <div class="flex justify-end gap-2">
+            <button type="button" onclick="toggleRejectInput(false)" class="text-muted text-[10px] font-bold uppercase px-3">Cancel</button>
+            <button type="button" onclick="handleQuickReject()" class="bg-red-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase">Confirm Reject</button>
+          </div>
+        </div>
+
         <div class="grid grid-cols-2 gap-6">
           <div>
             <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Internal ID</label>

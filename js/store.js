@@ -55,8 +55,16 @@ function AppProvider({ children }) {
         supabase.from('settings').select('*')
       ]);
 
-      if (a.data && a.data.length > 0) { setLiveApps(a.data); window.liveApps = a.data; }
-      if (g.data && g.data.length > 0) { setLiveGames(g.data); window.liveGames = g.data; }
+      if (a.data && a.data.length > 0) { 
+        const approved = a.data.filter(app => app.status === 'approved');
+        setLiveApps(approved); 
+        window.liveApps = approved; 
+      }
+      if (g.data && g.data.length > 0) { 
+        const approved = g.data.filter(game => game.status === 'approved');
+        setLiveGames(approved); 
+        window.liveGames = approved; 
+      }
       if (c.data && c.data.length > 0) { setLiveCats(c.data); window.liveCats = c.data; }
       
       if (s.data && s.data.length > 0) {

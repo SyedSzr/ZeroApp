@@ -9,6 +9,7 @@ let currentRoute = 'dashboard';
 let data = { apps: [], games: [], categories: [], settings: {} };
 let editingId = null;
 let filterCategory = null;
+let filterStatus = 'all'; // 'all', 'pending', 'approved', 'rejected'
 
 const EMOJI_LIST = [
   '🤖','🎮','👶','🛒','💼','💄','🎨','💰','📚','🎬','🔧','🏃','💬','🧩','⚔️','♟️','🕹️','📝','🎲','⚽','🗺️','🖼️','🧠',
@@ -102,6 +103,7 @@ function setRoute(route) {
   currentRoute = route;
   if (route !== 'apps' && route !== 'games') {
     filterCategory = null; 
+    filterStatus = 'all';
   }
   
   // Update UI Sidebar
@@ -192,29 +194,47 @@ function renderCurrentView() {
     if (filterCategory) {
       list = list.filter(item => (item.homeCategory === filterCategory || item.gameCategory === filterCategory));
     }
+    if (filterStatus !== 'all') {
+      list = list.filter(item => item.status === filterStatus);
+    }
+
+    const pendingCount = (currentRoute === 'apps' ? data.apps : data.games).filter(i => i.status === 'pending').length;
 
     container.innerHTML = `
-      ${filterCategory ? `
-        <div class="flex items-center justify-between mb-6 px-4 bg-accent/5 p-4 rounded-3xl border border-accent/10">
-          <div class="flex items-center gap-3">
-             <span class="text-muted text-[10px] font-black uppercase tracking-widest">Filtering by Category:</span>
-             <span class="pill bg-accent text-white text-[10px] px-3 py-1 font-black rounded-full shadow-lg glow-purple">
-               ${data.categories.find(c => c.id === filterCategory)?.label || filterCategory}
-             </span>
-          </div>
-          <button onclick="clearFilter()" class="text-[10px] font-black text-red-500 hover:text-red-400 uppercase tracking-widest flex items-center gap-1 transition-all">
-            <span>Clear Filter</span>
-            <span class="text-sm">×</span>
+      <div class="flex flex-col gap-6 mb-6">
+        <div class="flex items-center gap-4 bg-card border border-border p-2 rounded-2xl w-fit">
+          <button onclick="setStatusFilter('all')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterStatus === 'all' ? 'bg-white/10 text-white' : 'text-muted hover:text-white'}">All Items</button>
+          <button onclick="setStatusFilter('pending')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${filterStatus === 'pending' ? 'bg-amber-500/20 text-amber-500' : 'text-muted hover:text-white'}">
+            Pending Approval
+            ${pendingCount > 0 ? `<span class="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">${pendingCount}</span>` : ''}
           </button>
+          <button onclick="setStatusFilter('approved')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterStatus === 'approved' ? 'bg-emerald-500/20 text-emerald-500' : 'text-muted hover:text-white'}">Approved</button>
+          <button onclick="setStatusFilter('rejected')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterStatus === 'rejected' ? 'bg-red-500/20 text-red-500' : 'text-muted hover:text-white'}">Rejected</button>
         </div>
-      ` : ''}
+
+        ${filterCategory ? `
+          <div class="flex items-center justify-between px-4 bg-accent/5 p-4 rounded-3xl border border-accent/10">
+            <div class="flex items-center gap-3">
+               <span class="text-muted text-[10px] font-black uppercase tracking-widest">Filtering by Category:</span>
+               <span class="pill bg-accent text-white text-[10px] px-3 py-1 font-black rounded-full shadow-lg glow-purple">
+                 ${data.categories.find(c => c.id === filterCategory)?.label || filterCategory}
+               </span>
+            </div>
+            <button onclick="clearFilter()" class="text-[10px] font-black text-red-500 hover:text-red-400 uppercase tracking-widest flex items-center gap-1 transition-all">
+              <span>Clear Category Filter</span>
+              <span class="text-sm">×</span>
+            </button>
+          </div>
+        ` : ''}
+      </div>
+
       <div class="glass rounded-[32px] overflow-hidden">
         <table class="w-full text-left">
           <thead>
             <tr class="text-muted text-[11px] font-black uppercase tracking-widest border-b border-white/5">
               <th class="px-8 py-4">Item</th>
               <th class="px-8 py-4">Category</th>
-              <th class="px-8 py-4">Rating</th>
+              <th class="px-8 py-4 text-center">Status</th>
               <th class="px-8 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -223,7 +243,9 @@ function renderCurrentView() {
               <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
                 <td class="px-8 py-4">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-bg flex items-center justify-center text-xl">${item.emoji}</div>
+                    <div class="w-10 h-10 rounded-xl bg-bg flex items-center justify-center text-xl overflow-hidden">
+                      ${item.icon_url ? `<img src="${item.icon_url}" class="w-full h-full object-cover"/>` : item.emoji}
+                    </div>
                     <div>
                       <p class="text-white font-bold text-sm">${item.name}</p>
                       <p class="text-muted text-[10px] truncate max-w-[150px]">${item.url}</p>
@@ -233,7 +255,9 @@ function renderCurrentView() {
                 <td class="px-8 py-4">
                   <span class="pill bg-accent/10 text-accent text-[10px] px-2 py-1 font-bold uppercase">${item.homeCategory || item.gameCategory}</span>
                 </td>
-                <td class="px-8 py-4 text-white font-bold text-sm">${item.rating}</td>
+                <td class="px-8 py-4 text-center">
+                  ${renderStatusBadge(item.status)}
+                </td>
                 <td class="px-8 py-4 text-right">
                   <button onclick="editItem('${item.id}', '${currentRoute}')" class="text-muted hover:text-white transition-colors mr-3 text-sm font-bold">Edit</button>
                   <button onclick="deleteItem('${item.id}', '${currentRoute}')" class="text-red-500/50 hover:text-red-500 transition-colors text-sm font-bold">Delete</button>
@@ -504,6 +528,35 @@ function openItemModal(item = null) {
     form.reset();
   }
   
+  // Approval Workflow Header
+  const approvalHeader = document.getElementById('approval-header');
+  const rejectBox = document.getElementById('reject-box');
+  if (approvalHeader) {
+    if (item && item.status !== 'approved') {
+      approvalHeader.classList.remove('hidden');
+      const box = document.getElementById('status-icon-box');
+      const label = document.getElementById('status-label');
+      const sub = document.getElementById('status-subtext');
+      
+      if (item.status === 'pending') {
+        approvalHeader.className = 'p-4 rounded-[28px] border mb-6 flex items-center justify-between border-amber-500/20 bg-amber-500/5';
+        box.className = 'w-10 h-10 rounded-2xl flex items-center justify-center text-xl bg-amber-500/20 text-amber-500';
+        box.innerHTML = '⏳';
+        label.innerText = 'Pending Review';
+        sub.innerText = 'This item is not yet visible to users.';
+      } else if (item.status === 'rejected') {
+        approvalHeader.className = 'p-4 rounded-[28px] border mb-6 flex items-center justify-between border-red-500/20 bg-red-500/5';
+        box.className = 'w-10 h-10 rounded-2xl flex items-center justify-center text-xl bg-red-500/20 text-red-500';
+        box.innerHTML = '❌';
+        label.innerText = 'Submission Rejected';
+        sub.innerText = item.rejection_comment || 'No comment provided.';
+      }
+    } else {
+      approvalHeader.classList.add('hidden');
+    }
+  }
+  if (rejectBox) rejectBox.classList.add('hidden');
+
   const modal = document.getElementById('item-modal');
   if (modal) modal.classList.remove('hidden');
 }
@@ -587,6 +640,49 @@ async function seedSupabase() {
   finally { if (btn) { btn.innerText = 'START FULL DATA SYNC'; btn.disabled = false; } }
 }
 
+function setStatusFilter(s) {
+  filterStatus = s;
+  renderCurrentView();
+}
+
+function renderStatusBadge(status) {
+  if (status === 'pending') return `<span class="pill bg-amber-500/10 text-amber-500 text-[9px] px-2 py-0.5 font-black uppercase border border-amber-500/20">Pending Review</span>`;
+  if (status === 'approved') return `<span class="pill bg-emerald-500/10 text-emerald-500 text-[9px] px-2 py-0.5 font-black uppercase border border-emerald-500/20">Approved</span>`;
+  if (status === 'rejected') return `<span class="pill bg-red-500/10 text-red-500 text-[9px] px-2 py-0.5 font-black uppercase border border-red-500/20">Rejected</span>`;
+  return `<span class="pill bg-white/5 text-muted text-[9px] px-2 py-0.5 font-black uppercase border border-white/10">Draft</span>`;
+}
+
+function toggleRejectInput(show) {
+  const box = document.getElementById('reject-box');
+  if (box) box.classList.toggle('hidden', !show);
+}
+
+async function handleQuickApprove() {
+  if (!editingId) return;
+  if (!confirm('Approve this submission? It will go live immediately.')) return;
+  try {
+    const { error } = await sb.from(currentRoute).update({ status: 'approved' }).eq('id', editingId);
+    if (error) throw error;
+    closeModal('item-modal');
+    fetchAllData();
+  } catch (err) { alert(err.message); }
+}
+
+async function handleQuickReject() {
+  if (!editingId) return;
+  const comment = document.getElementById('rejection-comment').value;
+  if (!comment) return alert('Please enter a rejection reason.');
+  try {
+    const { error } = await sb.from(currentRoute).update({ 
+      status: 'rejected', 
+      rejection_comment: comment 
+    }).eq('id', editingId);
+    if (error) throw error;
+    closeModal('item-modal');
+    fetchAllData();
+  } catch (err) { alert(err.message); }
+}
+
 // ── EXPOSE TO WINDOW ───────────────────────────────────────────────────────────
 window.setRoute = setRoute;
 window.init = init;
@@ -602,3 +698,8 @@ window.openItemModal = openItemModal;
 window.openCatModal = openCatModal;
 window.previewFile = previewFile;
 window.previewScreenshots = previewScreenshots;
+window.setStatusFilter = setStatusFilter;
+window.handleQuickApprove = handleQuickApprove;
+window.handleQuickReject = handleQuickReject;
+window.toggleRejectInput = toggleRejectInput;
+window.clearFilter = () => { filterCategory = null; renderCurrentView(); };
