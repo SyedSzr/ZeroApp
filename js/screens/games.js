@@ -262,15 +262,15 @@ function GamesDiscoveryView({ onBack, activeCategory, setActiveCategory, section
           </div>
 
           <div className="px-5 mb-8">
-             <h2 className="text-white text-lg font-bold mb-4">Categories</h2>
-             <div className="flex gap-4 overflow-x-auto no-sb">
+             <h2 className="text-white text-lg font-bold mb-5 tracking-tight">Categories</h2>
+             <div className="flex gap-6 overflow-x-auto no-sb">
                {gameCategories.map(cat => (
                  <button key={cat.id} onClick={() => handleCategoryPress(cat.id)}
-                   className="tap flex-shrink-0 flex flex-col items-center gap-2">
-                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${activeCategory === cat.id ? 'bg-accent shadow-[0_0_20px_rgba(155,132,255,0.4)]' : 'bg-[#1A1A1A]'}`}>
+                   className="tap flex-shrink-0 flex flex-col items-center gap-3">
+                   <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${activeCategory === cat.id ? 'bg-accent shadow-[0_0_20px_rgba(155,132,255,0.4)]' : 'bg-white/5'}`}>
                       <span className="text-2xl">{cat.emoji}</span>
                    </div>
-                   <span className={`text-[10px] font-bold ${activeCategory === cat.id ? 'text-white' : 'text-white/40'}`}>{cat.label}</span>
+                   <span className={`text-[10px] font-black uppercase tracking-widest ${activeCategory === cat.id ? 'text-white' : 'text-white/40'}`}>{cat.label}</span>
                  </button>
                ))}
              </div>
@@ -281,18 +281,18 @@ function GamesDiscoveryView({ onBack, activeCategory, setActiveCategory, section
               const catGames = liveGames.filter(g => g.gameCategory === cat.id);
               if (catGames.length === 0) return null;
               return (
-                <div key={cat.id} ref={el => sectionRefs.current[cat.id] = el} className="mb-10">
-                  <h3 className="text-white/80 font-bold text-sm uppercase mb-4 tracking-widest">{cat.label}</h3>
-                  <div className="grid grid-cols-3 gap-4">
+                <div key={cat.id} ref={el => sectionRefs.current[cat.id] = el} className="mb-12">
+                  <h3 className="text-white font-black text-xs uppercase mb-5 tracking-[0.2em] opacity-40">{cat.label}</h3>
+                  <div className="grid grid-cols-3 gap-5">
                     {catGames.slice(0, 6).map(game => (
                       <button key={game.id} onClick={() => openDetail(game)} className="tap group flex flex-col items-center w-full">
-                        <div className="aspect-square w-full rounded-2xl bg-[#1A1A1A] border border-white/5 flex items-center justify-center mb-2 group-hover:border-accent/50 transition-colors">
+                        <div className="aspect-square w-full flex items-center justify-center mb-3 transition-transform active:scale-95 duration-200">
                           <AppLogo app={game} size="md" />
                         </div>
                         <div className="w-full text-center px-0.5">
-                           <div className="text-white text-[11px] font-bold truncate">{game.name}</div>
-                           <div className="flex items-center justify-center gap-0.5 mt-0.5 text-[9px] text-amber-400 font-medium">
-                             <span>★</span> {game.rating || "4.8"} <span className="text-white/40 font-normal">(10k)</span>
+                           <div className="text-white text-[11px] font-bold truncate leading-tight">{game.name}</div>
+                           <div className="flex items-center justify-center gap-1 mt-1 text-[10px] text-amber-400 font-bold">
+                             <span>★</span> {game.rating || "4.8"}
                            </div>
                         </div>
                       </button>
