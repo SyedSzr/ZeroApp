@@ -25,12 +25,13 @@ function ScreenWrapper({ children, isTop, canGoBack, goBack }) {
     const width = window.innerWidth;
     
     if (!swipeSide.current) {
-      // Threshold to start swiping
       if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
         if (startX.current < 50 && deltaX > 0) {
           swipeSide.current = 'left';
+          if (navigator.vibrate) navigator.vibrate(10); // Subtle haptic start
         } else if (startX.current > width - 50 && deltaX < 0) {
           swipeSide.current = 'right';
+          if (navigator.vibrate) navigator.vibrate(10); // Subtle haptic start
         }
       }
     }
@@ -57,6 +58,7 @@ function ScreenWrapper({ children, isTop, canGoBack, goBack }) {
                         (side === 'right' && currentX.current < -threshold);
 
       if (triggered) {
+        if (navigator.vibrate) navigator.vibrate(200); // 0.2s vibration as requested
         wrapperRef.current.style.transform = side === 'left' ? `translateX(100%)` : `translateX(-100%)`;
         setTimeout(() => {
           goBack();
