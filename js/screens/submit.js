@@ -29,6 +29,8 @@ function SubmitScreen() {
         name,
         url: fd.get('url'),
         description: fd.get('description'),
+        long_description: fd.get('long_description'),
+        tags: fd.get('tags') ? fd.get('tags').split(',').map(t => t.trim()).filter(Boolean) : [],
         homeCategory: fd.get('category'),
         rating: 4.5 + (Math.random() * 0.5),
         emoji: '🌐',
@@ -138,6 +140,16 @@ function SubmitScreen() {
                 className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none transition-all"
               />
             </div>
+
+            <div>
+              <label className="block text-muted text-[10px] font-black uppercase tracking-widest mb-2 px-1">Tags (Comma separated)</label>
+              <input 
+                name="tags" 
+                type="text" 
+                placeholder="e.g. productivity, ai, tools"
+                className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none transition-all"
+              />
+            </div>
           </div>
 
           {/* Media Selection */}
@@ -214,8 +226,18 @@ function SubmitScreen() {
             <label className="block text-muted text-[10px] font-black uppercase tracking-widest mb-2 px-1">Short Description</label>
             <textarea 
               name="description" 
-              rows="4"
-              placeholder="Tell us what this app does..."
+              rows="3"
+              placeholder="A quick one-liner about the app..."
+              className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none transition-all resize-none"
+            ></textarea>
+          </div>
+
+          <div>
+            <label className="block text-muted text-[10px] font-black uppercase tracking-widest mb-2 px-1">Long Description</label>
+            <textarea 
+              name="long_description" 
+              rows="6"
+              placeholder="Detailed app info, features, and how to use it..."
               className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none transition-all resize-none"
             ></textarea>
           </div>
