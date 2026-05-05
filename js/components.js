@@ -6,12 +6,19 @@ function AppLogo({ app, size = 'md' }) {
   const radius = { xs:'rounded-xl', sm:'rounded-xl', md:'rounded-2xl', lg:'rounded-3xl' }[size];
   const fontSize = { xs:'text-lg', sm:'text-2xl', md:'text-3xl', lg:'text-5xl' }[size];
 
-  const primary = app.domain ? `https://logo.clearbit.com/${app.domain}` : null;
+  // 1. Custom Icon from Supabase (Priority)
+  // 2. Clearbit Logo
+  // 3. Google Favicon
+  // 4. Emoji (Last Fallback)
+  const primary = app.icon_url || (app.domain ? `https://logo.clearbit.com/${app.domain}` : null);
+  
   const [src, setSrc]     = useState(primary);
   const [failed, setFailed] = useState(!primary);
 
   function handleError() {
-    if (src && src.includes('clearbit') && app.domain) {
+    if (src === app.icon_url && app.domain) {
+      setSrc(`https://logo.clearbit.com/${app.domain}`);
+    } else if (src && src.includes('clearbit') && app.domain) {
       setSrc(`https://www.google.com/s2/favicons?domain=${app.domain}&sz=128`);
     } else {
       setFailed(true);
@@ -22,7 +29,7 @@ function AppLogo({ app, size = 'md' }) {
     return (
       <div className={`${radius} bg-card border border-border flex items-center justify-center flex-shrink-0 ${fontSize}`}
         style={{width:px, height:px}}>
-        {app.emoji}
+        {app.emoji || '📱'}
       </div>
     );
   }
@@ -34,7 +41,8 @@ function AppLogo({ app, size = 'md' }) {
         src={src}
         alt={app.name}
         onError={handleError}
-        style={{width:'100%', height:'100%', objectFit:'contain', padding: px > 50 ? 8 : 5}}
+        className="w-full h-full object-cover"
+        style={{ padding: (src.includes('clearbit') || src.includes('favicons')) ? (px > 50 ? 8 : 5) : 0 }}
       />
     </div>
   );

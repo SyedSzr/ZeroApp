@@ -297,20 +297,103 @@ async function handleItemSubmit(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
   const type = currentRoute;
-  const payload = {
-    id: fd.get('id'),
-    name: fd.get('name'),
-    emoji: fd.get('emoji'),
-    url: fd.get('url'),
-    rating: parseFloat(fd.get('rating')),
-    reviews: fd.get('reviews'),
-    description: fd.get('description'),
-  };
-  if (type === 'apps') payload.homeCategory = fd.get('category_select');
-  else payload.gameCategory = fd.get('category_select');
-  const { error } = await sb.from(type).upsert(payload);
-  if (error) alert('Error: ' + error.message);
-  else closeModal('item-modal');
+  const submitBtn = document.getElementById('submit-btn');
+  const uploadStatus = document.getElementById('upload-status');
+  
+  try {
+    if (submitBtn) submitBtn.disabled = true;
+    if (uploadStatus) uploadStatus.classList.remove('hidden');
+    updateUploadProgress('Starting upload...', 5);
+
+    const payload = {
+      id: fd.get('id'),
+      name: fd.get('name'),
+      url: fd.get('url'),
+      rating: parseFloat(fd.get('rating')),
+      reviews: fd.get('reviews'),
+      description: fd.get('description'),
+    };
+
+    // 1. Handle App Icon
+    const iconFile = document.getElementById('icon-input').files[0];
+    if (iconFile) {
+      updateUploadProgress('Uploading icon...', 20);
+      payload.icon_url = await uploadFile(iconFile, 'icons');
+    } else if (editingId) {
+      const existing = (type === 'apps' ? data.apps : data.games).find(it => it.id === editingId);
+      if (existing) payload.icon_url = existing.icon_url;
+    }
+
+    // 2. Handle Game Featured Image
+    if (type === 'games') {
+      const featFile = document.getElementById('featured-input').files[0];
+      if (featFile) {
+        updateUploadProgress('Uploading featured image...', 50);
+        payload.featured_image = await uploadFile(featFile, 'featured');
+      } else if (editingId) {
+        const existing = data.games.find(it => it.id === editingId);
+        if (existing) payload.featured_image = existing.featured_image;
+      }
+      payload.gameCategory = fd.get('category_select');
+    } else {
+      payload.homeCategory = fd.get('category_select');
+    }
+
+    // 3. Handle Screenshots (Common for both)
+    const screenFiles = document.getElementById('screenshots-input').files;
+    if (screenFiles.length > 0) {
+      updateUploadProgress(`Uploading ${screenFiles.length} screenshots...`, 70);
+      const urls = [];
+      for (let i = 0; i < screenFiles.length; i++) {
+        const url = await uploadFile(screenFiles[i], 'screenshots');
+        urls.push(url);
+      }
+      payload.screenshots = urls;
+    } else if (editingId) {
+      const list = type === 'apps' ? data.apps : data.games;
+      const existing = list.find(it => it.id === editingId);
+      if (existing) payload.screenshots = existing.screenshots || [];
+    }
+
+    updateUploadProgress('Finalizing...', 90);
+    const { error } = await sb.from(type).upsert(payload);
+    if (error) throw error;
+    
+    updateUploadProgress('Success!', 100);
+    setTimeout(() => closeModal('item-modal'), 500);
+  } catch (err) {
+    console.error('Upload failed:', err);
+    alert('Failed to save item: ' + err.message);
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+    if (uploadStatus) uploadStatus.classList.add('hidden');
+  }
+}
+
+async function uploadFile(file, folder) {
+  const ext = file.name.split('.').pop();
+  const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+  
+  const { data: uploadData, error: uploadError } = await sb.storage
+    .from('media')
+    .upload(fileName, file);
+
+  if (uploadError) throw uploadError;
+
+  const { data: { publicUrl } } = sb.storage
+    .from('media')
+    .getPublicUrl(fileName);
+
+  return publicUrl;
+}
+
+function updateUploadProgress(msg, percent) {
+  const msgEl = document.getElementById('upload-msg');
+  const percentEl = document.getElementById('upload-percent');
+  const barEl = document.getElementById('upload-bar');
+  if (msgEl) msgEl.innerText = msg;
+  if (percentEl) percentEl.innerText = `${percent}%`;
+  if (barEl) barEl.style.width = `${percent}%`;
 }
 
 async function handleCatSubmit(e) {
@@ -340,40 +423,77 @@ async function deleteCategory(id) { if (confirm('Delete category?')) await sb.fr
 
 // ── MODALS ─────────────────────────────────────────────────────────────────────
 function openItemModal(item = null) {
+  editingId = item ? item.id : null;
   const form = document.getElementById('item-form');
   const select = document.getElementById('item-category-select');
   const catType = currentRoute === 'apps' ? 'app' : 'game';
   const filteredCats = data.categories.filter(c => c.type === catType);
   if (select) select.innerHTML = filteredCats.map(c => `<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('');
   
-  // Setup Emoji Picker
-  const grid = document.getElementById('emoji-grid');
-  if (grid) {
-    grid.innerHTML = EMOJI_LIST.map(e => `
-      <button type="button" onclick="selectEmoji('${e}')" class="w-10 h-10 rounded-xl hover:bg-white/10 flex-shrink-0 flex items-center justify-center text-xl transition-all active:scale-90">
-        ${e}
-      </button>
-    `).join('');
-  }
+  // Toggle sections
+  const gameFields = document.getElementById('game-only-fields');
+  if (gameFields) gameFields.classList.toggle('hidden', currentRoute !== 'games');
+
+  // Reset previews
+  const iconPrev = document.getElementById('icon-preview');
+  const featPrev = document.getElementById('featured-preview');
+  const screensPrev = document.getElementById('screenshots-preview');
+  
+  if (iconPrev) iconPrev.innerHTML = '<span class="text-muted">🖼️</span>';
+  if (featPrev) featPrev.innerHTML = '<span class="text-muted text-[10px]">16:9</span>';
+  if (screensPrev) screensPrev.innerHTML = '';
 
   if (item && form) {
-    form.id.value = item.id; form.name.value = item.name; 
-    selectEmoji(item.emoji || '🤖');
-    form.url.value = item.url; form.rating.value = item.rating; form.reviews.value = item.reviews;
-    form.description.value = item.description || ''; if (select) select.value = item.homeCategory || item.gameCategory;
+    form.id.value = item.id; 
+    form.name.value = item.name; 
+    form.url.value = item.url; 
+    form.rating.value = item.rating; 
+    form.reviews.value = item.reviews;
+    form.description.value = item.description || ''; 
+    if (select) select.value = item.homeCategory || item.gameCategory;
+    
+    if (item.icon_url && iconPrev) iconPrev.innerHTML = `<img src="${item.icon_url}" class="w-full h-full object-cover"/>`;
+    if (item.featured_image && featPrev) featPrev.innerHTML = `<img src="${item.featured_image}" class="w-full h-full object-cover"/>`;
+    if (item.screenshots && screensPrev) {
+      screensPrev.innerHTML = item.screenshots.map(url => `
+        <div class="w-16 h-16 rounded-lg bg-card border border-border flex-shrink-0 overflow-hidden">
+          <img src="${url}" class="w-full h-full object-cover"/>
+        </div>
+      `).join('');
+    }
   } else if (form) {
     form.reset();
-    selectEmoji('🤖');
   }
+  
   const modal = document.getElementById('item-modal');
   if (modal) modal.classList.remove('hidden');
 }
 
-function selectEmoji(e) {
-  const input = document.getElementById('item-emoji-input');
-  const preview = document.getElementById('emoji-preview');
-  if (input) input.value = e;
-  if (preview) preview.innerText = e;
+function previewFile(input, previewId) {
+  const file = input.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById(previewId).innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover animate-pulse"/>`;
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function previewScreenshots(input) {
+  const container = document.getElementById('screenshots-preview');
+  if (!container) return;
+  container.innerHTML = '';
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const div = document.createElement('div');
+      div.className = "w-16 h-16 rounded-lg bg-card border border-border flex-shrink-0 overflow-hidden";
+      div.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover animate-pulse"/>`;
+      container.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function openCatModal(cat = null) {
@@ -441,4 +561,5 @@ window.saveSettings = saveSettings;
 window.closeModal = closeModal;
 window.openItemModal = openItemModal;
 window.openCatModal = openCatModal;
-window.selectEmoji = selectEmoji;
+window.previewFile = previewFile;
+window.previewScreenshots = previewScreenshots;

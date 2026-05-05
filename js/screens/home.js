@@ -98,7 +98,7 @@ function AppsScreen() {
         {/* ── Category Sections with 3-column Square Grid ── */}
         <div className="mt-6">
           {categoriesToShow.map(cat => {
-            const catApps = getAppsByHomeCategory(cat.id);
+            const catApps = liveApps.filter(a => a.homeCategory === cat.id);
             if (catApps.length === 0) return null;
 
             const displayApps = catApps.slice(0, 6); // show first 6

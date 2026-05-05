@@ -2,7 +2,7 @@
 const { useState, useRef } = React;
 
 function GamesScreen() {
-  const { greeting, openDetail, go, toggleSaveApp, isSaved, liveGames } = useApp();
+  const { greeting, openDetail, go, toggleSaveApp, isSaved, liveGames, liveCats } = useApp();
   const [viewMode, setViewMode] = useState('feed'); 
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeOverlay, setActiveOverlay] = useState(null); // 'comments' | 'leaderboard'
@@ -57,11 +57,16 @@ function GamesScreen() {
             
             {/* Background Visual */}
             <div className="absolute inset-0 z-0">
-               <div className={`absolute inset-0 bg-[#0d0d12]`} />
-               <div className="absolute inset-0 flex items-center justify-center opacity-10 blur-3xl">
-                  <span style={{ fontSize: '350px' }}>{game.emoji}</span>
-               </div>
-               {/* Simulating the dark warehouse background from the screenshot */}
+               {game.featured_image ? (
+                 <img src={game.featured_image} className="absolute inset-0 w-full h-full object-cover" />
+               ) : (
+                 <>
+                   <div className={`absolute inset-0 bg-[#0d0d12]`} />
+                   <div className="absolute inset-0 flex items-center justify-center opacity-10 blur-3xl">
+                      <span style={{ fontSize: '350px' }}>{game.emoji}</span>
+                   </div>
+                 </>
+               )}
                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
             </div>
 
@@ -75,8 +80,8 @@ function GamesScreen() {
             {/* ── Right Side Action Stack (All Icons) ── */}
             <div className="absolute right-4 bottom-24 flex flex-col items-center gap-6 z-20 pointer-events-auto">
                <div className="relative mb-2">
-                  <div className="w-12 h-12 rounded-full border-[1.5px] border-white flex items-center justify-center bg-transparent overflow-hidden">
-                     {/* Empty profile circle */}
+                  <div className="w-12 h-12 rounded-full border-[1.5px] border-white flex items-center justify-center bg-card overflow-hidden">
+                     <AppIcon app={game} size="md" />
                   </div>
                   <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#FF2D55] border-2 border-black flex items-center justify-center text-white text-[10px] font-bold">+</div>
                </div>

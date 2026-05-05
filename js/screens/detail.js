@@ -42,6 +42,20 @@ function AppDetailScreen() {
         {/* ── Description ── */}
         <p className="text-white/70 text-sm leading-relaxed mb-6">{app.description}</p>
 
+        {/* ── Screenshots ── */}
+        {app.screenshots && app.screenshots.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-white font-bold text-sm mb-3">Screenshots</h3>
+            <div className="flex gap-3 overflow-x-auto no-sb -mx-5 px-5">
+              {app.screenshots.map((url, i) => (
+                <div key={i} className="flex-shrink-0 w-[240px] aspect-[16/9] rounded-2xl bg-card border border-border overflow-hidden">
+                  <img src={url} alt={`Screenshot ${i+1}`} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ── Launch Button ── */}
         <button onClick={() => launchApp(app)}
           className="tap w-full flex items-center justify-center gap-3 py-4 rounded-3xl bg-gradient-to-r from-accent to-violet-500 glow-purple mb-6">

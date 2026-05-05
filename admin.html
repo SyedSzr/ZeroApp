@@ -109,6 +109,17 @@
     <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeModal('item-modal')"></div>
     <div class="bg-surface border border-border rounded-[40px] w-full max-w-[640px] relative z-10 shadow-2xl p-8 max-h-[90vh] overflow-y-auto no-sb">
       <h3 id="item-modal-title" class="text-2xl font-black text-white mb-6">Add New Item</h3>
+      
+      <div id="upload-status" class="hidden mb-6 p-4 rounded-2xl bg-accent/10 border border-accent/20">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-accent text-[10px] font-black uppercase tracking-widest" id="upload-msg">Uploading files...</span>
+          <span class="text-accent text-xs font-bold" id="upload-percent">0%</span>
+        </div>
+        <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+          <div id="upload-bar" class="h-full bg-accent transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
       <form id="item-form" class="space-y-6">
         <input type="hidden" name="type" value="apps"/>
         <div class="grid grid-cols-2 gap-6">
@@ -121,24 +132,48 @@
             <input type="text" name="name" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="e.g. ChatGPT"/>
           </div>
         </div>
+
         <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">App Icon (Image)</label>
+            <div class="flex items-center gap-3">
+              <div id="icon-preview" class="w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden">
+                <span class="text-muted">🖼️</span>
+              </div>
+              <input type="file" id="icon-input" accept="image/*" class="hidden" onchange="previewFile(this, 'icon-preview')"/>
+              <button type="button" onclick="document.getElementById('icon-input').click()" class="flex-1 px-4 py-2.5 rounded-xl bg-card border border-border text-white text-[10px] font-bold uppercase hover:bg-white/5 transition-all">Select Icon</button>
+            </div>
+          </div>
           <div>
             <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Category</label>
             <select name="category_select" id="item-category-select" required class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm">
               <!-- Dynamically populated -->
             </select>
           </div>
-          <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Emoji Icon</label>
-            <div class="flex gap-3">
-              <div id="emoji-preview" class="w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center text-2xl flex-shrink-0">🤖</div>
-              <div id="emoji-grid" class="flex-1 flex gap-2 overflow-x-auto no-sb p-1 bg-card/50 rounded-2xl border border-border/50">
-                <!-- Dynamically populated -->
-              </div>
+        </div>
+
+        <div id="game-only-fields" class="hidden">
+          <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Featured Image (16:9 Portrait)</label>
+          <div class="flex items-center gap-3">
+            <div id="featured-preview" class="w-20 h-12 rounded-xl bg-card border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
+              <span class="text-muted text-[10px]">16:9</span>
             </div>
-            <input type="hidden" name="emoji" id="item-emoji-input" value="🤖" required />
+            <input type="file" id="featured-input" accept="image/*" class="hidden" onchange="previewFile(this, 'featured-preview')"/>
+            <button type="button" onclick="document.getElementById('featured-input').click()" class="flex-1 px-4 py-2.5 rounded-xl bg-card border border-border text-white text-[10px] font-bold uppercase hover:bg-white/5 transition-all">Upload Featured Image</button>
           </div>
         </div>
+
+        <div id="screenshot-fields">
+          <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Screenshots (Up to 5)</label>
+          <div class="flex flex-col gap-3">
+            <div id="screenshots-preview" class="flex gap-2 overflow-x-auto no-sb py-1">
+              <!-- Screenshot previews -->
+            </div>
+            <input type="file" id="screenshots-input" accept="image/*" multiple class="hidden" onchange="previewScreenshots(this)"/>
+            <button type="button" onclick="document.getElementById('screenshots-input').click()" class="w-full px-4 py-2.5 rounded-xl bg-card border border-border text-white text-[10px] font-bold uppercase hover:bg-white/5 transition-all">+ Add Screenshots</button>
+          </div>
+        </div>
+
         <div class="grid grid-cols-2 gap-6">
           <div>
             <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Rating (0-5)</label>
@@ -155,11 +190,11 @@
         </div>
         <div>
           <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Description</label>
-          <textarea name="description" rows="3" class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="Short description for details page..."></textarea>
+          <textarea name="description" rows="2" class="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm" placeholder="Short description for details page..."></textarea>
         </div>
         <div class="flex gap-4 pt-4">
           <button type="button" onclick="closeModal('item-modal')" class="flex-1 py-4 rounded-2xl bg-card border border-border text-white font-bold">Cancel</button>
-          <button type="submit" class="flex-1 py-4 rounded-2xl bg-accent text-white font-black shadow-lg glow-purple active:scale-95">Push to Cloud</button>
+          <button type="submit" id="submit-btn" class="flex-1 py-4 rounded-2xl bg-accent text-white font-black shadow-lg glow-purple active:scale-95 transition-all">Push to Cloud</button>
         </div>
       </form>
     </div>

@@ -183,9 +183,11 @@ const MODE_CFG = {
 };
 
 function getAppsByHomeCategory(catId) {
-  return APPS.filter(a => a.homeCategory === catId);
+  const source = (window.liveApps && window.liveApps.length > 0) ? window.liveApps : APPS;
+  return source.filter(a => a.homeCategory === catId);
 }
 
 function getGamesByCategory(catId) {
-  return GAMES.filter(g => g.gameCategory === catId);
+  const source = (window.liveGames && window.liveGames.length > 0) ? window.liveGames : GAMES;
+  return source.filter(g => g.gameCategory === catId);
 }
