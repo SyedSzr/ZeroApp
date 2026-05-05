@@ -4,13 +4,13 @@ function ScreenWrapper({ children, isTop, canGoBack, goBack }) {
   const startX = React.useRef(0);
   const startY = React.useRef(0);
   const currentX = React.useRef(0);
-  const isSwiping = React.useRef(false);
+  const swipeSide = React.useRef(null); // 'left' | 'right' | null
 
   const handleTouchStart = (e) => {
     if (!isTop || !canGoBack) return;
     startX.current = e.touches[0].clientX;
     startY.current = e.touches[0].clientY;
-    isSwiping.current = false;
+    swipeSide.current = null;
     if (wrapperRef.current) {
       wrapperRef.current.style.transition = 'none';
     }
@@ -18,20 +18,24 @@ function ScreenWrapper({ children, isTop, canGoBack, goBack }) {
 
   const handleTouchMove = (e) => {
     if (!isTop || !canGoBack) return;
-    const deltaX = e.touches[0].clientX - startX.current;
-    const deltaY = e.touches[0].clientY - startY.current;
+    const x = e.touches[0].clientX;
+    const y = e.touches[0].clientY;
+    const deltaX = x - startX.current;
+    const deltaY = y - startY.current;
+    const width = window.innerWidth;
     
-    // Only trigger swipe if horizontal movement is greater than vertical
-    // and starting from the left edge (e.g., < 40px)
-    if (!isSwiping.current) {
-      if (startX.current > 40) return;
-      if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 5) {
-        isSwiping.current = true;
+    if (!swipeSide.current) {
+      // Threshold to start swiping
+      if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (startX.current < 50 && deltaX > 0) {
+          swipeSide.current = 'left';
+        } else if (startX.current > width - 50 && deltaX < 0) {
+          swipeSide.current = 'right';
+        }
       }
     }
 
-    if (isSwiping.current && deltaX > 0) {
-      // Don't call preventDefault() here as it might cause passive listener issues
+    if (swipeSide.current) {
       currentX.current = deltaX;
       if (wrapperRef.current) {
         wrapperRef.current.style.transform = `translateX(${deltaX}px)`;
@@ -40,19 +44,24 @@ function ScreenWrapper({ children, isTop, canGoBack, goBack }) {
   };
 
   const handleTouchEnd = () => {
-    if (!isSwiping.current) return;
-    isSwiping.current = false;
+    if (!swipeSide.current) return;
+    const side = swipeSide.current;
+    swipeSide.current = null;
     
     if (wrapperRef.current) {
       wrapperRef.current.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
-      if (currentX.current > window.innerWidth / 3) {
-        // Go back
-        wrapperRef.current.style.transform = `translateX(100%)`;
+      const width = window.innerWidth;
+      const threshold = width / 4;
+      
+      const triggered = (side === 'left' && currentX.current > threshold) || 
+                        (side === 'right' && currentX.current < -threshold);
+
+      if (triggered) {
+        wrapperRef.current.style.transform = side === 'left' ? `translateX(100%)` : `translateX(-100%)`;
         setTimeout(() => {
           goBack();
         }, 300);
       } else {
-        // Snap back
         wrapperRef.current.style.transform = `translateX(0px)`;
       }
     }
