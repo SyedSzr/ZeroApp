@@ -91,9 +91,24 @@ function AppProvider({ children }) {
 
   // ── Navigate ──
   const go = useCallback((s, extra = {}) => {
+    const isRootTab = ['apps', 'games', 'explore', 'profile'].includes(s);
     const key = s + '-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
     const frame = { key, id: s, params: extra };
+    
     setHistory(h => {
+      // If switching to a main tab, reset the stack to keep performance high
+      // and prevent multiple bottom-navs from overlapping.
+      if (isRootTab) {
+        const next = [frame];
+        // If we are already on this screen, just replace state; otherwise push.
+        if (h[h.length - 1].id === s) {
+          window.history.replaceState({ stackIndex: 0 }, '', getUrlForFrame(frame));
+        } else {
+          window.history.pushState({ stackIndex: 0 }, '', getUrlForFrame(frame));
+        }
+        return next;
+      }
+      
       const next = [...h, frame];
       window.history.pushState({ stackIndex: next.length - 1 }, '', getUrlForFrame(frame));
       return next;
@@ -102,7 +117,11 @@ function AppProvider({ children }) {
 
   const goBack = useCallback((fromPopState = false) => {
     setHistory(h => {
-      if (h.length <= 1) return h;
+      if (h.length <= 1) {
+        // If we're at the root and user hits back, we can't pop React history
+        // But if it's from browser back, we should at least check if we can sync
+        return h;
+      }
       if (!fromPopState) window.history.back();
       const next = [...h];
       next.pop();
@@ -110,15 +129,30 @@ function AppProvider({ children }) {
     });
   }, []);
 
-  // ── Browser Back Support ──
+  // ── Browser History Sync ──
   useEffect(() => {
     const handlePop = (e) => {
-      // If we have a stackIndex, it means we're navigating back through our own history
-      goBack(true);
+      const hash = window.location.hash;
+      const [idPart] = (hash.slice(1) || 'apps').split('?');
+      
+      setHistory(h => {
+        // If the browser went back and the current hash matches the PREVIOUS screen in our stack, pop it.
+        if (h.length > 1 && h[h.length - 2].id === idPart) {
+          const next = [...h];
+          next.pop();
+          return next;
+        }
+        // Otherwise, if the browser is at a completely different root, re-hydrate.
+        if (['apps', 'games', 'explore', 'profile'].includes(idPart)) {
+           // Resolve extra params if needed... for now just reset to that root
+           return [{ key: 'pop-'+Date.now(), id: idPart, params: {} }];
+        }
+        return h;
+      });
     };
     window.addEventListener('popstate', handlePop);
     return () => window.removeEventListener('popstate', handlePop);
-  }, [goBack]);
+  }, []);
 
   // ── Initial Hydration ──
   useEffect(() => {
