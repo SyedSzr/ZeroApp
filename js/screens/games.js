@@ -30,6 +30,8 @@ function GamesScreen() {
     <div className="relative h-full w-full bg-black overflow-hidden font-sans">
       
       {/* ── TOP NAV (Header & Discover) ── */}
+      <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-black/90 via-black/40 to-transparent z-30 pointer-events-none" />
+      
       <div className="absolute top-0 left-0 right-0 pt-safe px-5 pt-5 pb-1 z-40 pointer-events-none">
         <div className="flex items-start justify-between">
           <div className="flex-1 pointer-events-auto">
