@@ -312,6 +312,8 @@ async function handleItemSubmit(e) {
       rating: parseFloat(fd.get('rating')),
       reviews: fd.get('reviews'),
       description: fd.get('description'),
+      long_description: fd.get('long_description'),
+      tags: fd.get('tags') ? fd.get('tags').split(',').map(t => t.trim()).filter(Boolean) : [],
     };
 
     // 1. Handle App Icon
@@ -450,6 +452,8 @@ function openItemModal(item = null) {
     form.rating.value = item.rating; 
     form.reviews.value = item.reviews;
     form.description.value = item.description || ''; 
+    form.long_description.value = item.long_description || '';
+    form.tags.value = (item.tags || []).join(', ');
     if (select) select.value = item.homeCategory || item.gameCategory;
     
     if (item.icon_url && iconPrev) iconPrev.innerHTML = `<img src="${item.icon_url}" class="w-full h-full object-cover"/>`;
