@@ -1,6 +1,6 @@
 // ── APP VIEWER (WebView) ──────────────────────────────────────────────────────
-function AppViewerScreen() {
-  const { viewerApp: app, goBack } = useApp();
+function AppViewerScreen({ viewerApp: app }) {
+  const { goBack } = useApp();
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(false);
   const [ikey, setIkey]       = useState(0);

@@ -35,9 +35,11 @@
     .fade-in{animation:fi .25s ease both}
     .slide-up{animation:su .3s cubic-bezier(.22,1,.36,1) both}
     .slide-right{animation:sr .3s cubic-bezier(.22,1,.36,1) both}
+    .slide-right-fast{animation:srf .4s cubic-bezier(0.32, 0.72, 0, 1) both}
     @keyframes fi{from{opacity:0}to{opacity:1}}
     @keyframes su{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
     @keyframes sr{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes srf{from{transform:translateX(100%)}to{transform:translateX(0)}}
     /* tap */
     .tap{transition:transform .1s ease,opacity .1s ease;cursor:pointer}
     .tap:active{transform:scale(.95);opacity:.8}

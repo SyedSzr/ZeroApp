@@ -1,5 +1,5 @@
-function ExploreScreen() {
-  const { exploreCategory, openDetail, go, liveApps, liveCats } = useApp();
+function ExploreScreen({ exploreCategory }) {
+  const { openDetail, go, liveApps, liveCats } = useApp();
   const homeCategories = liveCats.filter(c => c.type === 'app');
 
   // Build tab list: 'All' + every home category label
@@ -107,13 +107,18 @@ function ExploreScreen() {
                     className="tap flex-shrink-0 snap-start rounded-2xl overflow-hidden relative"
                     style={{ width:'calc(100% - 40px)', minWidth:'calc(100% - 40px)', height:200,
                              background: heroBgs[idx % heroBgs.length] }}>
-                    {/* bg art emoji */}
-                    <span style={{ position:'absolute', right:-20, top:-20, fontSize:180,
-                                   opacity:.12, transform:'rotate(-10deg)', lineHeight:1,
-                                   userSelect:'none', pointerEvents:'none' }}>{app.emoji}</span>
-                    {/* fg emoji */}
-                    <div style={{ position:'absolute', left:'50%', top:'50%',
-                                  transform:'translate(-50%,-60%)', fontSize:72 }}>{app.emoji}</div>
+                    {/* bg art */}
+                    {app.icon_url ? (
+                      <img src={app.icon_url} className="absolute inset-0 w-full h-full object-cover opacity-20 blur-sm" />
+                    ) : (
+                      <span style={{ position:'absolute', right:-20, top:-20, fontSize:180, opacity:.12, transform:'rotate(-10deg)', lineHeight:1, userSelect:'none', pointerEvents:'none' }}>{app.emoji}</span>
+                    )}
+                    {/* fg icon */}
+                    <div style={{ position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-60%)' }}>
+                      <div className="w-16 h-16 rounded-3xl overflow-hidden shadow-2xl border border-white/20">
+                        <AppIcon app={app} size="lg" />
+                      </div>
+                    </div>
                     {/* gradient overlay */}
                     <div style={{ position:'absolute', bottom:0, left:0, right:0, height:80,
                                   background:'linear-gradient(to top,rgba(0,0,0,.85),transparent)' }}/>
@@ -138,8 +143,9 @@ function ExploreScreen() {
             {featuredApp && (
               <div className="mx-4 mt-0 mb-4 px-4 py-3 rounded-2xl flex items-center gap-3"
                 style={{ background:'#111', border:'1px solid #1f1f1f' }}>
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-                  style={{ background:'#222' }}>{featuredApp.emoji}</div>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 bg-[#222] overflow-hidden">
+                  <AppIcon app={featuredApp} size="md" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-white text-sm font-bold truncate">{featuredApp.name}</div>
                   <div className="text-gray-500 text-xs">{featuredApp.category}</div>
@@ -168,10 +174,14 @@ function ExploreScreen() {
                       className="tap flex-shrink-0 flex flex-col" style={{width:130}}>
                       <div className="w-full rounded-3xl overflow-hidden relative flex items-center justify-center"
                         style={{ height:130, background: heroBgs[idx % heroBgs.length] }}>
-                        <span style={{ position:'absolute', fontSize:90, opacity:.15,
-                                       right:-8, bottom:-8, transform:'rotate(-10deg)',
-                                       lineHeight:1, pointerEvents:'none' }}>{app.emoji}</span>
-                        <span style={{ fontSize:52, position:'relative', zIndex:1 }}>{app.emoji}</span>
+                        {app.icon_url ? (
+                          <img src={app.icon_url} className="absolute inset-0 w-full h-full object-cover opacity-20 blur-md" />
+                        ) : (
+                          <span style={{ position:'absolute', fontSize:90, opacity:.15, right:-8, bottom:-8, transform:'rotate(-10deg)', lineHeight:1, pointerEvents:'none' }}>{app.emoji}</span>
+                        )}
+                        <div className="relative z-10 w-14 h-14 rounded-2xl overflow-hidden shadow-lg border border-white/10">
+                           <AppIcon app={app} size="md" />
+                        </div>
                       </div>
                       <div className="mt-2 px-0.5">
                         <div className="text-white text-xs font-semibold leading-tight text-left line-clamp-2">{app.name}</div>
@@ -202,7 +212,9 @@ function ExploreScreen() {
                       className="tap flex-shrink-0 flex flex-col" style={{width:100}}>
                       <div className="w-full rounded-2xl overflow-hidden flex items-center justify-center"
                         style={{ height:100, background:'#1a1a1a', border:'1px solid #252525' }}>
-                        <span style={{fontSize:44}}>{app.emoji}</span>
+                        <div className="w-12 h-12 rounded-xl overflow-hidden shadow-md">
+                          <AppIcon app={app} size="md" />
+                        </div>
                       </div>
                       <div className="mt-1.5 px-0.5">
                         <div className="text-white text-[11px] font-semibold leading-tight text-left line-clamp-2">{app.name}</div>
@@ -226,12 +238,13 @@ function ExploreScreen() {
                 {listApps.map(app => (
                   <button key={app.id} onClick={() => openDetail(app)}
                     className="tap flex items-center gap-4 px-4 py-3.5 active:bg-white/5 transition-colors">
-                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl flex-shrink-0"
-                      style={{ background:'#141414', border:'1px solid #222' }}>{app.emoji}</div>
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl flex-shrink-0 bg-[#141414] border border-[#222] overflow-hidden">
+                      <AppIcon app={app} size="md" />
+                    </div>
                     <div className="flex-1 min-w-0 text-left">
                       <div className="text-white text-sm font-semibold">{app.name}</div>
                       <div className="text-gray-500 text-xs mt-0.5">
-                        {app.tags.slice(0,3).map((t,i) => (
+                        {(app.tags || []).slice(0,3).map((t,i) => (
                           <span key={t}>{i > 0 && <span className="mx-1">·</span>}<span className="capitalize">{t}</span></span>
                         ))}
                       </div>
@@ -239,9 +252,8 @@ function ExploreScreen() {
                         <span className="text-amber-400 text-xs">★ {app.rating}</span>
                       </div>
                     </div>
-                    <div className="w-10 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background:'#141414', border:'1px solid #1e1e1e', opacity:.4 }}>
-                      <span className="text-xl">{listApps[(listApps.indexOf(app)+1)%listApps.length]?.emoji}</span>
+                    <div className="w-10 h-16 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#141414] border border-[#1e1e1e] opacity-40 overflow-hidden">
+                      <AppIcon app={listApps[(listApps.indexOf(app)+1)%listApps.length]} size="sm" />
                     </div>
                   </button>
                 ))}

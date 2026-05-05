@@ -28,16 +28,13 @@ function AppProvider({ children }) {
   const [liveCats, setLiveCats]   = useState(typeof HOME_CATEGORIES !== 'undefined' ? [...HOME_CATEGORIES.map(c=>({...c,type:'app'})), ...GAME_CATEGORIES.map(c=>({...c,type:'game'}))] : []);
   const [settings, setSettings]   = useState({ app_name: 'ZeroApp' });
 
-  // ── Navigation state ──
-  const [screen, setScreen]       = useState('apps');
-  const [history, setHistory]     = useState(['apps']);
+  // ── Navigation state (Native Stack) ──
+  const [history, setHistory]     = useState([{ key: 'root-apps', id: 'apps', params: {} }]);
   const [mainTab, setMainTab]     = useState('apps'); // 'apps' | 'games'
 
+  const screen = history[history.length - 1].id;
+
   // ── Domain state ──
-  const [mode, setMode]                   = useState(null);  // 'study'|'work'|'play'
-  const [exploreCategory, setExploreCat] = useState(null);  // homeCategory id | null = All
-  const [detailApp, setDetailApp]         = useState(null);
-  const [viewerApp, setViewerApp]         = useState(null);
   const [searchQ, setSearchQ]             = useState('');
 
   // ── Persistent ──
@@ -80,12 +77,8 @@ function AppProvider({ children }) {
 
   // ── Navigate ──
   const go = useCallback((s, extra = {}) => {
-    if (extra.mode             !== undefined) setMode(extra.mode);
-    if (extra.exploreCategory  !== undefined) setExploreCat(extra.exploreCategory);
-    if (extra.detailApp        !== undefined) setDetailApp(extra.detailApp);
-    if (extra.viewerApp        !== undefined) setViewerApp(extra.viewerApp);
-    setHistory(h => [...h, s]);
-    setScreen(s);
+    const key = s + '-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    setHistory(h => [...h, { key, id: s, params: extra }]);
   }, []);
 
   const goBack = useCallback(() => {
@@ -93,35 +86,24 @@ function AppProvider({ children }) {
       if (h.length <= 1) return h;
       const next = [...h];
       next.pop();
-      const prev = next[next.length - 1];
-      setScreen(prev);
       return next;
     });
   }, []);
 
   const goHome = useCallback(() => {
-    setScreen('apps');
-    setHistory(['apps']);
+    setHistory([{ key: 'root-apps', id: 'apps', params: {} }]);
     setMainTab('apps');
-    setMode(null);
-    setExploreCat(null);
-    setDetailApp(null);
-    setViewerApp(null);
     setSearchQ('');
   }, []);
 
   // ── Open app detail ──
   const openDetail = useCallback((app) => {
-    setDetailApp(app);
-    setHistory(h => [...h, 'detail']);
-    setScreen('detail');
+    go('detail', { detailApp: app });
   }, []);
 
   // ── Launch app into viewer ──
   const launchApp = useCallback((app) => {
-    setViewerApp(app);
-    setHistory(h => [...h, 'viewer']);
-    setScreen('viewer');
+    go('viewer', { viewerApp: app });
     // Add to recents
     setRecents(prev => {
       const next = [{ ...app, openedAt: Date.now() }, ...prev.filter(r => r.id !== app.id)].slice(0, 20);
@@ -216,10 +198,9 @@ function AppProvider({ children }) {
   const value = {
     screen, history, go, goBack, goHome,
     mainTab, setMainTab,
-    mode, setMode,
-    exploreCategory, setExploreCat,
-    detailApp, setDetailApp, openDetail,
-    viewerApp, setViewerApp, launchApp,
+    exploreCategory: null, mode: null, detailApp: null, viewerApp: null,
+    detailApp: null, setDetailApp: () => {}, openDetail,
+    viewerApp: null, setViewerApp: () => {}, launchApp,
     searchQ, setSearchQ,
     recents, clearRecents,
     favorites, toggleFav, isFav,
