@@ -54,8 +54,8 @@ function ExploreScreen({ exploreCategory }) {
     : '🧭 Explore';
 
   // ── Featured Content ──
-  const allFeatured = liveApps.filter(a => a.is_featured);
-  const heroBanners = allFeatured.length > 0 ? allFeatured.slice(0, 5) : listApps.slice(0, 3);
+  const currentFeatured = listApps.filter(a => a.is_featured);
+  const heroBanners = currentFeatured.length > 0 ? currentFeatured.slice(0, 5) : listApps.slice(0, 3);
   const featuredApp = heroBanners[0];
   
   const suggestedApps = listApps.slice(0, 8);
