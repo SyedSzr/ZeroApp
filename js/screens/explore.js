@@ -148,34 +148,25 @@ function ExploreScreen({ exploreCategory }) {
 
             {/* ══ SUGGESTED FOR YOU ══ */}
             {suggestedApps.length > 0 && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between px-4 mb-3">
+              <div className="mb-8">
+                <div className="flex items-center justify-between px-4 mb-4">
                   <div>
-                    <span className="text-gray-500 text-xs font-semibold">Suggested · </span>
-                    <span className="text-white font-extrabold text-lg">For you</span>
+                    <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">Suggested · </span>
+                    <span className="text-white font-black text-xl tracking-tight">For you</span>
                   </div>
                   <button className="tap text-gray-500 text-xl">⋮</button>
                 </div>
-                <div className="flex gap-4 px-4 overflow-x-auto no-sb">
+                <div className="flex gap-6 px-4 overflow-x-auto no-sb">
                   {suggestedApps.map((app, idx) => (
                     <button key={app.id} onClick={() => openDetail(app)}
-                      className="tap flex-shrink-0 flex flex-col" style={{width:130}}>
-                      <div className="w-full rounded-3xl overflow-hidden relative flex items-center justify-center"
-                        style={{ height:130, background: heroBgs[idx % heroBgs.length] }}>
-                        {app.icon_url ? (
-                          <img src={app.icon_url} className="absolute inset-0 w-full h-full object-cover opacity-20 blur-md" />
-                        ) : (
-                          <span style={{ position:'absolute', fontSize:90, opacity:.15, right:-8, bottom:-8, transform:'rotate(-10deg)', lineHeight:1, pointerEvents:'none' }}>{app.emoji}</span>
-                        )}
-                        <div className="relative z-10 w-14 h-14 rounded-2xl overflow-hidden shadow-lg border border-white/10">
-                           <AppIcon app={app} size="md" />
-                        </div>
+                      className="tap flex-shrink-0 flex flex-col items-center" style={{width:115}}>
+                      <div className="w-full aspect-square flex items-center justify-center transition-transform active:scale-95 duration-200">
+                        <AppIcon app={app} size="lg" />
                       </div>
-                      <div className="mt-2 px-0.5">
-                        <div className="text-white text-xs font-semibold leading-tight text-left line-clamp-2">{app.name}</div>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-amber-400 text-xs">★</span>
-                          <span className="text-gray-400 text-xs">{app.rating}</span>
+                      <div className="mt-3 w-full text-center px-0.5">
+                        <div className="text-white text-xs font-bold leading-tight truncate">{app.name}</div>
+                        <div className="flex items-center justify-center gap-1 mt-1">
+                          <span className="text-amber-400 text-[10px] font-bold">★ {app.rating}</span>
                         </div>
                       </div>
                     </button>
@@ -186,27 +177,23 @@ function ExploreScreen({ exploreCategory }) {
 
             {/* ══ RECOMMENDED FOR YOU ══ */}
             {recommended.length > 0 && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between px-4 mb-3">
-                  <span className="text-white font-extrabold text-lg">Recommended for you</span>
-                  <button className="tap w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ background:'#1a1a1a', border:'1px solid #2a2a2a' }}>
+              <div className="mb-8">
+                <div className="flex items-center justify-between px-4 mb-4">
+                  <span className="text-white font-black text-xl tracking-tight">Recommended for you</span>
+                  <button className="tap w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors">
                     <span className="text-white text-sm">→</span>
                   </button>
                 </div>
-                <div className="flex gap-3 px-4 overflow-x-auto no-sb">
+                <div className="flex gap-5 px-4 overflow-x-auto no-sb">
                   {recommended.map(app => (
                     <button key={app.id} onClick={() => openDetail(app)}
-                      className="tap flex-shrink-0 flex flex-col" style={{width:100}}>
-                      <div className="w-full rounded-2xl overflow-hidden flex items-center justify-center"
-                        style={{ height:100, background:'#1a1a1a', border:'1px solid #252525' }}>
-                        <div className="w-12 h-12 rounded-xl overflow-hidden shadow-md">
-                          <AppIcon app={app} size="md" />
-                        </div>
+                      className="tap flex-shrink-0 flex flex-col items-center" style={{width:86}}>
+                      <div className="w-full aspect-square flex items-center justify-center transition-transform active:scale-95 duration-200">
+                        <AppIcon app={app} size="md" />
                       </div>
-                      <div className="mt-1.5 px-0.5">
-                        <div className="text-white text-[11px] font-semibold leading-tight text-left line-clamp-2">{app.name}</div>
-                        <div className="text-gray-500 text-[10px] mt-0.5">{app.category}</div>
+                      <div className="mt-2.5 w-full text-center px-0.5">
+                        <div className="text-white text-[11px] font-bold leading-tight truncate">{app.name}</div>
+                        <div className="text-gray-500 text-[9px] mt-0.5 uppercase tracking-widest truncate">{app.category}</div>
                       </div>
                     </button>
                   ))}
@@ -216,8 +203,8 @@ function ExploreScreen({ exploreCategory }) {
 
             {/* ══ ALL APPS LIST ══ */}
             <div className="mb-2">
-              <div className="px-4 mb-3">
-                <span className="text-white font-extrabold text-lg">
+              <div className="px-4 mb-4">
+                <span className="text-white font-black text-xl tracking-tight">
                   {activeCat ? `All ${activeCat.label} Apps` : 'All Apps'}
                   <span className="text-gray-600 text-sm font-normal ml-2">({listApps.length})</span>
                 </span>
@@ -225,22 +212,24 @@ function ExploreScreen({ exploreCategory }) {
               <div className="flex flex-col">
                 {listApps.map(app => (
                   <button key={app.id} onClick={() => openDetail(app)}
-                    className="tap flex items-center gap-4 px-4 py-3.5 active:bg-white/5 transition-colors">
-                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl flex-shrink-0 bg-[#141414] border border-[#222] overflow-hidden">
+                    className="tap flex items-center gap-5 px-4 py-4 active:bg-white/5 transition-colors border-b border-white/[0.03]">
+                    <div className="w-20 h-20 flex items-center justify-center flex-shrink-0">
                       <AppIcon app={app} size="md" />
                     </div>
                     <div className="flex-1 min-w-0 text-left">
-                      <div className="text-white text-sm font-semibold">{app.name}</div>
-                      <div className="text-gray-500 text-xs mt-0.5">
+                      <div className="text-white text-base font-bold tracking-tight">{app.name}</div>
+                      <div className="text-gray-500 text-[11px] font-medium mt-1 truncate">
                         {(app.tags || []).slice(0,3).map((t,i) => (
                           <span key={t}>{i > 0 && <span className="mx-1">·</span>}<span className="capitalize">{t}</span></span>
                         ))}
                       </div>
-                      <div className="flex items-center gap-1 mt-1">
-                        <span className="text-amber-400 text-xs">★ {app.rating}</span>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className="text-amber-400 text-xs font-bold">★ {app.rating}</span>
+                        <span className="text-gray-700">·</span>
+                        <span className="text-gray-500 text-xs font-medium uppercase tracking-tighter">{app.category}</span>
                       </div>
                     </div>
-                    <div className="text-muted text-lg opacity-40 pr-2">›</div>
+                    <div className="text-muted text-xl opacity-30 pr-1">›</div>
                   </button>
                 ))}
               </div>
