@@ -83,14 +83,14 @@ function AppsScreen() {
               <span className="text-white/50 text-xs font-bold uppercase tracking-widest">Recently Used</span>
               <button onClick={() => go('recent')} className="tap text-accent text-xs font-semibold">View All</button>
             </div>
-            <div className="flex gap-3 pl-5 overflow-x-auto no-sb pb-1">
+            <div className="flex gap-5 pl-5 overflow-x-auto no-sb pb-1">
               {recents.slice(0, 8).map(app => (
                 <button key={app.id + app.openedAt} onClick={() => openDetail(app)}
-                  className="tap flex flex-col items-center gap-2 flex-shrink-0">
-                  <div className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center text-3xl">
-                    {app.emoji}
+                  className="tap flex flex-col items-center gap-3 flex-shrink-0">
+                  <div className="w-16 h-16 flex items-center justify-center">
+                    <AppIcon app={app} size="sm" />
                   </div>
-                  <span className="text-white/70 text-[10px] font-medium text-center max-w-[56px] truncate">{app.name}</span>
+                  <span className="text-white/70 text-[10px] font-bold text-center max-w-[64px] truncate tracking-tight">{app.name}</span>
                 </button>
               ))}
             </div>

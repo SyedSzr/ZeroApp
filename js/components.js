@@ -2,14 +2,10 @@
 
 // ── AppLogo: real brand logo with emoji fallback ──────────────────────────────
 function AppLogo({ app, size = 'md' }) {
-  const px = { xs:36, sm:44, md:56, lg:80 }[size] || 56;
-  const radius = { xs:'rounded-xl', sm:'rounded-xl', md:'rounded-2xl', lg:'rounded-3xl' }[size];
-  const fontSize = { xs:'text-lg', sm:'text-2xl', md:'text-3xl', lg:'text-5xl' }[size];
+  const px = { xs:40, sm:52, md:72, lg:96 }[size] || 72;
+  const radius = { xs:'rounded-xl', sm:'rounded-xl', md:'rounded-3xl', lg:'rounded-[32px]' }[size];
+  const fontSize = { xs:'text-xl', sm:'text-3xl', md:'text-4xl', lg:'text-6xl' }[size];
 
-  // 1. Custom Icon from Supabase (Priority)
-  // 2. Clearbit Logo
-  // 3. Google Favicon
-  // 4. Emoji (Last Fallback)
   const primary = app.icon_url || (app.domain ? `https://logo.clearbit.com/${app.domain}` : null);
   
   const [src, setSrc]     = useState(primary);
@@ -27,7 +23,7 @@ function AppLogo({ app, size = 'md' }) {
 
   if (failed || !src) {
     return (
-      <div className={`${radius} bg-card border border-border flex items-center justify-center flex-shrink-0 ${fontSize}`}
+      <div className={`${radius} flex items-center justify-center flex-shrink-0 ${fontSize}`}
         style={{width:px, height:px}}>
         {app.emoji || '📱'}
       </div>
@@ -35,14 +31,14 @@ function AppLogo({ app, size = 'md' }) {
   }
 
   return (
-    <div className={`${radius} overflow-hidden flex-shrink-0 border border-white/10`}
+    <div className={`${radius} overflow-hidden flex-shrink-0`}
       style={{width:px, height:px, background:'#fff'}}>
       <img
         src={src}
         alt={app.name}
         onError={handleError}
         className="w-full h-full object-cover"
-        style={{ padding: (src.includes('clearbit') || src.includes('favicons')) ? (px > 50 ? 8 : 5) : 0 }}
+        style={{ padding: (src.includes('clearbit') || src.includes('favicons')) ? (px > 60 ? 10 : 6) : 0 }}
       />
     </div>
   );
@@ -54,11 +50,11 @@ const AppIcon = AppLogo;
 function AppCard({ app, onPress }) {
   return (
     <button onClick={() => onPress(app)}
-      className="tap w-full flex flex-col items-center gap-2 p-3.5 rounded-2xl bg-card border border-border hover:border-white/20 transition-colors">
+      className="tap w-full flex flex-col items-center gap-3 p-2 transition-all">
       <AppLogo app={app} size="md" />
       <div className="w-full text-center">
-        <div className="text-white text-xs font-semibold leading-tight truncate">{app.name}</div>
-        <div className="text-muted text-[10px] mt-0.5 truncate">{app.category}</div>
+        <div className="text-white text-[11px] font-bold leading-tight truncate">{app.name}</div>
+        <div className="text-muted text-[9px] mt-0.5 truncate uppercase tracking-widest">{app.category}</div>
       </div>
     </button>
   );
@@ -253,15 +249,14 @@ function CategoryPill({ cat, active, onPress }) {
 function AppSquareCard({ app, onPress }) {
   return (
     <button onClick={() => onPress(app)}
-      className="tap flex flex-col items-center gap-2 w-full">
-      <div className="w-full rounded-2xl overflow-hidden flex items-center justify-center bg-[#1A1A1A] border border-white/5 group-hover:border-accent/50 transition-colors"
-        style={{height:90}}>
+      className="tap flex flex-col items-center gap-2.5 w-full">
+      <div className="w-full flex items-center justify-center transition-transform active:scale-95 duration-200">
         <AppLogo app={app} size="md" />
       </div>
       <div className="w-full text-center px-0.5">
-        <div className="text-white text-[11px] font-bold truncate">{app.name}</div>
-        <div className="flex items-center justify-center gap-0.5 mt-0.5 text-[9px] text-amber-400 font-medium">
-          <span>★</span> {app.rating || "4.8"} <span className="text-white/40 font-normal">(10k)</span>
+        <div className="text-white text-[11px] font-bold truncate leading-tight">{app.name}</div>
+        <div className="flex items-center justify-center gap-0.5 mt-1 text-[9px] text-amber-400 font-bold">
+          <span>★</span> {app.rating || "4.8"}
         </div>
       </div>
     </button>
