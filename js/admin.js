@@ -8,6 +8,7 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
 let currentRoute = 'dashboard';
 let data = { apps: [], games: [], categories: [], settings: {} };
 let editingId = null;
+let filterCategory = null;
 
 const EMOJI_LIST = [
   '🤖','🎮','👶','🛒','💼','💄','🎨','💰','📚','🎬','🔧','🏃','💬','🧩','⚔️','♟️','🕹️','📝','🎲','⚽','🗺️','🖼️','🧠',
@@ -97,16 +98,17 @@ function showSyncStatus(msg, colorClass) {
   el.style.opacity = '1';
 }
 
-// ── ROUTING ────────────────────────────────────────────────────────────────────
 function setRoute(route) {
   currentRoute = route;
+  if (route !== 'apps' && route !== 'games') {
+    filterCategory = null; 
+  }
   
   // Update UI Sidebar
   document.querySelectorAll('.nav-item').forEach(el => {
     el.classList.toggle('tab-active', el.dataset.route === route);
   });
 
-  // Update Header
   const header = document.getElementById('route-header');
   const addBtn = document.getElementById('main-add-btn');
   
@@ -143,6 +145,16 @@ function setRoute(route) {
   renderCurrentView();
 }
 
+function clearFilter() {
+  filterCategory = null;
+  renderCurrentView();
+}
+
+function viewCategoryItems(catId, type) {
+  filterCategory = catId;
+  setRoute(type === 'app' ? 'apps' : 'games');
+}
+
 // ── VIEW RENDERING ─────────────────────────────────────────────────────────────
 function renderCurrentView() {
   const container = document.getElementById('view-container');
@@ -175,8 +187,27 @@ function renderCurrentView() {
       </div>
     `;
   } else if (currentRoute === 'apps' || currentRoute === 'games') {
-    const list = currentRoute === 'apps' ? data.apps : data.games;
+    let list = currentRoute === 'apps' ? data.apps : data.games;
+    
+    if (filterCategory) {
+      list = list.filter(item => (item.homeCategory === filterCategory || item.gameCategory === filterCategory));
+    }
+
     container.innerHTML = `
+      ${filterCategory ? `
+        <div class="flex items-center justify-between mb-6 px-4 bg-accent/5 p-4 rounded-3xl border border-accent/10">
+          <div class="flex items-center gap-3">
+             <span class="text-muted text-[10px] font-black uppercase tracking-widest">Filtering by Category:</span>
+             <span class="pill bg-accent text-white text-[10px] px-3 py-1 font-black rounded-full shadow-lg glow-purple">
+               ${data.categories.find(c => c.id === filterCategory)?.label || filterCategory}
+             </span>
+          </div>
+          <button onclick="clearFilter()" class="text-[10px] font-black text-red-500 hover:text-red-400 uppercase tracking-widest flex items-center gap-1 transition-all">
+            <span>Clear Filter</span>
+            <span class="text-sm">×</span>
+          </button>
+        </div>
+      ` : ''}
       <div class="glass rounded-[32px] overflow-hidden">
         <table class="w-full text-left">
           <thead>
@@ -227,9 +258,11 @@ function renderCurrentView() {
                 <p class="text-[10px] font-black uppercase tracking-widest ${cat.type === 'app' ? 'text-blue-400' : 'text-orange-400'}">${cat.type}s</p>
               </div>
             </div>
+            </div>
             <div class="flex gap-2">
-              <button onclick="editCategory('${cat.id}')" class="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[10px] font-bold uppercase tracking-widest text-muted hover:text-white transition-all">Edit</button>
-              <button onclick="deleteCategory('${cat.id}')" class="flex-1 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-[10px] font-bold uppercase tracking-widest text-red-500/60 hover:text-red-500 transition-all">Delete</button>
+              <button onclick="viewCategoryItems('${cat.id}', '${cat.type}')" class="flex-1 py-2.5 rounded-xl bg-accent text-white text-[10px] font-black uppercase tracking-widest shadow-lg glow-purple active:scale-95 transition-all">View Apps</button>
+              <button onclick="editCategory('${cat.id}')" class="w-10 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-muted hover:text-white transition-all flex items-center justify-center text-xs">✎</button>
+              <button onclick="deleteCategory('${cat.id}')" class="w-10 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-500/60 hover:text-white transition-all flex items-center justify-center text-sm">×</button>
             </div>
           </div>
         `).join('')}
@@ -314,6 +347,7 @@ async function handleItemSubmit(e) {
       description: fd.get('description'),
       long_description: fd.get('long_description'),
       tags: fd.get('tags') ? fd.get('tags').split(',').map(t => t.trim()).filter(Boolean) : [],
+      is_featured: fd.get('is_featured') === 'on',
     };
 
     // 1. Handle App Icon
@@ -454,6 +488,7 @@ function openItemModal(item = null) {
     form.description.value = item.description || ''; 
     form.long_description.value = item.long_description || '';
     form.tags.value = (item.tags || []).join(', ');
+    form.is_featured.checked = !!item.is_featured;
     if (select) select.value = item.homeCategory || item.gameCategory;
     
     if (item.icon_url && iconPrev) iconPrev.innerHTML = `<img src="${item.icon_url}" class="w-full h-full object-cover"/>`;

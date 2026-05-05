@@ -47,14 +47,16 @@ function ExploreScreen({ exploreCategory }) {
     ? `bg-gradient-to-r ${activeCat.grad}`
     : 'bg-accent';
 
-  const heroBanners   = listApps.slice(0, 3);
-  const featuredApp   = listApps[0];
-  const suggestedApps = listApps.slice(1, 8);
-  const recommended   = listApps.slice(5, 13);
-
   const headerLabel = activeCat
     ? `${activeCat.emoji} ${activeCat.label}`
     : '🧭 Explore';
+
+  // ── Featured Content ──
+  const allFeatured = liveApps.filter(a => a.is_featured);
+  const heroBanners = allFeatured.length > 0 ? allFeatured.slice(0, 5) : listApps.slice(0, 3);
+  
+  const suggestedApps = listApps.slice(0, 8);
+  const recommended   = listApps.slice(5, 13);
 
   return (
     <div className="slide-right flex flex-col h-full" style={{background:'#000'}}>
@@ -122,10 +124,9 @@ function ExploreScreen({ exploreCategory }) {
                     {/* gradient overlay */}
                     <div style={{ position:'absolute', bottom:0, left:0, right:0, height:80,
                                   background:'linear-gradient(to top,rgba(0,0,0,.85),transparent)' }}/>
-                    {/* "Now available" badge */}
                     <div style={{ position:'absolute', top:12, left:12 }}
-                      className="bg-black/60 backdrop-blur-sm border border-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                      Now available
+                      className="bg-accent/80 backdrop-blur-sm border border-white/20 text-white text-[10px] font-black uppercase tracking-tighter px-3 py-1 rounded-full shadow-lg">
+                      Featured
                     </div>
                     {/* title */}
                     <div style={{ position:'absolute', bottom:14, left:16, right:16 }}>
