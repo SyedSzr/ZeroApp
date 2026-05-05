@@ -56,6 +56,7 @@ function ExploreScreen({ exploreCategory }) {
   // ── Featured Content ──
   const allFeatured = liveApps.filter(a => a.is_featured);
   const heroBanners = allFeatured.length > 0 ? allFeatured.slice(0, 5) : listApps.slice(0, 3);
+  const featuredApp = heroBanners[0];
   
   const suggestedApps = listApps.slice(0, 8);
   const recommended   = listApps.slice(5, 13);
