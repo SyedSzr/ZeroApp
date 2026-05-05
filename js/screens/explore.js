@@ -105,40 +105,41 @@ function ExploreScreen({ exploreCategory }) {
         ) : (
           <>
             {/* ══ HERO CAROUSEL ══ */}
-            <div className="mt-3 mb-2">
-              <div className="flex gap-3 px-4 overflow-x-auto no-sb snap-x snap-mandatory">
+            <div className="mt-4 mb-6">
+              <div className="flex gap-4 px-4 overflow-x-auto no-sb snap-x snap-mandatory">
                 {heroBanners.map((app, idx) => (
                   <button key={app.id} onClick={() => openDetail(app)}
-                    className="tap flex-shrink-0 snap-start rounded-2xl overflow-hidden relative"
-                    style={{ width:'calc(100% - 40px)', minWidth:'calc(100% - 40px)', height:200,
-                             background: heroBgs[idx % heroBgs.length] }}>
-                    {/* bg art */}
-                    {app.featured_image ? (
-                      <img src={app.featured_image} className="absolute inset-0 w-full h-full object-cover" />
-                    ) : app.icon_url ? (
-                      <img src={app.icon_url} className="absolute inset-0 w-full h-full object-cover opacity-20 blur-sm" />
-                    ) : (
-                      <span style={{ position:'absolute', right:-20, top:-20, fontSize:180, opacity:.12, transform:'rotate(-10deg)', lineHeight:1, userSelect:'none', pointerEvents:'none' }}>{app.emoji}</span>
-                    )}
-                    {/* fg icon */}
-                    <div style={{ position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-60%)' }}>
-                      <div className="w-16 h-16 rounded-3xl overflow-hidden shadow-2xl border border-white/20">
-                        <AppIcon app={app} size="lg" />
+                    className="tap flex-shrink-0 snap-start flex flex-col w-[280px] group">
+                    
+                    {/* Top Graphic */}
+                    <div className="w-full aspect-[16/9] rounded-2xl overflow-hidden relative border border-white/5 bg-[#111]">
+                      {app.featured_image ? (
+                        <img src={app.featured_image} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-30" style={{ background: heroBgs[idx % heroBgs.length] }}>
+                           <span className="text-4xl">{app.emoji}</span>
+                        </div>
+                      )}
+                      
+                      {/* Featured Badge Overlay */}
+                      <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md border border-white/10 text-[9px] font-black text-white uppercase tracking-wider">
+                        Featured
                       </div>
                     </div>
-                    {/* gradient overlay */}
-                    <div style={{ position:'absolute', bottom:0, left:0, right:0, height:80,
-                                  background:'linear-gradient(to top,rgba(0,0,0,.85),transparent)' }}/>
-                    <div style={{ position:'absolute', top:12, left:12 }}
-                      className="bg-accent/80 backdrop-blur-sm border border-white/20 text-white text-[10px] font-black uppercase tracking-tighter px-3 py-1 rounded-full shadow-lg">
-                      Featured
-                    </div>
-                    {/* title */}
-                    <div style={{ position:'absolute', bottom:14, left:16, right:16 }}>
-                      <p className="text-white font-extrabold text-base leading-tight text-left"
-                         style={{ textShadow:'0 1px 8px rgba(0,0,0,.8)' }}>
-                        {app.name} · {app.category}
-                      </p>
+
+                    {/* Bottom Details */}
+                    <div className="flex items-center gap-3 mt-3 px-1">
+                      <div className="w-11 h-11 rounded-xl overflow-hidden border border-white/10 shadow-lg flex-shrink-0">
+                        <AppIcon app={app} size="sm" />
+                      </div>
+                      <div className="flex-1 min-w-0 text-left">
+                        <h4 className="text-white text-sm font-bold truncate tracking-tight">{app.name}</h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-gray-500 text-[11px] font-medium">{app.category}</span>
+                          <span className="text-gray-600">·</span>
+                          <span className="text-amber-400 text-[11px] font-bold">★ {app.rating}</span>
+                        </div>
+                      </div>
                     </div>
                   </button>
                 ))}
