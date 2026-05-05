@@ -146,32 +146,6 @@ function ExploreScreen({ exploreCategory }) {
               </div>
             </div>
 
-            {/* ══ FEATURED APP ROW ══ */}
-            {featuredApp && (
-              <div className="mx-4 mt-0 mb-4 rounded-2xl relative overflow-hidden h-28 flex items-center px-5 border border-white/10 shadow-2xl"
-                style={{ background: featuredApp.featured_image ? 'none' : '#111' }}>
-                
-                {featuredApp.featured_image && (
-                  <img src={featuredApp.featured_image} className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
-
-                <div className="relative z-10 flex items-center gap-4 w-full">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 bg-white/10 backdrop-blur-md border border-white/20 overflow-hidden shadow-xl">
-                    <AppIcon app={featuredApp} size="md" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white text-base font-black truncate drop-shadow-lg">{featuredApp.name}</div>
-                    <div className="text-white/60 text-xs font-bold uppercase tracking-wider">{featuredApp.category}</div>
-                  </div>
-                  <button onClick={() => openDetail(featuredApp)}
-                    className={`tap flex-shrink-0 ${accentBtn} text-white text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-xl shadow-lg glow-purple active:scale-95 transition-all`}>
-                    OPEN
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* ══ SUGGESTED FOR YOU ══ */}
             {suggestedApps.length > 0 && (
               <div className="mb-6">
