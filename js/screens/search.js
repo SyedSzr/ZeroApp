@@ -1,4 +1,6 @@
 // ── SEARCH SCREEN ─────────────────────────────────────────────────────────────
+const { useState, useEffect, useMemo, useRef } = React;
+
 function SearchScreen() {
   const { goBack, searchQ, setSearchQ, openDetail, liveApps } = useApp();
   const inputRef = useRef(null);

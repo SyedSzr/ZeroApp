@@ -1,3 +1,5 @@
+const { useState, useEffect, useMemo, useRef } = React;
+
 function ExploreScreen({ exploreCategory }) {
   const { openDetail, go, liveApps, liveCats } = useApp();
   const homeCategories = liveCats.filter(c => c.type === 'app');

@@ -1,4 +1,6 @@
 // ── RECENT / HISTORY SCREEN ───────────────────────────────────────────────────
+const { useState, useEffect, useMemo, useRef } = React;
+
 function RecentScreen() {
   const { recents, clearRecents, openDetail, goBack } = useApp();
 

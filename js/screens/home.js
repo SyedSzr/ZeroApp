@@ -1,4 +1,6 @@
 // ── HOME SCREEN — Redesigned ──────────────────────────────────────────────────
+const { useState, useEffect, useMemo, useRef } = React;
+
 function AppsScreen() {
   const { greeting, recents, openDetail, go, liveApps, liveCats, settings } = useApp();
   const [activeCategory, setActiveCategory] = useState(null);
