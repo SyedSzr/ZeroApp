@@ -252,9 +252,7 @@ function ExploreScreen({ exploreCategory }) {
                         <span className="text-amber-400 text-xs">★ {app.rating}</span>
                       </div>
                     </div>
-                    <div className="w-10 h-16 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#141414] border border-[#1e1e1e] opacity-40 overflow-hidden">
-                      <AppIcon app={listApps[(listApps.indexOf(app)+1)%listApps.length]} size="sm" />
-                    </div>
+                    <div className="text-muted text-lg opacity-40 pr-2">›</div>
                   </button>
                 ))}
               </div>
