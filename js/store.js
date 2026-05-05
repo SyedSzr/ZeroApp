@@ -295,6 +295,7 @@ function AppProvider({ children }) {
   const clearRecents = useCallback(() => { setRecents([]); lsSet('zero_recents', []); }, []);
 
   const value = {
+    supabase,
     screen, history, go, goBack, goHome,
     mainTab, setMainTab,
     exploreCategory: null, mode: null, detailApp: null, viewerApp: null,

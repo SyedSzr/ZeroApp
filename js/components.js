@@ -280,7 +280,7 @@ function BottomNav({ active }) {
   const items = [
     { id: 'games',   label: 'Games',   icon: GamesNavIcon,  action: goGames },
     { id: 'apps',    label: 'Apps',    icon: AppsNavIcon,   action: goApps  },
-    { id: 'plus',    label: '',        icon: null,          action: () => {} },
+    { id: 'plus',    label: '',        icon: null,          action: () => go('submit') },
     { id: 'explore', label: 'Explore', icon: ExploreIcon,   action: () => go('explore', { mode: null, exploreCategory: null }) },
     { id: 'profile', label: 'Profile', icon: ProfileIcon,   action: () => go('profile') },
   ];
