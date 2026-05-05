@@ -8,7 +8,11 @@ function GamesScreen() {
   const [activeOverlay, setActiveOverlay] = useState(null); // 'comments' | 'leaderboard'
   const sectionRefs = useRef({});
 
-  const featuredGames = liveGames.slice(0, 10);
+  const allGames = [...liveGames].sort((a, b) => {
+    const dateA = new Date(a.created_at || 0);
+    const dateB = new Date(b.created_at || 0);
+    return dateB - dateA;
+  });
 
   if (viewMode === 'discover') {
     return <GamesDiscoveryView 
@@ -52,7 +56,7 @@ function GamesScreen() {
 
       {/* ── Feed Container (Vertical Snap) ── */}
       <div className="h-full w-full overflow-y-auto snap-y snap-mandatory no-sb">
-        {featuredGames.map((game, idx) => (
+        {allGames.map((game, idx) => (
           <div key={game.id} className="h-full w-full snap-start relative flex flex-col justify-end">
             
             {/* Background Visual */}
