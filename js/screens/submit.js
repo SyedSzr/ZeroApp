@@ -1,6 +1,9 @@
 // ── SUBMIT SCREEN ───────────────────────────────────────────────────────────
 function SubmitScreen() {
-  const { supabase, liveCats, goBack } = useApp();
+  const context = useApp();
+  if (!context) return null;
+  const { supabase, liveCats, goBack } = context;
+
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
   const [error, setError]     = React.useState(null);
@@ -239,6 +242,5 @@ function SubmitScreen() {
         </div>
       </form>
     </div>
-  );
   );
 }
