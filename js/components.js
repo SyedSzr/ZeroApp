@@ -35,29 +35,108 @@ function TaskLayer() {
   );
 }
 
-function TaskDock() {
-  const { tasks, activeTaskId, switchTask } = useApp();
-  
-  if (tasks.length === 0 || activeTaskId) return null;
+function FloatingBubble({ task, index, onDragStart, onDragEnd }) {
+  const { switchTask } = useApp();
+  const [pos, setPos] = React.useState({ x: 10, y: 150 + (index * 90) });
+  const [isDragging, setIsDragging] = React.useState(false);
+  const dragRef = React.useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 } });
+
+  const handleStart = (e) => {
+    const touch = e.touches ? e.touches[0] : e;
+    dragRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startPos: { ...pos }
+    };
+    setIsDragging(true);
+    onDragStart(task.id);
+  };
+
+  const handleMove = (e) => {
+    if (!isDragging) return;
+    const touch = e.touches ? e.touches[0] : e;
+    const dx = touch.clientX - dragRef.current.startX;
+    const dy = touch.clientY - dragRef.current.startY;
+    
+    setPos({
+      x: dragRef.current.startPos.x + dx,
+      y: dragRef.current.startPos.y + dy
+    });
+  };
+
+  const handleEnd = (e) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    
+    // Snap to nearest side
+    const screenWidth = window.innerWidth;
+    const centerX = pos.x + 35; 
+    const finalX = centerX < screenWidth / 2 ? 10 : screenWidth - 80;
+    
+    setPos(prev => ({ ...prev, x: finalX }));
+    onDragEnd(task.id, pos.x + 35, pos.y + 35);
+  };
 
   return (
-    <div className="absolute bottom-24 left-0 right-0 z-[80] px-5 pointer-events-none">
-      <div className="flex flex-col gap-3">
-        <span className="text-white/40 text-[10px] font-black uppercase tracking-widest px-1">Running Apps</span>
-        <div className="flex gap-4 overflow-x-auto no-sb pointer-events-auto pb-4">
-          {tasks.map(task => (
-            <button key={task.id} onClick={() => switchTask(task.id)}
-              className="tap flex flex-col items-center gap-2 flex-shrink-0 group">
-              <div className="w-16 h-16 rounded-[28px] bg-card border border-white/5 flex items-center justify-center group-hover:border-accent transition-all overflow-hidden relative">
-                 <AppLogo app={task.app} size="sm" />
-                 <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent"></div>
-              </div>
-              <span className="text-white text-[10px] font-bold truncate max-w-[64px]">{task.app.name}</span>
-            </button>
-          ))}
-        </div>
+    <div 
+      className={`fixed z-[90] w-[70px] h-[70px] transition-transform ${isDragging ? 'scale-110 z-[100]' : 'duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'}`}
+      style={{ left: pos.x, top: pos.y, touchAction: 'none' }}
+      onTouchStart={handleStart}
+      onTouchMove={handleMove}
+      onTouchEnd={handleEnd}
+      onClick={() => !isDragging && switchTask(task.id)}
+    >
+      <div className="w-full h-full rounded-[26px] bg-card border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden active:scale-90 transition-transform">
+         <AppLogo app={task.app} size="sm" />
+         <div className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-card shadow-sm"></div>
+      </div>
+      <div className="absolute -bottom-5 left-0 right-0 text-center">
+         <span className="text-white text-[8px] font-black uppercase tracking-tighter opacity-40 truncate px-1 block">{task.app.name}</span>
       </div>
     </div>
+  );
+}
+
+function TaskDock() {
+  const { tasks, activeTaskId, closeTask } = useApp();
+  const [draggingId, setDraggingId] = React.useState(null);
+
+  if (tasks.length === 0 || activeTaskId) return null;
+
+  const handleDragStart = (id) => setDraggingId(id);
+  const handleDragEnd = (id, x, y) => {
+    setDraggingId(null);
+    const screenHeight = window.innerHeight;
+    const screenWidth = window.innerWidth;
+    const distToBottom = screenHeight - y;
+    const distToCenter = Math.abs((screenWidth / 2) - x);
+
+    if (distToBottom < 150 && distToCenter < 100) {
+      closeTask(id);
+      if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+    }
+  };
+  
+  return (
+    <>
+      {tasks.map((task, i) => (
+        <FloatingBubble 
+          key={task.id} 
+          task={task} 
+          index={i} 
+          onDragStart={handleDragStart} 
+          onDragEnd={handleDragEnd}
+        />
+      ))}
+
+      {/* Close Zone */}
+      <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-[85] flex flex-col items-center gap-2 transition-all duration-300 ${draggingId ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+         <div className="w-16 h-16 rounded-full border-2 border-dashed bg-red-500/10 border-red-500/30 flex items-center justify-center">
+            <span className="text-2xl text-red-500">×</span>
+         </div>
+         <span className="text-red-500 text-[10px] font-black uppercase tracking-widest">Close App</span>
+      </div>
+    </>
   );
 }
 
