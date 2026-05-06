@@ -7,6 +7,48 @@ function GamesScreen() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeOverlay, setActiveOverlay] = useState(null); // 'comments' | 'leaderboard'
   const sectionRefs = useRef({});
+  const feedRef = useRef(null);
+  const scrollLock = useRef(false);
+
+  React.useEffect(() => {
+    const el = feedRef.current;
+    if (!el || viewMode !== 'feed') return;
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      if (scrollLock.current) return;
+      scrollLock.current = true;
+      const dir = e.deltaY > 0 ? 1 : -1;
+      el.scrollBy({ top: dir * el.clientHeight, behavior: 'smooth' });
+      setTimeout(() => { scrollLock.current = false; }, 500);
+    };
+
+    let startY = 0;
+    const handleTouchStart = (e) => { startY = e.touches[0].clientY; };
+    const handleTouchMove = (e) => { e.preventDefault(); };
+    const handleTouchEnd = (e) => {
+      if (scrollLock.current) return;
+      const delta = startY - e.changedTouches[0].clientY;
+      if (Math.abs(delta) > 30) {
+        scrollLock.current = true;
+        const dir = delta > 0 ? 1 : -1;
+        el.scrollBy({ top: dir * el.clientHeight, behavior: 'smooth' });
+        setTimeout(() => { scrollLock.current = false; }, 500);
+      }
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    el.addEventListener('touchstart', handleTouchStart, { passive: false });
+    el.addEventListener('touchmove', handleTouchMove, { passive: false });
+    el.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    return () => {
+      el.removeEventListener('wheel', handleWheel);
+      el.removeEventListener('touchstart', handleTouchStart);
+      el.removeEventListener('touchmove', handleTouchMove);
+      el.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [viewMode]);
 
   const allGames = [...liveGames].sort((a, b) => {
     const dateA = new Date(a.created_at || 0);
@@ -56,10 +98,10 @@ function GamesScreen() {
         </div>
       </div>
 
-      {/* ── Feed Container (Vertical Snap) ── */}
-      <div className="h-full w-full overflow-y-auto snap-y snap-mandatory no-sb">
+      {/* ── Feed Container (Strict 1-by-1 JS Scroll) ── */}
+      <div ref={feedRef} className="h-full w-full overflow-hidden no-sb">
         {allGames.map((game, idx) => (
-          <div key={game.id} className="h-full w-full snap-start snap-always relative flex flex-col justify-end">
+          <div key={game.id} className="h-full w-full relative flex flex-col justify-end flex-shrink-0">
             
             {/* Background Visual */}
             <div className="absolute inset-0 z-0">
