@@ -4,15 +4,6 @@ const { useState, useEffect, useCallback, useRef, useMemo, createContext, useCon
 const Ctx = createContext(null);
 function useApp() { return useContext(Ctx); }
 
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 5)  return 'Good Night';
-  if (h < 12) return 'Good Morning';
-  if (h < 17) return 'Good Afternoon';
-  if (h < 21) return 'Good Evening';
-  return 'Good Night';
-}
-
 function ls(key, def) { try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? def; } catch { return def; } }
 function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
 
@@ -29,24 +20,46 @@ function AppProvider({ children }) {
   const [settings, setSettings]   = useState({ app_name: 'ZeroApp' });
 
   // ── Auth State ──
-  const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
     if (!supabase) return;
     
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(session?.user || null);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(session?.user || null);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
+
+  useEffect(() => {
+    if (user && supabase) {
+      supabase.from('profiles').select('*').eq('id', user.id).single()
+        .then(({data, error}) => {
+          if (data) setUserProfile(data);
+        });
+    } else {
+      setUserProfile(null);
+    }
+  }, [user, supabase]);
+
+  const updateProfileName = async (newName) => {
+    if (!user || !supabase) return;
+    const { error } = await supabase.from('profiles').update({ display_name: newName }).eq('id', user.id);
+    if (!error) {
+      setUserProfile(prev => ({ ...(prev || {}), display_name: newName }));
+    } else {
+      console.error('Error updating name:', error);
+    }
+  };
 
   const signIn = useCallback(async (email, password) => await supabase.auth.signInWithPassword({ email, password }), []);
   const signUp = useCallback(async (email, password) => await supabase.auth.signUp({ email, password }), []);
@@ -371,6 +384,18 @@ function AppProvider({ children }) {
   // ── Clear recents ──
   const clearRecents = useCallback(() => { setRecents([]); lsSet('zero_recents', []); }, []);
 
+  const greeting = useMemo(() => {
+    const hr = new Date().getHours();
+    let timeGreeting = 'Good Evening';
+    if(hr < 12) timeGreeting = 'Good Morning';
+    else if(hr < 18) timeGreeting = 'Good Afternoon';
+    
+    if (userProfile && userProfile.display_name) {
+      return `${timeGreeting}, ${userProfile.display_name.split(' ')[0]}`;
+    }
+    return timeGreeting;
+  }, [userProfile]);
+
   const value = {
     supabase,
     session, user, signIn, signUp, signOut, signInWithGoogle,
@@ -386,7 +411,9 @@ function AppProvider({ children }) {
     savedApps, folders, toggleSaveApp, isSaved, 
     createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder,
     liveApps, liveGames, liveCats, settings,
-    greeting: settings.greeting_override || getGreeting(),
+    greeting,
+    userProfile,
+    updateProfileName
   };
 
   return React.createElement(Ctx.Provider, { value }, children);

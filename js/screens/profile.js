@@ -2,9 +2,11 @@
 const { useState } = React;
 
 function ProfileScreen() {
-  const { favorites, savedApps, folders, createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder, toggleSaveApp, go, openDetail, user, supabase, signOut } = useApp();
+  const { favorites, savedApps, folders, createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder, toggleSaveApp, go, openDetail, user, supabase, signOut, userProfile, updateProfileName } = useApp();
   
   const [mySubmissions, setMySubmissions] = useState([]);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState('');
   
   React.useEffect(() => {
     if (user && supabase) {
@@ -102,13 +104,22 @@ function ProfileScreen() {
         {user ? (
           <div className="px-5 py-5 flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-violet-400 flex items-center justify-center text-3xl text-white font-bold flex-shrink-0">
-              {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
+              {userProfile?.display_name ? userProfile.display_name.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : 'U')}
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-white font-extrabold text-lg truncate max-w-[150px]">{user.email.split('@')[0]}</span>
-                <span className="pill bg-accent text-white text-[10px] px-2 py-0.5">Pro</span>
-              </div>
+            <div className="flex-1 min-w-0">
+              {isEditingName ? (
+                <div className="flex items-center gap-2">
+                  <input type="text" autoFocus value={editNameValue} onChange={e => setEditNameValue(e.target.value)} className="bg-surface border border-border text-white text-sm rounded-lg px-2 py-1 w-28 outline-none focus:border-accent" placeholder="Display Name" />
+                  <button onClick={() => { if(editNameValue.trim()) updateProfileName(editNameValue.trim()); setIsEditingName(false); }} className="text-accent text-xs font-bold px-2 py-1 bg-accent/10 rounded-md">Save</button>
+                  <button onClick={() => setIsEditingName(false)} className="text-muted text-xs hover:text-white px-1">Cancel</button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-extrabold text-lg truncate max-w-[150px]">{userProfile?.display_name || user.email.split('@')[0]}</span>
+                  <button onClick={() => { setEditNameValue(userProfile?.display_name || ''); setIsEditingName(true); }} className="text-muted hover:text-white text-xs p-1">✎</button>
+                  <span className="pill bg-accent text-white text-[10px] px-2 py-0.5">Pro</span>
+                </div>
+              )}
               <p className="text-muted text-sm mt-0.5 truncate max-w-[200px]">{user.email}</p>
             </div>
             <button onClick={signOut} className="tap px-3 py-1.5 bg-red-500/10 text-red-500 rounded-full text-xs font-bold border border-red-500/20">Sign Out</button>
