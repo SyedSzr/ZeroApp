@@ -51,7 +51,12 @@ function AppProvider({ children }) {
   const signIn = useCallback(async (email, password) => await supabase.auth.signInWithPassword({ email, password }), []);
   const signUp = useCallback(async (email, password) => await supabase.auth.signUp({ email, password }), []);
   const signOut = useCallback(async () => await supabase.auth.signOut(), []);
-  const signInWithGoogle = useCallback(async () => await supabase.auth.signInWithOAuth({ provider: 'google' }), []);
+  const signInWithGoogle = useCallback(async () => await supabase.auth.signInWithOAuth({ 
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin
+    }
+  }), []);
 
   // ── Navigation state (Native Stack) ──
   const [history, setHistory]     = useState([{ key: 'root-apps', id: 'apps', params: {} }]);
