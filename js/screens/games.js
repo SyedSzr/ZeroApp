@@ -59,7 +59,7 @@ function GamesScreen() {
       {/* ── Feed Container (Vertical Snap) ── */}
       <div className="h-full w-full overflow-y-auto snap-y snap-mandatory no-sb">
         {allGames.map((game, idx) => (
-          <div key={game.id} className="h-full w-full snap-start relative flex flex-col justify-end">
+          <div key={game.id} className="h-full w-full snap-start snap-always relative flex flex-col justify-end">
             
             {/* Background Visual */}
             <div className="absolute inset-0 z-0">
