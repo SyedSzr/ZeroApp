@@ -75,7 +75,7 @@ function ProfileScreen() {
         <h1 className="text-white font-extrabold text-xl mt-1">Profile</h1>
         <div className="flex flex-col items-center gap-2">
           <button className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-xl">⚙️</button>
-          <button className="tap bg-accent text-white text-[10px] font-extrabold px-3 py-1 rounded-full shadow-[0_0_10px_rgba(124,106,247,0.3)] whitespace-nowrap tracking-wide">
+          <button className="tap bg-accent text-white text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(124,106,247,0.4)] whitespace-nowrap">
             Sign In
           </button>
         </div>
