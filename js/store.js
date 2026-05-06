@@ -42,6 +42,8 @@ function AppProvider({ children }) {
   const [favorites, setFavorites] = useState(() => ls('zero_favs', []));
   const [savedApps, setSavedApps] = useState(() => ls('zero_saved_apps', []));
   const [folders, setFolders]     = useState(() => ls('zero_folders', []));
+  const [tasks, setTasks]         = useState([]); // { id, app, status: 'active'|'minimized' }
+  const [activeTaskId, setActiveTaskId] = useState(null);
 
   // ── Real-time Catalog Logic ──
   useEffect(() => {
@@ -208,28 +210,44 @@ function AppProvider({ children }) {
     go('detail', { detailApp: app });
   }, []);
 
-  // ── Launch app into viewer ──
+  // ── Multi-tasking Logic ──
   const launchApp = useCallback((app) => {
-    if (app && app.url) {
-      // Open in a new standalone-style window
-      const width = 450;
-      const height = 800;
-      const left = (window.screen.width / 2) - (width / 2);
-      const top = (window.screen.height / 2) - (height / 2);
-      
-      window.open(
-        app.url, 
-        `_blank_${app.id}`, 
-        `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`
-      );
+    if (!app || !app.url) return;
+    
+    setTasks(prev => {
+      // Check if already running
+      const existing = prev.find(t => t.id === app.id);
+      if (existing) {
+        setActiveTaskId(app.id);
+        return prev.map(t => t.id === app.id ? { ...t, status: 'active' } : { ...t, status: 'minimized' });
+      }
+      // Add new task
+      const newTask = { id: app.id, app, status: 'active' };
+      setActiveTaskId(app.id);
+      return [...prev.map(t => ({ ...t, status: 'minimized' })), newTask];
+    });
 
-      // Add to recents
-      setRecents(prev => {
-        const next = [{ ...app, openedAt: Date.now() }, ...prev.filter(r => r.id !== app.id)].slice(0, 20);
-        lsSet('zero_recents', next);
-        return next;
-      });
-    }
+    // Add to recents
+    setRecents(prev => {
+      const next = [{ ...app, openedAt: Date.now() }, ...prev.filter(r => r.id !== app.id)].slice(0, 20);
+      lsSet('zero_recents', next);
+      return next;
+    });
+  }, []);
+
+  const minimizeTask = useCallback((id) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'minimized' } : t));
+    setActiveTaskId(null);
+  }, []);
+
+  const closeTask = useCallback((id) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
+    setActiveTaskId(prev => prev === id ? null : prev);
+  }, []);
+
+  const switchTask = useCallback((id) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'active' } : { ...t, status: 'minimized' }));
+    setActiveTaskId(id);
   }, []);
 
   // ── Favorites ──
@@ -322,6 +340,7 @@ function AppProvider({ children }) {
     exploreCategory: null, mode: null, detailApp: null, viewerApp: null,
     detailApp: null, setDetailApp: () => {}, openDetail,
     viewerApp: null, setViewerApp: () => {}, launchApp,
+    tasks, activeTaskId, minimizeTask, closeTask, switchTask,
     searchQ, setSearchQ,
     recents, clearRecents,
     favorites, toggleFav, isFav,

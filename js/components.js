@@ -1,5 +1,66 @@
 // ── SHARED COMPONENTS ─────────────────────────────────────────────────────────
 
+// ── ZeroOS Multi-tasking System ──────────────────────────────────────────────
+
+function TaskLayer() {
+  const { tasks, activeTaskId, minimizeTask, closeTask } = useApp();
+  
+  if (tasks.length === 0) return null;
+
+  return (
+    <div className="absolute inset-0 z-[100] pointer-events-none">
+      {tasks.map(task => {
+        const isActive = task.id === activeTaskId && task.status === 'active';
+        return (
+          <div key={task.id} 
+               className={`absolute inset-0 bg-bg transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-auto ${isActive ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-full opacity-0 scale-95'}`}
+               style={{ zIndex: isActive ? 50 : 0 }}>
+            
+            {/* App Content */}
+            <iframe src={task.app.url} className="w-full h-full border-none" />
+
+            {/* Floating Control Hub */}
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-black/40 backdrop-blur-xl border border-white/10 p-2 rounded-3xl shadow-2xl">
+               <button onClick={() => minimizeTask(task.id)} className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center tap">
+                  <span className="text-xl">🏠</span>
+               </button>
+               <button onClick={() => closeTask(task.id)} className="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center tap">
+                  <span className="text-xl text-red-500">×</span>
+               </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TaskDock() {
+  const { tasks, activeTaskId, switchTask } = useApp();
+  
+  if (tasks.length === 0 || activeTaskId) return null;
+
+  return (
+    <div className="absolute bottom-24 left-0 right-0 z-[80] px-5 pointer-events-none">
+      <div className="flex flex-col gap-3">
+        <span className="text-white/40 text-[10px] font-black uppercase tracking-widest px-1">Running Apps</span>
+        <div className="flex gap-4 overflow-x-auto no-sb pointer-events-auto pb-4">
+          {tasks.map(task => (
+            <button key={task.id} onClick={() => switchTask(task.id)}
+              className="tap flex flex-col items-center gap-2 flex-shrink-0 group">
+              <div className="w-16 h-16 rounded-[28px] bg-card border border-white/5 flex items-center justify-center group-hover:border-accent transition-all overflow-hidden relative">
+                 <AppLogo app={task.app} size="sm" />
+                 <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent"></div>
+              </div>
+              <span className="text-white text-[10px] font-bold truncate max-w-[64px]">{task.app.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── AppLogo: real brand logo with emoji fallback ──────────────────────────────
 function AppLogo({ app, size = 'md' }) {
   const px = { xs:48, sm:62, md:86, lg:115 }[size] || 86;

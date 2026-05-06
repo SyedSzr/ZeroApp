@@ -117,6 +117,9 @@ function AppShell() {
           {getScreenComponent(frame)}
         </ScreenWrapper>
       ))}
+
+      <TaskLayer />
+      <TaskDock />
     </div>
   );
 }
