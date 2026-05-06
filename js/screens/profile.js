@@ -71,9 +71,14 @@ function ProfileScreen() {
     <div className="slide-up flex flex-col h-full bg-bg relative">
 
       {/* ── Header ── */}
-      <div className="pt-safe px-5 flex items-center justify-between py-4 border-b border-border bg-surface flex-shrink-0">
-        <h1 className="text-white font-extrabold text-xl">Profile</h1>
-        <button className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-xl">⚙️</button>
+      <div className="pt-safe px-5 flex items-start justify-between py-4 border-b border-border bg-surface flex-shrink-0">
+        <h1 className="text-white font-extrabold text-xl mt-1">Profile</h1>
+        <div className="flex flex-col items-center gap-2">
+          <button className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-xl">⚙️</button>
+          <button className="tap bg-accent text-white text-[10px] font-extrabold px-3 py-1 rounded-full shadow-[0_0_10px_rgba(124,106,247,0.3)] whitespace-nowrap tracking-wide">
+            Sign In
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto no-sb pb-28">

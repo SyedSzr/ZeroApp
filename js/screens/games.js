@@ -92,9 +92,14 @@ function GamesScreen() {
             </button>
           </div>
 
-          <button className="tap mt-1 w-10 h-10 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center pointer-events-auto">
-            <span className="text-xl">🔔</span>
-          </button>
+          <div className="flex flex-col items-center gap-2 mt-1 pointer-events-auto">
+            <button className="tap w-10 h-10 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
+              <span className="text-xl">🔔</span>
+            </button>
+            <button className="tap bg-[#6b4eff] text-white text-[10px] font-extrabold px-3 py-1 rounded-full shadow-[0_0_10px_rgba(107,78,255,0.4)] whitespace-nowrap tracking-wide">
+              Sign In
+            </button>
+          </div>
         </div>
       </div>
 

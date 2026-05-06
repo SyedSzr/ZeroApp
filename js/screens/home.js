@@ -41,9 +41,14 @@ function AppsScreen() {
             <p className="text-white text-2xl font-bold leading-tight">{greeting}, Ali 👋</p>
             <p className="text-muted text-sm mt-0.5">What would you like to do today?</p>
           </div>
-          <button className="tap mt-1 w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center">
-            <span className="text-xl">🔔</span>
-          </button>
+          <div className="flex flex-col items-center gap-2 mt-1">
+            <button className="tap w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center">
+              <span className="text-xl">🔔</span>
+            </button>
+            <button className="tap bg-accent text-white text-[10px] font-extrabold px-3 py-1 rounded-full shadow-[0_0_10px_rgba(124,106,247,0.3)] whitespace-nowrap tracking-wide">
+              Sign In
+            </button>
+          </div>
         </div>
 
         {/* ── Search Bar ── */}
