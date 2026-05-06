@@ -2,7 +2,7 @@
 const { useState, useEffect, useMemo, useRef } = React;
 
 function AppsScreen() {
-  const { greeting, recents, openDetail, go, liveApps, liveCats, settings } = useApp();
+  const { greeting, recents, openDetail, go, liveApps, liveCats, settings, user } = useApp();
   const [activeCategory, setActiveCategory] = useState(null);
   const sectionRefs = useRef({});
 
@@ -45,9 +45,11 @@ function AppsScreen() {
             <button className="tap w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center">
               <span className="text-xl">🔔</span>
             </button>
-            <button className="tap bg-accent text-white text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(124,106,247,0.4)] whitespace-nowrap">
-              Sign In
-            </button>
+            {!user && (
+              <button onClick={() => go('auth')} className="tap bg-accent text-white text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(124,106,247,0.4)] whitespace-nowrap">
+                Sign In
+              </button>
+            )}
           </div>
         </div>
 

@@ -28,6 +28,31 @@ function AppProvider({ children }) {
   const [liveCats, setLiveCats]   = useState(typeof HOME_CATEGORIES !== 'undefined' ? [...HOME_CATEGORIES.map(c=>({...c,type:'app'})), ...GAME_CATEGORIES.map(c=>({...c,type:'game'}))] : []);
   const [settings, setSettings]   = useState({ app_name: 'ZeroApp' });
 
+  // ── Auth State ──
+  const [session, setSession] = useState(null);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    if (!supabase) return;
+    
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signIn = useCallback(async (email, password) => await supabase.auth.signInWithPassword({ email, password }), []);
+  const signUp = useCallback(async (email, password) => await supabase.auth.signUp({ email, password }), []);
+  const signOut = useCallback(async () => await supabase.auth.signOut(), []);
+  const signInWithGoogle = useCallback(async () => await supabase.auth.signInWithOAuth({ provider: 'google' }), []);
+
   // ── Navigation state (Native Stack) ──
   const [history, setHistory]     = useState([{ key: 'root-apps', id: 'apps', params: {} }]);
   const [mainTab, setMainTab]     = useState('apps'); // 'apps' | 'games'
@@ -335,6 +360,7 @@ function AppProvider({ children }) {
 
   const value = {
     supabase,
+    session, user, signIn, signUp, signOut, signInWithGoogle,
     screen, history, go, goBack, goHome,
     mainTab, setMainTab,
     exploreCategory: null, mode: null, detailApp: null, viewerApp: null,

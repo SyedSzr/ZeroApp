@@ -2,8 +2,21 @@
 const { useState } = React;
 
 function ProfileScreen() {
-  const { favorites, savedApps, folders, createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder, toggleSaveApp, go, openDetail } = useApp();
+  const { favorites, savedApps, folders, createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder, toggleSaveApp, go, openDetail, user, supabase, signOut } = useApp();
   
+  const [mySubmissions, setMySubmissions] = useState([]);
+  
+  React.useEffect(() => {
+    if (user && supabase) {
+      const fetchSubs = async () => {
+        const { data: apps } = await supabase.from('apps').select('*').eq('user_id', user.id);
+        const { data: games } = await supabase.from('games').select('*').eq('user_id', user.id);
+        setMySubmissions([...(apps||[]), ...(games||[])]);
+      };
+      fetchSubs();
+    }
+  }, [user, supabase]);
+
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [selectedAppsForFolder, setSelectedAppsForFolder] = useState([]);
@@ -75,26 +88,85 @@ function ProfileScreen() {
         <h1 className="text-white font-extrabold text-xl mt-1">Profile</h1>
         <div className="flex flex-col items-center gap-2">
           <button className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-xl">⚙️</button>
-          <button className="tap bg-accent text-white text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(124,106,247,0.4)] whitespace-nowrap">
-            Sign In
-          </button>
+          {!user && (
+            <button onClick={() => go('auth')} className="tap bg-accent text-white text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(124,106,247,0.4)] whitespace-nowrap">
+              Sign In
+            </button>
+          )}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto no-sb pb-28">
 
         {/* ── User Card ── */}
-        <div className="px-5 py-5 flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-violet-400 flex items-center justify-center text-3xl text-white font-bold flex-shrink-0">
-            A
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-white font-extrabold text-lg">Ali Hassan</span>
-              <span className="pill bg-accent text-white text-[10px] px-2 py-0.5">Pro</span>
+        {user ? (
+          <div className="px-5 py-5 flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-violet-400 flex items-center justify-center text-3xl text-white font-bold flex-shrink-0">
+              {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
             </div>
-            <p className="text-muted text-sm mt-0.5">ali.hassan@email.com</p>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-white font-extrabold text-lg truncate max-w-[150px]">{user.email.split('@')[0]}</span>
+                <span className="pill bg-accent text-white text-[10px] px-2 py-0.5">Pro</span>
+              </div>
+              <p className="text-muted text-sm mt-0.5 truncate max-w-[200px]">{user.email}</p>
+            </div>
+            <button onClick={signOut} className="tap px-3 py-1.5 bg-red-500/10 text-red-500 rounded-full text-xs font-bold border border-red-500/20">Sign Out</button>
           </div>
+        ) : (
+          <div className="px-5 py-5 flex items-center justify-between">
+            <div>
+              <h2 className="text-white font-extrabold text-lg">Guest User</h2>
+              <p className="text-muted text-sm">Sign in to sync your data</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── My Submissions (My Games) ── */}
+        <div className="px-5 mt-2 mb-8">
+          <h2 className="text-white text-lg font-bold mb-4">My Submissions</h2>
+          
+          {!user ? (
+            <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center text-center">
+              <span className="text-4xl mb-3">🔒</span>
+              <div className="text-white font-bold text-sm mb-1">Login Required</div>
+              <div className="text-muted text-xs mb-4">Sign in to view and track your submitted games and apps.</div>
+              <button onClick={() => go('auth')} className="tap bg-accent text-white font-bold text-sm px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(124,106,247,0.4)]">
+                Login / Sign Up
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {mySubmissions.length === 0 ? (
+                <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center text-center">
+                  <span className="text-3xl mb-2">🚀</span>
+                  <div className="text-white font-bold text-sm">No submissions yet</div>
+                  <div className="text-muted text-xs mt-1">Click the + button below to submit your first game!</div>
+                </div>
+              ) : (
+                mySubmissions.map(sub => (
+                  <div key={sub.id} className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-surface flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {sub.icon_url || sub.featured_image ? <img src={sub.icon_url || sub.featured_image} className="w-full h-full object-cover" /> : <span className="text-xl">{sub.emoji || '🎮'}</span>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white font-bold text-sm truncate">{sub.name}</div>
+                      {sub.status === 'rejected' && sub.rejection_comment && (
+                        <div className="text-red-400 text-[10px] mt-0.5 leading-tight line-clamp-2">{sub.rejection_comment}</div>
+                      )}
+                    </div>
+                    <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                      sub.status === 'approved' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
+                      sub.status === 'rejected' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                      'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                    }`}>
+                      {sub.status || 'pending'}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── Menu Items (Horizontal) ── */}

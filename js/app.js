@@ -101,6 +101,7 @@ function AppShell() {
       case 'recent':    return <RecentScreen {...props} />;
       case 'profile':   return <ProfileScreen {...props} />;
       case 'submit':    return <SubmitScreen {...props} />;
+      case 'auth':      return <AuthScreen {...props} />;
       default:          return <AppsScreen {...props} />;
     }
   };

@@ -6,8 +6,9 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
 // ── STATE ──────────────────────────────────────────────────────────────────────
 let currentRoute = 'dashboard';
-let data = { apps: [], games: [], categories: [], settings: {} };
+let data = { apps: [], games: [], categories: [], settings: {}, profiles: [] };
 let editingId = null;
+let selectedUserId = null;
 let filterCategory = null;
 let filterStatus = 'all'; // 'all', 'pending', 'approved', 'rejected'
 
@@ -64,6 +65,9 @@ async function fetchAllData() {
       sb.from('settings').select('*')
     ]);
 
+    let resProfiles = { data: [] };
+    try { resProfiles = await sb.from('profiles').select('*'); } catch(e) {}
+
     if (resApps.error) throw resApps.error;
     if (resGames.error) throw resGames.error;
     if (resCats.error) throw resCats.error;
@@ -71,6 +75,7 @@ async function fetchAllData() {
     data.apps = resApps.data || [];
     data.games = resGames.data || [];
     data.categories = resCats.data || [];
+    data.profiles = resProfiles.data || [];
     
     const sMap = {};
     (resSettings.data || []).forEach(s => sMap[s.key] = s.value);
@@ -133,6 +138,11 @@ function setRoute(route) {
     case 'categories':
       if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Classification</h2><p class="text-muted text-xs">Define groups</p>`;
       if (addBtn) addBtn.onclick = () => openCatModal();
+      break;
+    case 'users':
+      if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">User Directory</h2><p class="text-muted text-xs">Manage ${data.profiles.length} users</p>`;
+      if (addBtn) addBtn.classList.add('hidden');
+      selectedUserId = null;
       break;
     case 'sync':
       if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Cloud Migration</h2><p class="text-muted text-xs">Push local data</p>`;
@@ -292,6 +302,105 @@ function renderCurrentView() {
         `).join('')}
       </div>
     `;
+  } else if (currentRoute === 'users') {
+    if (selectedUserId) {
+       const user = data.profiles.find(p => p.id === selectedUserId) || { id: selectedUserId, email: 'Unknown User' };
+       const userApps = data.apps.filter(a => a.user_id === selectedUserId);
+       const userGames = data.games.filter(a => a.user_id === selectedUserId);
+       const allSubs = [...userApps, ...userGames];
+       container.innerHTML = `
+         <button onclick="viewUser(null)" class="text-muted hover:text-white text-sm font-bold mb-6 flex items-center gap-2">← Back to Users</button>
+         <div class="glass p-8 rounded-[32px] mb-8 flex items-center gap-6">
+           <div class="w-20 h-20 rounded-full bg-gradient-to-br from-accent to-blue-500 flex items-center justify-center text-4xl text-white font-bold">
+             ${user.email ? user.email.charAt(0).toUpperCase() : 'U'}
+           </div>
+           <div>
+             <h3 class="text-white font-bold text-2xl">${user.email || 'Unknown User'}</h3>
+             <p class="text-muted text-sm mt-1">User ID: ${user.id}</p>
+           </div>
+           <div class="ml-auto text-right">
+             <p class="text-3xl font-black text-white">${allSubs.length}</p>
+             <p class="text-muted text-xs uppercase tracking-widest font-bold mt-1">Total Submissions</p>
+           </div>
+         </div>
+         <h4 class="text-white font-bold text-lg mb-4">Submission History</h4>
+         <div class="glass rounded-[32px] overflow-hidden">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="text-muted text-[11px] font-black uppercase tracking-widest border-b border-white/5">
+                  <th class="px-8 py-4">Item</th>
+                  <th class="px-8 py-4">Type</th>
+                  <th class="px-8 py-4 text-center">Status</th>
+                  <th class="px-8 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${allSubs.length === 0 ? `<tr><td colspan="4" class="text-center py-10 text-muted">No submissions found.</td></tr>` : allSubs.map(item => `
+                  <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td class="px-8 py-4">
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-bg flex items-center justify-center text-xl overflow-hidden">
+                          ${item.icon_url || item.featured_image ? `<img src="${item.icon_url || item.featured_image}" class="w-full h-full object-cover"/>` : item.emoji || '🎮'}
+                        </div>
+                        <div>
+                          <p class="text-white font-bold text-sm">${item.name}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-8 py-4">
+                      <span class="pill bg-accent/10 text-accent text-[10px] px-2 py-1 font-bold uppercase">${item.homeCategory ? 'App' : 'Game'}</span>
+                    </td>
+                    <td class="px-8 py-4 text-center">
+                      ${renderStatusBadge(item.status)}
+                    </td>
+                    <td class="px-8 py-4 text-right">
+                      <button onclick="editItem('${item.id}', '${item.homeCategory ? 'apps' : 'games'}')" class="text-accent hover:text-white transition-colors text-xs font-bold">Review / Edit</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+         </div>
+       `;
+    } else {
+       container.innerHTML = `
+         <div class="glass rounded-[32px] overflow-hidden">
+           <table class="w-full text-left">
+             <thead>
+               <tr class="text-muted text-[11px] font-black uppercase tracking-widest border-b border-white/5">
+                 <th class="px-8 py-4">User</th>
+                 <th class="px-8 py-4">ID</th>
+                 <th class="px-8 py-4 text-center">Submissions</th>
+                 <th class="px-8 py-4 text-right">Actions</th>
+               </tr>
+             </thead>
+             <tbody>
+               ${data.profiles.length === 0 ? `<tr><td colspan="4" class="text-center py-10 text-muted">No profiles found. Make sure the 'profiles' table exists and is populated via Auth.</td></tr>` : data.profiles.map(p => {
+                 const subsCount = data.apps.filter(a => a.user_id === p.id).length + data.games.filter(a => a.user_id === p.id).length;
+                 return `
+                 <tr class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer" onclick="viewUser('${p.id}')">
+                   <td class="px-8 py-4">
+                     <div class="flex items-center gap-3">
+                       <div class="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-blue-500 flex items-center justify-center text-xs text-white font-bold">
+                         ${p.email ? p.email.charAt(0).toUpperCase() : 'U'}
+                       </div>
+                       <span class="text-white font-bold text-sm">${p.email || 'Unknown User'}</span>
+                     </div>
+                   </td>
+                   <td class="px-8 py-4 text-muted text-xs">${p.id}</td>
+                   <td class="px-8 py-4 text-center">
+                     <span class="bg-white/10 text-white text-[10px] px-2.5 py-1 rounded-full font-bold">${subsCount}</span>
+                   </td>
+                   <td class="px-8 py-4 text-right text-muted">
+                     →
+                   </td>
+                 </tr>
+               `}).join('')}
+             </tbody>
+           </table>
+         </div>
+       `;
+    }
   } else if (currentRoute === 'sync') {
     container.innerHTML = `
       <div class="max-w-2xl mx-auto text-center py-10">
@@ -703,3 +812,4 @@ window.handleQuickApprove = handleQuickApprove;
 window.handleQuickReject = handleQuickReject;
 window.toggleRejectInput = toggleRejectInput;
 window.clearFilter = () => { filterCategory = null; renderCurrentView(); };
+window.viewUser = (id) => { selectedUserId = id; renderCurrentView(); };

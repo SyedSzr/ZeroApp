@@ -2,7 +2,7 @@
 function SubmitScreen() {
   const context = useApp();
   if (!context) return null;
-  const { supabase, liveCats, goBack } = context;
+  const { supabase, liveCats, goBack, user } = context;
 
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
@@ -26,6 +26,7 @@ function SubmitScreen() {
     try {
       const payload = {
         id,
+        user_id: user?.id,
         name,
         url: fd.get('url'),
         description: fd.get('description'),

@@ -2,7 +2,7 @@
 const { useState, useRef } = React;
 
 function GamesScreen() {
-  const { greeting, openDetail, go, toggleSaveApp, isSaved, liveGames, liveCats, launchApp } = useApp();
+  const { greeting, openDetail, go, toggleSaveApp, isSaved, liveGames, liveCats, launchApp, user } = useApp();
   const [viewMode, setViewMode] = useState('feed'); 
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeOverlay, setActiveOverlay] = useState(null); // 'comments' | 'leaderboard'
@@ -96,9 +96,11 @@ function GamesScreen() {
             <button className="tap w-10 h-10 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
               <span className="text-xl">🔔</span>
             </button>
-            <button className="tap bg-[#6b4eff] text-white text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(107,78,255,0.4)] whitespace-nowrap">
-              Sign In
-            </button>
+            {!user && (
+              <button onClick={() => go('auth')} className="tap bg-[#6b4eff] text-white text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(107,78,255,0.4)] whitespace-nowrap">
+                Sign In
+              </button>
+            )}
           </div>
         </div>
       </div>

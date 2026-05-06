@@ -430,7 +430,7 @@ function AppSquareCard({ app, onPress }) {
 
 // ── BottomNav ───────────────────────────────────────────────────────────────────
 function BottomNav({ active }) {
-  const { go, mainTab, setMainTab } = useApp();
+  const { go, mainTab, setMainTab, user } = useApp();
 
   function goGames() { setMainTab('games'); go('games'); }
   function goApps()  { setMainTab('apps');  go('apps');  }
@@ -440,7 +440,7 @@ function BottomNav({ active }) {
   const items = [
     { id: 'games',   label: 'Games',   icon: GamesNavIcon,  action: goGames },
     { id: 'apps',    label: 'Apps',    icon: AppsNavIcon,   action: goApps  },
-    { id: 'plus',    label: '',        icon: null,          action: () => go('submit') },
+    { id: 'plus',    label: '',        icon: null,          action: () => { if (user) go('submit'); else go('auth'); } },
     { id: 'explore', label: 'Explore', icon: ExploreIcon,   action: () => go('explore', { mode: null, exploreCategory: null }) },
     { id: 'profile', label: 'Profile', icon: ProfileIcon,   action: () => go('profile') },
   ];
