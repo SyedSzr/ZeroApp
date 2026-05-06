@@ -35,11 +35,18 @@ function TaskLayer() {
   );
 }
 
-function FloatingBubble({ task, index, onDragStart, onDragEnd }) {
+function FloatingBubble({ task, index, onDragStart, onDragEnd, targetPos }) {
   const { switchTask } = useApp();
-  const [pos, setPos] = React.useState({ x: 10, y: 150 + (index * 90) });
+  const [pos, setPos] = React.useState(targetPos || { x: 10, y: 150 + (index * 80) });
   const [isDragging, setIsDragging] = React.useState(false);
   const dragRef = React.useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 } });
+
+  // Sync position when not dragging to allow auto-stacking
+  React.useEffect(() => {
+    if (!isDragging && targetPos) {
+      setPos(targetPos);
+    }
+  }, [targetPos, isDragging]);
 
   const handleStart = (e) => {
     const touch = e.touches ? e.touches[0] : e;
@@ -68,30 +75,28 @@ function FloatingBubble({ task, index, onDragStart, onDragEnd }) {
     if (!isDragging) return;
     setIsDragging(false);
     
-    // Snap to nearest side
     const screenWidth = window.innerWidth;
-    const centerX = pos.x + 35; 
-    const finalX = centerX < screenWidth / 2 ? 10 : screenWidth - 80;
+    const centerX = pos.x + 30; 
+    const side = centerX < screenWidth / 2 ? 'L' : 'R';
     
-    setPos(prev => ({ ...prev, x: finalX }));
-    onDragEnd(task.id, pos.x + 35, pos.y + 35);
+    onDragEnd(task.id, pos.x + 30, pos.y + 30, side);
   };
 
   return (
     <div 
-      className={`fixed z-[90] w-[70px] h-[70px] transition-transform ${isDragging ? 'scale-110 z-[100]' : 'duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'}`}
+      className={`fixed z-[90] w-[60px] h-[60px] transition-transform ${isDragging ? 'scale-110 z-[100]' : 'duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]'}`}
       style={{ left: pos.x, top: pos.y, touchAction: 'none' }}
       onTouchStart={handleStart}
       onTouchMove={handleMove}
       onTouchEnd={handleEnd}
       onClick={() => !isDragging && switchTask(task.id)}
     >
-      <div className="w-full h-full rounded-[26px] bg-card border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden active:scale-90 transition-transform">
-         <AppLogo app={task.app} size="sm" />
-         <div className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-card shadow-sm"></div>
+      <div className="w-full h-full rounded-[22px] bg-card border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden active:scale-90 transition-transform">
+         <AppLogo app={task.app} size="xs" />
+         <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent border border-card shadow-sm"></div>
       </div>
-      <div className="absolute -bottom-5 left-0 right-0 text-center">
-         <span className="text-white text-[8px] font-black uppercase tracking-tighter opacity-40 truncate px-1 block">{task.app.name}</span>
+      <div className="absolute -bottom-4 left-0 right-0 text-center">
+         <span className="text-white text-[7px] font-black uppercase tracking-tighter opacity-40 truncate px-1 block">{task.app.name}</span>
       </div>
     </div>
   );
@@ -100,11 +105,12 @@ function FloatingBubble({ task, index, onDragStart, onDragEnd }) {
 function TaskDock() {
   const { tasks, activeTaskId, closeTask } = useApp();
   const [draggingId, setDraggingId] = React.useState(null);
+  const [taskSides, setTaskSides] = React.useState({}); // { taskId: 'L' | 'R' }
 
   if (tasks.length === 0 || activeTaskId) return null;
 
   const handleDragStart = (id) => setDraggingId(id);
-  const handleDragEnd = (id, x, y) => {
+  const handleDragEnd = (id, x, y, side) => {
     setDraggingId(null);
     const screenHeight = window.innerHeight;
     const screenWidth = window.innerWidth;
@@ -114,16 +120,35 @@ function TaskDock() {
     if (distToBottom < 150 && distToCenter < 100) {
       closeTask(id);
       if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+    } else {
+      setTaskSides(prev => ({ ...prev, [id]: side }));
     }
   };
   
+  // Calculate auto-stacking positions
+  const leftStack = [];
+  const rightStack = [];
+  
+  const positionedTasks = tasks.map((task, i) => {
+    const side = taskSides[task.id] || (i % 2 === 0 ? 'L' : 'R');
+    const stack = side === 'L' ? leftStack : rightStack;
+    const yIndex = stack.length;
+    stack.push(task.id);
+
+    const screenWidth = window.innerWidth;
+    const targetX = side === 'L' ? 10 : screenWidth - 70;
+    const targetY = 120 + (yIndex * 75);
+    
+    return { task, targetPos: { x: targetX, y: targetY } };
+  });
+
   return (
     <>
-      {tasks.map((task, i) => (
+      {positionedTasks.map(({ task, targetPos }) => (
         <FloatingBubble 
           key={task.id} 
           task={task} 
-          index={i} 
+          targetPos={targetPos}
           onDragStart={handleDragStart} 
           onDragEnd={handleDragEnd}
         />
