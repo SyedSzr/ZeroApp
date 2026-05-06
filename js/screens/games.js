@@ -2,7 +2,7 @@
 const { useState, useRef } = React;
 
 function GamesScreen() {
-  const { greeting, openDetail, go, toggleSaveApp, isSaved, liveGames, liveCats } = useApp();
+  const { greeting, openDetail, go, toggleSaveApp, isSaved, liveGames, liveCats, launchApp } = useApp();
   const [viewMode, setViewMode] = useState('feed'); 
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeOverlay, setActiveOverlay] = useState(null); // 'comments' | 'leaderboard'
@@ -138,7 +138,7 @@ function GamesScreen() {
                   </div>
 
                   {/* Play Button */}
-                  <button onClick={() => openDetail(game)}
+                  <button onClick={() => { launchApp(game); }}
                           className="w-[85%] py-3.5 rounded-xl bg-gradient-to-r from-[#5a3eff] to-[#7b5cff] text-white font-bold text-[16px] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(90,62,255,0.4)] active:scale-[0.97] transition-transform">
                      <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                      Play Now

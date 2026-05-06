@@ -210,13 +210,26 @@ function AppProvider({ children }) {
 
   // ── Launch app into viewer ──
   const launchApp = useCallback((app) => {
-    go('viewer', { viewerApp: app });
-    // Add to recents
-    setRecents(prev => {
-      const next = [{ ...app, openedAt: Date.now() }, ...prev.filter(r => r.id !== app.id)].slice(0, 20);
-      lsSet('zero_recents', next);
-      return next;
-    });
+    if (app && app.url) {
+      // Open in a new standalone-style window
+      const width = 450;
+      const height = 800;
+      const left = (window.screen.width / 2) - (width / 2);
+      const top = (window.screen.height / 2) - (height / 2);
+      
+      window.open(
+        app.url, 
+        `_blank_${app.id}`, 
+        `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`
+      );
+
+      // Add to recents
+      setRecents(prev => {
+        const next = [{ ...app, openedAt: Date.now() }, ...prev.filter(r => r.id !== app.id)].slice(0, 20);
+        lsSet('zero_recents', next);
+        return next;
+      });
+    }
   }, []);
 
   // ── Favorites ──
