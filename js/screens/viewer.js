@@ -72,7 +72,7 @@ function AppViewerScreen({ viewerApp: initialApp }) {
         )}
         <iframe
           key={ikey}
-          src={app.url}
+          src={app.url.includes('corsproxy.io') ? app.url : `https://corsproxy.io/?${encodeURIComponent(app.url)}`}
           title={app.name}
           className="w-full h-full border-0"
           style={{ opacity: loading || error ? 0 : 1, transition: 'opacity .4s' }}

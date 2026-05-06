@@ -17,7 +17,7 @@ function TaskLayer() {
                style={{ zIndex: isActive ? 50 : 0 }}>
             
             {/* App Content */}
-            <iframe src={task.app.url} className="w-full h-full border-none" />
+            <iframe src={task.app.url.includes('corsproxy.io') ? task.app.url : `https://corsproxy.io/?${encodeURIComponent(task.app.url)}`} className="w-full h-full border-none" />
 
             {/* Floating Control Hub */}
             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-black/40 backdrop-blur-xl border border-white/10 p-2 rounded-3xl shadow-2xl">
