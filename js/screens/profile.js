@@ -1,8 +1,8 @@
 // ── PROFILE SCREEN ────────────────────────────────────────────────────────────
-const { useState } = React;
+var { useState } = React;
 
 function ProfileScreen() {
-  const { favorites, savedApps, folders, createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder, toggleSaveApp, go, openDetail, user, supabase, signOut, userProfile, updateProfileName } = useApp();
+  var { savedApps, folders, createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder, toggleSaveApp, go, openDetail, user, supabase, signOut, userProfile, updateProfileName, t } = useApp();
   
   const [mySubmissions, setMySubmissions] = useState([]);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -11,8 +11,8 @@ function ProfileScreen() {
   React.useEffect(() => {
     if (user && supabase) {
       const fetchSubs = async () => {
-        const { data: apps } = await supabase.from('apps').select('*').eq('user_id', user.id);
-        const { data: games } = await supabase.from('games').select('*').eq('user_id', user.id);
+        var { data: apps } = await supabase.from('apps').select('*').eq('user_id', user.id);
+        var { data: games } = await supabase.from('games').select('*').eq('user_id', user.id);
         setMySubmissions([...(apps||[]), ...(games||[])]);
       };
       fetchSubs();
@@ -28,10 +28,9 @@ function ProfileScreen() {
   const [movingAppId, setMovingAppId] = useState(null);
 
   const menuItems = [
-    { icon: '⭐', label: 'Favorites',     badge: null,  action: () => {} },
-    { icon: '⚙️', label: 'Settings',      badge: null,  action: () => {} },
-    { icon: '❓', label: 'Help & Support', badge: null, action: () => {} },
-    { icon: 'ℹ️', label: 'About ZeroApp', badge: null,  action: () => {} },
+    { icon: '⚙️', label: t('settings'),      badge: null,  action: () => go('settings') },
+    { icon: '❓', label: t('help'),           badge: null, action: () => go('help') },
+    { icon: 'ℹ️', label: t('about'),          badge: null,  action: () => go('about') },
   ];
 
   const handleCreateFolder = () => {
@@ -87,12 +86,12 @@ function ProfileScreen() {
 
       {/* ── Header ── */}
       <div className="pt-safe px-5 flex items-start justify-between py-4 border-b border-border bg-surface flex-shrink-0">
-        <h1 className="text-white font-extrabold text-xl mt-1">Profile</h1>
+        <h1 className="text-white font-extrabold text-xl mt-1">{t('profile')}</h1>
         <div className="flex flex-col items-center gap-2">
-          <button className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-xl">⚙️</button>
+          <button onClick={() => go('settings')} className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-xl">⚙️</button>
           {!user && (
             <button onClick={() => go('auth')} className="tap bg-accent text-white text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(124,106,247,0.4)] whitespace-nowrap">
-              Sign In
+              {t('sign_in')}
             </button>
           )}
         </div>
@@ -109,9 +108,9 @@ function ProfileScreen() {
             <div className="flex-1 min-w-0">
               {isEditingName ? (
                 <div className="flex items-center gap-2">
-                  <input type="text" autoFocus value={editNameValue} onChange={e => setEditNameValue(e.target.value)} className="bg-surface border border-border text-white text-sm rounded-lg px-2 py-1 w-28 outline-none focus:border-accent" placeholder="Display Name" />
-                  <button onClick={() => { if(editNameValue.trim()) updateProfileName(editNameValue.trim()); setIsEditingName(false); }} className="text-accent text-xs font-bold px-2 py-1 bg-accent/10 rounded-md">Save</button>
-                  <button onClick={() => setIsEditingName(false)} className="text-muted text-xs hover:text-white px-1">Cancel</button>
+                  <input type="text" autoFocus value={editNameValue} onChange={e => setEditNameValue(e.target.value)} className="bg-surface border border-border text-white text-sm rounded-lg px-2 py-1 w-28 outline-none focus:border-accent" placeholder={t('display_name')} />
+                  <button onClick={() => { if(editNameValue.trim()) updateProfileName(editNameValue.trim()); setIsEditingName(false); }} className="text-accent text-xs font-bold px-2 py-1 bg-accent/10 rounded-md">{t('save')}</button>
+                  <button onClick={() => setIsEditingName(false)} className="text-muted text-xs hover:text-white px-1">{t('cancel')}</button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
@@ -122,7 +121,7 @@ function ProfileScreen() {
               )}
               <p className="text-muted text-sm mt-0.5 truncate max-w-[200px]">{user.email}</p>
             </div>
-            <button onClick={signOut} className="tap px-3 py-1.5 bg-red-500/10 text-red-500 rounded-full text-xs font-bold border border-red-500/20">Sign Out</button>
+            <button onClick={signOut} className="tap px-3 py-1.5 bg-red-500/10 text-red-500 rounded-full text-xs font-bold border border-red-500/20">{t('sign_out')}</button>
           </div>
         ) : (
           <div className="px-5 py-5 flex items-center justify-between">
@@ -135,15 +134,15 @@ function ProfileScreen() {
 
         {/* ── My Submissions (My Games) ── */}
         <div className="px-5 mt-2 mb-8">
-          <h2 className="text-white text-lg font-bold mb-4">My Submissions</h2>
+          <h2 className="text-white text-lg font-bold mb-4">{t('my_submissions')}</h2>
           
           {!user ? (
             <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center text-center">
               <span className="text-4xl mb-3">🔒</span>
-              <div className="text-white font-bold text-sm mb-1">Login Required</div>
-              <div className="text-muted text-xs mb-4">Sign in to view and track your submitted games and apps.</div>
+              <div className="text-white font-bold text-sm mb-1">{t('login_required')}</div>
+              <div className="text-muted text-xs mb-4">{t('login_sub')}</div>
               <button onClick={() => go('auth')} className="tap bg-accent text-white font-bold text-sm px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(124,106,247,0.4)]">
-                Login / Sign Up
+                {t('login_signup')}
               </button>
             </div>
           ) : (
@@ -151,8 +150,8 @@ function ProfileScreen() {
               {mySubmissions.length === 0 ? (
                 <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center text-center">
                   <span className="text-3xl mb-2">🚀</span>
-                  <div className="text-white font-bold text-sm">No submissions yet</div>
-                  <div className="text-muted text-xs mt-1">Click the + button below to submit your first game!</div>
+                  <div className="text-white font-bold text-sm">{t('no_submissions')}</div>
+                  <div className="text-muted text-xs mt-1">{t('no_submissions_sub')}</div>
                 </div>
               ) : (
                 mySubmissions.map(sub => (
@@ -195,13 +194,13 @@ function ProfileScreen() {
         <div className="px-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-white text-lg font-bold flex items-center gap-2">
-              My Apps
+              {t('my_apps')}
               <button onClick={() => setIsEditing(!isEditing)} className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${isEditing ? 'bg-accent/20 border-accent text-accent' : 'bg-transparent border-white/20 text-white/50'}`}>
-                {isEditing ? 'Done' : 'Edit'}
+                {isEditing ? t('done') : t('edit')}
               </button>
             </h2>
             <button onClick={() => setShowFolderModal(true)} className="tap text-accent text-sm font-bold bg-accent/10 px-3 py-1.5 rounded-full">
-              + Folder
+              + {t('new_folder').split(' ')[1]}
             </button>
           </div>
 
@@ -219,7 +218,7 @@ function ProfileScreen() {
                     <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center text-xl">📁</div>
                     <div className="flex-1 min-w-0">
                       <div className="text-white font-bold text-sm truncate">{folder.name}</div>
-                      <div className="text-muted text-xs">{folder.appIds.length} Apps</div>
+                      <div className="text-muted text-xs">{folder.appIds.length} {t('apps_count')}</div>
                     </div>
                   </div>
                   {isEditing && (
@@ -239,8 +238,8 @@ function ProfileScreen() {
           {savedApps.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl p-8 flex flex-col items-center text-center">
                <span className="text-4xl mb-3">📱</span>
-               <div className="text-white font-bold text-sm">No Apps Saved</div>
-               <div className="text-muted text-xs mt-1">Save apps from the Feed or Explore to see them here.</div>
+               <div className="text-white font-bold text-sm">{t('no_apps_saved')}</div>
+               <div className="text-muted text-xs mt-1">{t('no_apps_saved_sub')}</div>
             </div>
           ) : (
             <div className="grid grid-cols-4 gap-x-3 gap-y-5">
@@ -275,15 +274,15 @@ function ProfileScreen() {
       {activeFolderView && activeFolder && (
         <div className="absolute inset-0 z-40 flex flex-col bg-bg slide-up">
           <div className="pt-safe px-5 flex items-center justify-between py-4 border-b border-border bg-surface flex-shrink-0">
-            <button onClick={() => setActiveFolderView(null)} className="tap text-white font-bold text-base">← Back</button>
+            <button onClick={() => setActiveFolderView(null)} className="tap text-white font-bold text-base">← {t('back')}</button>
             <h2 className="text-white font-extrabold text-xl">{activeFolder.name}</h2>
             <button onClick={() => setIsEditing(!isEditing)} className={`text-[12px] font-bold px-3 py-1 rounded-full border ${isEditing ? 'bg-accent/20 border-accent text-accent' : 'bg-transparent border-white/20 text-white/50'}`}>
-              {isEditing ? 'Done' : 'Edit'}
+              {isEditing ? t('done') : t('edit')}
             </button>
           </div>
           <div className="flex-1 overflow-y-auto px-5 py-6">
             {activeFolderApps.length === 0 ? (
-              <div className="text-center text-muted text-sm mt-10">This folder is empty. Drag apps here to add them!</div>
+              <div className="text-center text-muted text-sm mt-10">{t('folder_empty')}</div>
             ) : (
               <div className="grid grid-cols-4 gap-x-3 gap-y-5">
                 {activeFolderApps.map(app => (
@@ -314,10 +313,10 @@ function ProfileScreen() {
         <div className="absolute inset-0 z-50 flex items-center justify-center px-5">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowFolderModal(false)}></div>
           <div className="bg-surface border border-border rounded-3xl w-full max-w-[340px] p-6 relative z-10 shadow-2xl slide-up flex flex-col max-h-[80vh]">
-            <h3 className="text-white font-bold text-lg mb-4 text-center">New Folder</h3>
+            <h3 className="text-white font-bold text-lg mb-4 text-center">{t('new_folder')}</h3>
             <input 
               type="text" 
-              placeholder="Folder Name" 
+              placeholder={t('folder_name')} 
               value={newFolderName}
               onChange={e => setNewFolderName(e.target.value)}
               className="w-full bg-card border border-border rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-accent mb-4 flex-shrink-0"
@@ -326,7 +325,7 @@ function ProfileScreen() {
             
             {savedApps.length > 0 && (
               <div className="flex-1 overflow-y-auto mb-4 border border-border rounded-xl bg-bg p-2 space-y-1">
-                <div className="text-muted text-[10px] font-bold px-2 py-1 uppercase tracking-wider">Select Apps to include:</div>
+                <div className="text-muted text-[10px] font-bold px-2 py-1 uppercase tracking-wider">{t('select_apps')}</div>
                 {savedApps.map(app => {
                   const isSelected = selectedAppsForFolder.includes(app.id);
                   return (
@@ -345,14 +344,289 @@ function ProfileScreen() {
             )}
 
             <div className="flex gap-3 mt-auto">
-              <button onClick={() => setShowFolderModal(false)} className="flex-1 py-3 rounded-xl bg-card border border-border text-white font-semibold text-sm">Cancel</button>
-              <button onClick={handleCreateFolder} className="flex-1 py-3 rounded-xl bg-accent text-white font-bold text-sm shadow-[0_0_15px_rgba(107,78,255,0.4)]">Create</button>
+              <button onClick={() => setShowFolderModal(false)} className="flex-1 py-3 rounded-xl bg-card border border-border text-white font-semibold text-sm">{t('cancel')}</button>
+              <button onClick={handleCreateFolder} className="flex-1 py-3 rounded-xl bg-accent text-white font-bold text-sm shadow-[0_0_15px_rgba(107,78,255,0.4)]">{t('create')}</button>
             </div>
           </div>
         </div>
       )}
 
-      <BottomNav active="profile" />
     </div>
   );
 }
+
+// ── SETTINGS SCREEN (Already largely localized) ──────────────────────────────────
+// I will just ensure "Privacy Policy" and "Terms of Service" are localized now.
+
+function SettingsScreen() {
+  var { user, signOut, goBack, userProfile, updateProfileName, t, lang, setLang, theme, setTheme } = useApp();
+  const [showNameModal, setShowNameModal] = React.useState(false);
+  const [newName, setNewName] = React.useState(userProfile?.display_name || '');
+
+  const handleEditName = () => {
+    setShowNameModal(true);
+  };
+
+  const handleSaveName = () => {
+    if (newName.trim()) {
+      updateProfileName(newName.trim());
+      setShowNameModal(false);
+    }
+  };
+
+  const languages = [
+    { code: 'en', label: 'English' },
+    { code: 'es', label: 'Español' },
+    { code: 'fr', label: 'Français' },
+    { code: 'zh', label: '中文 (Chinese)' },
+    { code: 'de', label: 'Deutsch' },
+    { code: 'ur', label: 'اردو (Urdu)' },
+    { code: 'hi', label: 'हिन्दी (Hindi)' },
+    { code: 'bn', label: 'বাংলা (Bengali)' },
+    { code: 'ar', label: 'العربية (Arabic)' }
+  ];
+
+  const sections = [
+    {
+      title: t('profile_settings'),
+      items: [
+        { label: t('display_name'), value: userProfile?.display_name || 'Not set', action: handleEditName },
+        { label: t('email'), value: user?.email || 'Guest', action: null },
+      ]
+    },
+    {
+      title: t('app_preferences'),
+      items: [
+        { 
+          label: t('dark_mode'), 
+          value: theme === 'dark' ? 'Dark' : 'Bright', 
+          action: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
+          isToggle: true 
+        },
+        { label: t('notifications'), value: 'Enabled', action: null },
+        { 
+          label: t('language'), 
+          value: languages.find(l => l.code === lang)?.label || 'English', 
+          isDropdown: true,
+          action: (e) => setLang(e.target.value)
+        },
+      ]
+    },
+    {
+      title: t('account'),
+      items: [
+        { label: t('privacy_policy'), value: '', action: () => {} },
+        { label: t('terms_service'), value: '', action: () => {} },
+      ]
+    }
+  ];
+
+  return (
+    <div className="slide-right flex flex-col h-full bg-bg relative">
+      <BackHeader title={t('settings')} />
+      
+      <div className="flex-1 overflow-y-auto no-sb p-5">
+        <div className="space-y-8">
+          {sections.map(section => (
+            <div key={section.title}>
+              <h3 className="text-muted text-[10px] font-black uppercase tracking-[0.2em] mb-3 ml-1">{section.title}</h3>
+              <div className="bg-card border border-border rounded-[24px] overflow-hidden">
+                {section.items.map((item, i) => (
+                  <div key={item.label} className={`w-full flex items-center justify-between px-5 py-4 text-left ${i !== section.items.length - 1 ? 'border-b border-border' : ''}`}>
+                    <span className="text-white text-sm font-semibold">{item.label}</span>
+                    <div className="flex items-center gap-2">
+                      {item.isToggle ? (
+                         <button onClick={item.action} className="tap flex items-center gap-2">
+                            <span className="text-muted text-xs uppercase font-bold tracking-tighter">{item.value}</span>
+                            <div className={`w-10 h-5 rounded-full relative transition-colors ${theme === 'dark' ? 'bg-accent' : 'bg-border'}`}>
+                               <div className={`absolute top-1 left-1 w-3 h-3 rounded-full bg-white transition-transform ${theme === 'dark' ? 'translate-x-5' : ''}`} />
+                            </div>
+                         </button>
+                      ) : item.isDropdown ? (
+                        <select 
+                          value={lang} 
+                          onChange={item.action}
+                          className="bg-card border border-border rounded-lg text-muted text-[10px] font-bold px-2 py-1 focus:outline-none cursor-pointer"
+                        >
+                          {languages.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+                        </select>
+                      ) : (
+                        <button onClick={item.action} disabled={!item.action} className={`flex items-center gap-2 ${item.action ? 'tap' : 'cursor-default'}`}>
+                          <span className="text-muted text-xs">{item.value}</span>
+                          {item.action && <span className="text-muted text-lg">›</span>}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {user && (
+            <div className="pt-4">
+              <button onClick={signOut} className="tap w-full py-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold text-sm">
+                {t('sign_out')}
+              </button>
+            </div>
+          )}
+
+          <div className="text-center pt-8 pb-12">
+            <p className="text-muted text-[10px] font-bold uppercase tracking-widest">{t('version')} 1.0.0</p>
+            <p className="text-muted/40 text-[9px] mt-1">© 2026 ZeroApp Systems</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Name Modal ── */}
+      {showNameModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center px-5">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowNameModal(false)}></div>
+          <div className="bg-surface border border-border rounded-3xl w-full max-w-[340px] p-6 relative z-10 shadow-2xl slide-up">
+            <h3 className="text-white font-bold text-lg mb-4 text-center">{t('display_name')}</h3>
+            <input 
+              type="text" 
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-accent mb-6"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button onClick={() => setShowNameModal(false)} className="flex-1 py-3 rounded-xl bg-card border border-border text-white font-semibold text-sm">{t('cancel')}</button>
+              <button onClick={handleSaveName} className="flex-1 py-3 rounded-xl bg-accent text-white font-bold text-sm shadow-[0_0_15px_rgba(107,78,255,0.4)]">{t('save')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── HELP & SUPPORT SCREEN ───────────────────────────────────────────────────
+function HelpSupportScreen() {
+  var { goBack, t } = useApp();
+
+  const faqs = [
+    { q: t('faq_1_q'), a: t('faq_1_a') },
+    { q: t('faq_2_q'), a: t('faq_2_a') },
+    { q: t('faq_3_q'), a: t('faq_3_a') },
+    { q: t('faq_4_q'), a: t('faq_4_a') }
+  ];
+
+  return (
+    <div className="slide-right flex flex-col h-full bg-bg">
+      <BackHeader title={t('help')} />
+      
+      <div className="flex-1 overflow-y-auto no-sb p-5">
+        <div className="text-center py-8">
+          <div className="w-20 h-20 bg-accent/10 rounded-[40px] flex items-center justify-center text-4xl mx-auto mb-4 border border-accent/20 shadow-2xl">🤝</div>
+          <h2 className="text-white text-xl font-black">{t('faq_title')}</h2>
+          <p className="text-muted text-sm mt-1">{t('faq_sub')}</p>
+        </div>
+
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-muted text-[10px] font-black uppercase tracking-widest mb-3 ml-1">{t('faq')}</h3>
+            <div className="space-y-3">
+              {faqs.map(faq => (
+                <div key={faq.q} className="bg-card border border-border rounded-2xl p-4">
+                  <h4 className="text-white text-sm font-bold mb-2">{faq.q}</h4>
+                  <p className="text-muted text-xs leading-relaxed">{faq.a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-muted text-[10px] font-black uppercase tracking-widest mb-3 ml-1">{t('contact_us')}</h3>
+            <div className="bg-card border border-border rounded-[24px] overflow-hidden">
+              <button className="w-full flex items-center justify-between px-5 py-4 text-left border-b border-border tap">
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">📧</span>
+                  <span className="text-white text-sm font-semibold">{t('email_support')}</span>
+                </div>
+                <span className="text-muted text-lg">›</span>
+              </button>
+              <button className="w-full flex items-center justify-between px-5 py-4 text-left tap">
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">💬</span>
+                  <span className="text-white text-sm font-semibold">{t('live_chat')}</span>
+                </div>
+                <span className="text-muted text-lg">›</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ABOUT SCREEN ────────────────────────────────────────────────────────────
+function AboutScreen() {
+  var { goBack, t } = useApp();
+
+  return (
+    <div className="slide-right flex flex-col h-full bg-bg">
+      <BackHeader title={t('about')} />
+      
+      <div className="flex-1 overflow-y-auto no-sb p-5">
+        <div className="text-center py-12">
+          <div className="w-24 h-24 bg-gradient-to-br from-accent to-violet-500 rounded-[40px] flex items-center justify-center text-5xl mx-auto mb-6 shadow-2xl glow-purple border border-white/20">⚡</div>
+          <h1 className="text-white text-3xl font-black tracking-tighter">ZeroApp</h1>
+          <p className="text-muted text-sm mt-1 font-bold uppercase tracking-widest opacity-60">Version 1.0.0 (Stable)</p>
+        </div>
+
+        <div className="space-y-8 px-2">
+          <div>
+            <h3 className="text-white text-lg font-bold mb-3">{t('vision')}</h3>
+            <p className="text-muted text-sm leading-relaxed">
+              {t('vision_desc')}
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-white text-lg font-bold mb-3">{t('key_features')}</h3>
+            <ul className="space-y-4">
+              <li className="flex items-start gap-3">
+                <span className="text-accent text-xl">🚀</span>
+                <div>
+                  <div className="text-white text-sm font-bold">{t('zero_install')}</div>
+                  <div className="text-muted text-xs mt-0.5">{t('zero_install_desc')}</div>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-accent text-xl">📱</span>
+                <div>
+                  <div className="text-white text-sm font-bold">{t('multi_tasking')}</div>
+                  <div className="text-muted text-xs mt-0.5">{t('multi_tasking_desc')}</div>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-accent text-xl">☁️</span>
+                <div>
+                  <div className="text-white text-sm font-bold">{t('cloud_sync')}</div>
+                  <div className="text-muted text-xs mt-0.5">{t('cloud_sync_desc')}</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div className="pt-8 border-t border-border">
+            <h3 className="text-white text-lg font-bold mb-4 text-center">{t('stay_connected')}</h3>
+            <div className="flex justify-center gap-6">
+              <button className="tap w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center text-xl">🌐</button>
+              <button className="tap w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center text-xl">🐦</button>
+              <button className="tap w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center text-xl">🐙</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+window.ProfileScreen = ProfileScreen;
+window.SettingsScreen = SettingsScreen;
+window.HelpSupportScreen = HelpSupportScreen;
+window.AboutScreen = AboutScreen;

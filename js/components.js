@@ -3,7 +3,7 @@
 // ── ZeroOS Multi-tasking System ──────────────────────────────────────────────
 
 function TaskLayer() {
-  const { tasks, activeTaskId, minimizeTask, closeTask } = useApp();
+  var { tasks, activeTaskId, minimizeTask, closeTask } = useApp();
   
   if (tasks.length === 0) return null;
 
@@ -36,7 +36,7 @@ function TaskLayer() {
 }
 
 function FloatingBubble({ task, index, onDragStart, onDragEnd, targetPos }) {
-  const { switchTask } = useApp();
+  var { switchTask } = useApp();
   const [pos, setPos] = React.useState(targetPos || { x: 10, y: 150 + (index * 80) });
   const [isDragging, setIsDragging] = React.useState(false);
   const dragRef = React.useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 } });
@@ -103,7 +103,7 @@ function FloatingBubble({ task, index, onDragStart, onDragEnd, targetPos }) {
 }
 
 function TaskDock() {
-  const { tasks, activeTaskId, closeTask } = useApp();
+  var { tasks, activeTaskId, closeTask, t } = useApp();
   const [draggingId, setDraggingId] = React.useState(null);
   const [taskSides, setTaskSides] = React.useState({}); // { taskId: 'L' | 'R' }
 
@@ -159,7 +159,7 @@ function TaskDock() {
          <div className="w-16 h-16 rounded-full border-2 border-dashed bg-red-500/10 border-red-500/30 flex items-center justify-center">
             <span className="text-2xl text-red-500">×</span>
          </div>
-         <span className="text-red-500 text-[10px] font-black uppercase tracking-widest">Close App</span>
+         <span className="text-red-500 text-[10px] font-black uppercase tracking-widest">{t('close_app')}</span>
       </div>
     </>
   );
@@ -371,6 +371,7 @@ const CATEGORY_ICONS = {
 
 // ── CategoryPill: modern icon chip for home category row ──────────────────────
 function CategoryPill({ cat, active, onPress }) {
+  const { t } = useApp();
   const IconComp = CATEGORY_ICONS[cat.id];
   return (
     <button onClick={() => onPress(cat.id)}
@@ -405,7 +406,7 @@ function CategoryPill({ cat, active, onPress }) {
         whiteSpace: 'nowrap',
         letterSpacing: '0.01em',
         transition: 'color 0.2s',
-      }}>{cat.label}</span>
+      }}>{t('cat_' + cat.id)}</span>
     </button>
   );
 }
@@ -430,7 +431,7 @@ function AppSquareCard({ app, onPress }) {
 
 // ── BottomNav ───────────────────────────────────────────────────────────────────
 function BottomNav({ active }) {
-  const { go, mainTab, setMainTab, user } = useApp();
+  var { go, mainTab, setMainTab, user, t } = useApp();
 
   function goGames() { setMainTab('games'); go('games'); }
   function goApps()  { setMainTab('apps');  go('apps');  }
@@ -438,11 +439,11 @@ function BottomNav({ active }) {
   const effectiveActive = active || mainTab;
 
   const items = [
-    { id: 'games',   label: 'Games',   icon: GamesNavIcon,  action: goGames },
-    { id: 'apps',    label: 'Apps',    icon: AppsNavIcon,   action: goApps  },
-    { id: 'plus',    label: '',        icon: null,          action: () => { if (user) go('submit'); else go('auth'); } },
-    { id: 'explore', label: 'Explore', icon: ExploreIcon,   action: () => go('explore', { mode: null, exploreCategory: null }) },
-    { id: 'profile', label: 'Profile', icon: ProfileIcon,   action: () => go('profile') },
+    { id: 'games',   label: t('games_nav'),   icon: GamesNavIcon,  action: goGames },
+    { id: 'apps',    label: t('apps_nav'),    icon: AppsNavIcon,   action: goApps  },
+    { id: 'plus',    label: '',               icon: null,          action: () => { if (user) go('submit'); else go('auth'); } },
+    { id: 'explore', label: t('explore_nav'), icon: ExploreIcon,   action: () => go('explore', { mode: null, exploreCategory: null }) },
+    { id: 'profile', label: t('profile_nav'), icon: ProfileIcon,   action: () => go('profile') },
   ];
 
   return (
@@ -514,7 +515,7 @@ function ProfileIcon({ active }) {
 
 // ── BackHeader ────────────────────────────────────────────────────────────────
 function BackHeader({ title, right }) {
-  const { goBack } = useApp();
+  var { goBack } = useApp();
   return (
     <div className="pt-safe flex items-center gap-3 px-4 py-3 border-b border-border bg-surface/80 backdrop-blur-xl flex-shrink-0" style={{zIndex:40}}>
       <button onClick={goBack} className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-white text-lg">←</button>

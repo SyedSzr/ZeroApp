@@ -6,6 +6,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="theme-color" content="#0d0d14"/>
+  <script>
+    window.onerror = function(msg, url, line) {
+      alert("Error: " + msg + "\nURL: " + url + "\nLine: " + line);
+      return false;
+    };
+  </script>
   <title>ZeroApp</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -17,45 +23,70 @@
         extend: {
           fontFamily: { sans: ['Inter','sans-serif'] },
           colors: {
-            bg:'#0d0d14', surface:'#16161f', card:'#1c1c28',
-            border:'#252535', accent:'#7c6af7', muted:'#5a5a7a',
+            bg: 'var(--bg)',
+            surface: 'var(--surface)',
+            card: 'var(--card)',
+            border: 'var(--border)',
+            accent: 'var(--accent)',
+            muted: 'var(--muted)',
           }
         }
       }
     }
   </script>
   <style>
-    :root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
-    *{-webkit-tap-highlight-color:transparent;box-sizing:border-box;margin:0;padding:0}
-    html,body,#root{height:100%;overflow:hidden}
-    body{background:#0d0d14;font-family:'Inter',sans-serif}
-    .no-sb::-webkit-scrollbar{display:none}
-    .no-sb{-ms-overflow-style:none;scrollbar-width:none}
+    :root {
+      --bg: #0d0d14;
+      --surface: #16161f;
+      --card: #1c1c28;
+      --border: #252535;
+      --accent: #7c6af7;
+      --muted: #5a5a7a;
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+    }
+    .light-mode {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --card: #f1f3f5;
+      --border: #dee2e6;
+      --accent: #5c7cfa;
+      --muted: #868e96;
+    }
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; overflow: hidden; background: var(--bg); transition: background 0.3s ease; }
+    body { font-family: 'Inter', sans-serif; color: var(--muted); }
+    /* .text-white should remain visible in both modes */
+    .light-mode .text-white { color: #1a1a2e; }
+    .light-mode .text-muted { color: #495057; }
+    
+    .no-sb::-webkit-scrollbar { display: none; }
+    .no-sb { -ms-overflow-style: none; scrollbar-width: none; }
     /* Transitions */
-    .fade-in{animation:fi .25s ease both}
-    .slide-up{animation:su .3s cubic-bezier(.22,1,.36,1) both}
-    .slide-right{animation:sr .3s cubic-bezier(.22,1,.36,1) both}
-    .slide-right-fast{animation:srf .4s cubic-bezier(0.32, 0.72, 0, 1) both}
-    @keyframes fi{from{opacity:0}to{opacity:1}}
-    @keyframes su{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
-    @keyframes sr{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
-    @keyframes srf{from{transform:translateX(100%)}to{transform:translateX(0)}}
+    .fade-in { animation: fi .25s ease both }
+    .slide-up { animation: su .3s cubic-bezier(.22,1,.36,1) both }
+    .slide-right { animation: sr .3s cubic-bezier(.22,1,.36,1) both }
+    .slide-right-fast { animation: srf .4s cubic-bezier(0.32, 0.72, 0, 1) both }
+    @keyframes fi { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes su { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: none } }
+    @keyframes sr { from { opacity: 0; transform: translateX(30px) } to { opacity: 1; transform: translateX(0) } }
+    @keyframes srf { from { transform: translateX(100%) } to { transform: translateX(0) } }
     /* tap */
-    .tap{transition:transform .1s ease,opacity .1s ease;cursor:pointer}
-    .tap:active{transform:scale(.95);opacity:.8}
+    .tap { transition: transform .1s ease, opacity .1s ease; cursor: pointer }
+    .tap:active { transform: scale(.95); opacity: .8 }
     /* glow */
-    .glow-purple{box-shadow:0 4px 24px rgba(124,106,247,.45)}
+    .glow-purple { box-shadow: 0 4px 24px rgba(124,106,247,.45) }
     /* spinner */
-    .spin{width:36px;height:36px;border-radius:50%;border:3px solid rgba(124,106,247,.2);border-top-color:#7c6af7;animation:ro .7s linear infinite}
-    @keyframes ro{to{transform:rotate(360deg)}}
+    .spin { width: 36px; height: 36px; border-radius: 50%; border: 3px solid rgba(124,106,247,.2); border-top-color: var(--accent); animation: ro .7s linear infinite }
+    @keyframes ro { to { transform: rotate(360deg) } }
     /* jiggle */
-    .jiggle{animation: jiggle 0.3s ease-in-out infinite}
-    @keyframes jiggle{0%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}100%{transform:rotate(-2deg)}}
+    .jiggle { animation: jiggle 0.3s ease-in-out infinite }
+    @keyframes jiggle { 0% { transform: rotate(-2deg) } 50% { transform: rotate(2deg) } 100% { transform: rotate(-2deg) } }
     /* safe areas */
-    .pt-safe{padding-top:var(--sat)}
-    .pb-safe{padding-bottom:calc(var(--sab) + 4px)}
+    .pt-safe { padding-top: var(--sat) }
+    .pb-safe { padding-bottom: calc(var(--sab) + 4px) }
     /* pill */
-    .pill{display:inline-flex;align-items:center;padding:6px 14px;border-radius:999px;font-size:.75rem;font-weight:600;white-space:nowrap;transition:all .15s}
+    .pill { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 999px; font-size: .75rem; font-weight: 600; white-space: nowrap; transition: all .15s }
   </style>
 </head>
 <body>
@@ -63,21 +94,21 @@
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script type="text/babel" src="js/data.js?v=38"></script>
-<script type="text/babel" src="js/store.js?v=38"></script>
-<script type="text/babel" src="js/components.js?v=38"></script>
-<script type="text/babel" src="js/screens/auth.js?v=38"></script>
-<script type="text/babel" src="js/screens/submit.js?v=38"></script>
-<script type="text/babel" src="js/screens/home.js?v=38"></script>
-<script type="text/babel" src="js/screens/games.js?v=38"></script>
-<script type="text/babel" src="js/screens/explore.js?v=38"></script>
-<script type="text/babel" src="js/screens/detail.js?v=38"></script>
-<script type="text/babel" src="js/screens/viewer.js?v=38"></script>
-<script type="text/babel" src="js/screens/search.js?v=38"></script>
-<script type="text/babel" src="js/screens/recent.js?v=38"></script>
-<script type="text/babel" src="js/screens/profile.js?v=38"></script>
-<script type="text/babel" src="js/seed.js?v=38"></script>
-<script type="text/babel" src="js/app.js?v=38"></script>
+<script type="text/babel" src="js/data.js?v=40"></script>
+<script type="text/babel" src="js/store.js?v=40"></script>
+<script type="text/babel" src="js/components.js?v=40"></script>
+<script type="text/babel" src="js/screens/auth.js?v=40"></script>
+<script type="text/babel" src="js/screens/submit.js?v=40"></script>
+<script type="text/babel" src="js/screens/home.js?v=40"></script>
+<script type="text/babel" src="js/screens/games.js?v=40"></script>
+<script type="text/babel" src="js/screens/explore.js?v=40"></script>
+<script type="text/babel" src="js/screens/detail.js?v=40"></script>
+<script type="text/babel" src="js/screens/viewer.js?v=40"></script>
+<script type="text/babel" src="js/screens/search.js?v=40"></script>
+<script type="text/babel" src="js/screens/recent.js?v=40"></script>
+<script type="text/babel" src="js/screens/profile.js?v=40"></script>
+<script type="text/babel" src="js/seed.js?v=40"></script>
+<script type="text/babel" src="js/app.js?v=40"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

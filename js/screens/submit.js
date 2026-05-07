@@ -2,7 +2,7 @@
 function SubmitScreen() {
   const context = useApp();
   if (!context) return null;
-  const { supabase, liveCats, goBack, user } = context;
+  var { supabase, liveCats, goBack, user } = context;
 
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
@@ -65,7 +65,7 @@ function SubmitScreen() {
         payload.screenshots = urls;
       }
 
-      const { error: sbErr } = await supabase.from('apps').insert(payload);
+      var { error: sbErr } = await supabase.from('apps').insert(payload);
       if (sbErr) throw sbErr;
       
       setSuccess(true);
@@ -82,13 +82,13 @@ function SubmitScreen() {
     const ext = file.name.split('.').pop();
     const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
     
-    const { data, error } = await supabase.storage
+    var { data, error } = await supabase.storage
       .from('media')
       .upload(fileName, file);
 
     if (error) throw error;
 
-    const { data: { publicUrl } } = supabase.storage
+    var { data: { publicUrl } } = supabase.storage
       .from('media')
       .getPublicUrl(fileName);
 
@@ -308,3 +308,4 @@ function SubmitScreen() {
     </div>
   );
 }
+window.SubmitScreen = SubmitScreen;

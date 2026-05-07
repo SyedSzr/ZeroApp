@@ -86,7 +86,7 @@ function ScreenWrapper({ children, isTop, canGoBack, goBack }) {
 
 // ── ROOT APP ──────────────────────────────────────────────────────────────────
 function AppShell() {
-  const { history, goBack } = useApp();
+  var { history, goBack } = useApp();
 
   const getScreenComponent = (frame) => {
     const props = frame.params || {};
@@ -102,6 +102,9 @@ function AppShell() {
       case 'profile':   return <ProfileScreen {...props} />;
       case 'submit':    return <SubmitScreen {...props} />;
       case 'auth':      return <AuthScreen {...props} />;
+      case 'settings':  return <SettingsScreen {...props} />;
+      case 'help':      return <HelpSupportScreen {...props} />;
+      case 'about':     return <AboutScreen {...props} />;
       default:          return <AppsScreen {...props} />;
     }
   };
@@ -121,11 +124,38 @@ function AppShell() {
 
       <TaskLayer />
       <TaskDock />
+      
+      {['apps', 'games', 'explore', 'profile'].includes(history[history.length-1].id) && (
+        <BottomNav active={history[history.length-1].id} />
+      )}
     </div>
   );
 }
 
 function App() {
+  const [error, setError] = React.useState(null);
+
+  React.useEffect(() => {
+    const handleError = (e) => setError(e.error || e.reason || e.message);
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleError);
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleError);
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full bg-bg p-8 text-center">
+        <div className="text-4xl mb-4">⚠️</div>
+        <h2 className="text-white text-lg font-bold mb-2">Something went wrong</h2>
+        <p className="text-muted text-xs mb-6">{error.toString()}</p>
+        <button onClick={() => window.location.reload()} className="px-6 py-2 bg-accent text-white rounded-xl text-sm font-bold">Reload App</button>
+      </div>
+    );
+  }
+
   return (
     <AppProvider>
       <AppShell />

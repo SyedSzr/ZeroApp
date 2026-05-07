@@ -1,20 +1,24 @@
 // ── RECENT / HISTORY SCREEN ───────────────────────────────────────────────────
-const { useState, useEffect, useMemo, useRef } = React;
+var { useState, useEffect, useMemo, useRef } = React;
 
 function RecentScreen() {
-  const { recents, clearRecents, openDetail, goBack } = useApp();
+  const { recents, clearRecents, openDetail, goBack, t } = useApp();
 
   function groupByDate(list) {
-    const groups = { Today: [], Yesterday: [], Earlier: [] };
+    const groups = {};
+    groups[t('today')] = [];
+    groups[t('yesterday')] = [];
+    groups[t('earlier')] = [];
+
     const now   = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const yest  = today - 86400000;
+    const todayTs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yestTs  = todayTs - 86400000;
 
     list.forEach(app => {
-      const t = app.openedAt || Date.now();
-      if (t >= today)     groups.Today.push(app);
-      else if (t >= yest) groups.Yesterday.push(app);
-      else                groups.Earlier.push(app);
+      const ts = app.openedAt || Date.now();
+      if (ts >= todayTs)     groups[t('today')].push(app);
+      else if (ts >= yestTs) groups[t('yesterday')].push(app);
+      else                groups[t('earlier')].push(app);
     });
     return groups;
   }
@@ -27,16 +31,16 @@ function RecentScreen() {
   }
 
   return (
-    <div className="slide-up flex flex-col h-full">
+    <div className="slide-up flex flex-col h-full bg-bg">
 
       {/* ── Header ── */}
       <div className="pt-safe px-5 flex items-center justify-between py-4 border-b border-border bg-surface flex-shrink-0">
         <div className="flex items-center gap-3">
           <button onClick={goBack} className="tap text-white text-xl">←</button>
-          <h1 className="text-white font-extrabold text-xl">Recent</h1>
+          <h1 className="text-white font-extrabold text-xl">{t('recent')}</h1>
         </div>
         {recents.length > 0 && (
-          <button onClick={clearRecents} className="tap text-accent text-sm font-semibold">Clear all</button>
+          <button onClick={clearRecents} className="tap text-accent text-sm font-semibold">{t('clear_all')}</button>
         )}
       </div>
 
@@ -45,13 +49,13 @@ function RecentScreen() {
         {recents.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-4">
             <span className="text-6xl">🕐</span>
-            <p className="text-white font-bold text-lg">No Recent Apps</p>
-            <p className="text-muted text-sm">Apps you open will appear here</p>
+            <p className="text-white font-bold text-lg">{t('no_recent')}</p>
+            <p className="text-muted text-sm">{t('no_recent_sub')}</p>
           </div>
         ) : (
           Object.entries(groups).map(([label, apps]) => apps.length > 0 && (
             <div key={label} className="mt-5">
-              <p className="px-5 text-white/40 text-xs font-bold uppercase tracking-widest mb-3">{label}</p>
+              <p className="px-5 text-muted text-xs font-bold uppercase tracking-widest mb-3">{label}</p>
               <div className="flex flex-col gap-2 px-4">
                 {apps.map(app => (
                   <button key={app.id + app.openedAt} onClick={() => openDetail(app)}
@@ -74,7 +78,6 @@ function RecentScreen() {
         )}
       </div>
 
-      <BottomNav active="home" />
     </div>
   );
 }

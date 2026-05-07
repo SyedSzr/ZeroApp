@@ -1,6 +1,6 @@
 // ── APP DETAIL SCREEN ─────────────────────────────────────────────────────────
 function AppDetailScreen({ detailApp: initialApp }) {
-  const { liveApps, liveGames, launchApp, toggleFav, isFav, toggleSaveApp, isSaved, goBack } = useApp();
+  const { liveApps, liveGames, launchApp, toggleSaveApp, isSaved, goBack, t } = useApp();
   
   const app = React.useMemo(() => {
     if (typeof initialApp === 'object' && initialApp !== null) return initialApp;
@@ -16,21 +16,17 @@ function AppDetailScreen({ detailApp: initialApp }) {
       <div className="spin" />
     </div>
   );
-  const fav = isFav(app.id);
 
   const features = ['Instant Access', 'No Installation', 'Secure & Private', 'Works Everywhere'];
 
   return (
     <>
-      <div className="slide-right flex flex-col h-full">
+      <div className="slide-right flex flex-col h-full bg-bg">
 
         {/* ── Top Bar ── */}
         <div className="pt-safe flex items-center gap-2 px-4 py-3 border-b border-border bg-surface/80 backdrop-blur-xl flex-shrink-0">
           <button onClick={goBack} className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-white text-lg">←</button>
           <div className="flex-1" />
-          <button onClick={() => toggleFav(app)} className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-xl">
-            {fav ? '❤️' : '🤍'}
-          </button>
           <button className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-xl">⋮</button>
         </div>
 
@@ -53,24 +49,24 @@ function AppDetailScreen({ detailApp: initialApp }) {
                   <span className="text-white font-bold">{app.rating}</span>
                   <span className="text-white text-[10px]">★</span>
                 </div>
-                <span className="text-muted text-[10px]">{app.reviews} reviews</span>
+                <span className="text-muted text-[10px]">{app.reviews} {t('reviews')}</span>
               </div>
               <div className="w-px h-6 bg-border"></div>
               <div className="flex flex-col items-center">
                 <span className="text-white font-bold">100K+</span>
-                <span className="text-muted text-[10px]">Downloads</span>
+                <span className="text-muted text-[10px]">{t('downloads')}</span>
               </div>
               <div className="w-px h-6 bg-border"></div>
               <div className="flex flex-col items-center">
                 <span className="text-white font-bold text-sm bg-card border border-border px-1.5 rounded-sm">E</span>
-                <span className="text-muted text-[10px]">Everyone</span>
+                <span className="text-muted text-[10px]">{t('everyone')}</span>
               </div>
             </div>
 
             {/* ── Action Buttons ── */}
             <button onClick={() => launchApp(app)}
               className="tap w-full flex items-center justify-center gap-2 py-3.5 rounded-full bg-accent text-white font-bold text-[15px] mb-3">
-              <span>Launch App</span>
+              <span>{t('launch_app')}</span>
             </button>
             
             <button onClick={() => toggleSaveApp(app)}
@@ -79,7 +75,7 @@ function AppDetailScreen({ detailApp: initialApp }) {
                   ? 'bg-transparent border-accent text-accent' 
                   : 'bg-transparent border-border text-accent hover:border-accent'
               }`}>
-              {isSaved(app.id) ? 'Saved' : 'Save App'}
+              {isSaved(app.id) ? t('saved') : t('save_app')}
             </button>
           </div>
 
@@ -99,7 +95,7 @@ function AppDetailScreen({ detailApp: initialApp }) {
           {/* ── About this app ── */}
           <div className="px-5 mb-6">
             <button onClick={() => setShowFullDesc(true)} className="tap w-full flex items-center justify-between mb-3">
-              <h3 className="text-white font-bold text-base">About this app</h3>
+              <h3 className="text-white font-bold text-base">{t('about_app')}</h3>
               <span className="text-accent text-xl">→</span>
             </button>
             <p onClick={() => setShowFullDesc(true)} className="tap text-white/70 text-sm leading-relaxed line-clamp-3 text-left">{app.description}</p>
