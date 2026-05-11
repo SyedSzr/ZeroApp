@@ -57,15 +57,7 @@ function GamesScreen() {
   });
 
   if (viewMode === 'discover') {
-    return <GamesDiscoveryView
-      onBack={() => setViewMode('feed')}
-      activeCategory={activeCategory}
-      setActiveCategory={setActiveCategory}
-      sectionRefs={sectionRefs}
-      openDetail={openDetail}
-      go={go}
-      liveCats={liveCats}
-    />;
+    return <GamesDiscoveryView onBack={() => setViewMode('feed')} />;
   }
 
   return (
@@ -274,82 +266,202 @@ function GamesScreen() {
 }
 
 // ── DISCOVERY VIEW (The previous grid layout) ──────────────────────────────────
-function GamesDiscoveryView({ onBack, activeCategory, setActiveCategory, sectionRefs, openDetail, go, liveCats }) {
-  const { liveGames, t } = useApp();
+function GamesDiscoveryView({ onBack }) {
+  const { openDetail, go, liveGames, liveCats, t, getPromoItems } = useApp();
   const gameCategories = liveCats.filter(c => c.type === 'game');
-  function handleCategoryPress(catId) {
-    if (activeCategory === catId) { setActiveCategory(null); return; }
-    setActiveCategory(catId);
-    setTimeout(() => {
-      const el = sectionRefs.current[catId];
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 80);
-  }
 
-  const categoriesToShow = activeCategory
-    ? gameCategories.filter(c => c.id === activeCategory)
-    : gameCategories;
+  const featuredGame = getPromoItems('featured_game', 'game')?.[0] || liveGames.find(g => g.is_featured) || liveGames[0];
+  const recommended = getPromoItems('recommended_games', 'game') || liveGames.slice(0, 6);
+  const trending = getPromoItems('trending_games', 'game') || liveGames.slice(6, 12);
+  const featuredGames = getPromoItems('featured_games', 'game') || liveGames.filter(g => g.is_featured).slice(0, 8);
+  const hotRightNow = getPromoItems('hot_right_now', 'game') || liveGames.slice(3, 9);
+  const topPicks = getPromoItems('top_pick_for_you', 'game') || liveGames.slice(12, 18);
+  const editorsPicks = getPromoItems('editors_picks', 'game') || liveGames.slice(1, 7);
+  const popular = getPromoItems('popular_games', 'game') || liveGames.slice(8, 14);
+  const newExp = getPromoItems('new_experience', 'game') || liveGames.slice(15, 21);
+  const superGames = getPromoItems('super_games', 'game') || liveGames.slice(0, 4);
+  const mightLike = getPromoItems('games_might_like', 'game') || liveGames.slice(10, 16);
+  const personalized = getPromoItems('personalize_recommendations', 'game') || liveGames.slice(5, 11);
+  const crowdFavs = getPromoItems('crowd_favorites', 'game') || liveGames.slice(2, 8);
+  const monthBest = getPromoItems('this_month_best', 'game') || liveGames.slice(4, 10);
+
+  const heroBgs = [
+    'linear-gradient(135deg,#1a1a3e 0%,#2d1b69 40%,#11071f 100%)',
+    'linear-gradient(135deg,#0f2027 0%,#203a43 50%,#2c5364 100%)',
+    'linear-gradient(135deg,#1f4037 0%,#244c3c 50%,#0f2027 100%)',
+    'linear-gradient(135deg,#3a1c71 0%,#d76d77 50%,#ffaf7b 100%)',
+    'linear-gradient(135deg,#141e30 0%,#243b55 100%)',
+  ];
+
+  const SectionHeader = ({ title, onSeeAll }) => (
+    <div className="px-5 flex items-center justify-between mb-4 mt-8">
+      <span className="text-white font-black text-xl tracking-tight">{t(title)}</span>
+      {onSeeAll && (
+        <button onClick={onSeeAll} className="tap text-accent text-xs font-bold uppercase tracking-widest">
+          {t('see_all')} →
+        </button>
+      )}
+    </div>
+  );
+
+  const HorizontalScroll = ({ apps, size = 'md' }) => (
+    <div className="flex gap-5 px-5 overflow-x-auto no-sb pb-2">
+      {apps.map(app => (
+        <button key={app.id} onClick={() => openDetail(app)}
+          className="tap flex-shrink-0 flex flex-col items-center" style={{ width: size === 'lg' ? 115 : size === 'md' ? 86 : 64 }}>
+          <div className="w-full aspect-square flex items-center justify-center transition-transform active:scale-95 duration-200">
+            <AppIcon app={app} size={size} />
+          </div>
+          <div className="mt-2 w-full text-center px-0.5">
+            <div className="text-white text-[11px] font-bold leading-tight truncate">{app.name}</div>
+            <div className="text-muted text-[9px] mt-0.5 uppercase tracking-widest truncate">{t('cat_' + app.gameCategory)}</div>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
 
   return (
-    <div className="slide-up flex flex-col h-full" style={{ background: '#000' }}>
-      <div className="flex-1 overflow-y-auto no-sb pb-24">
-        <div className="pt-safe px-5 pt-6 pb-2">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <button onClick={onBack} className="text-[#fff]/40 text-2xl">←</button>
-              <h1 className="text-[#fff] text-2xl font-black tracking-tight">{t('discover')}</h1>
-            </div>
-            <button className="w-10 h-10 rounded-full bg-[#fff]/5 border border-[#fff]/10 flex items-center justify-center text-xl">🏆</button>
-          </div>
-          <div className="relative mb-6" onClick={() => go('search')}>
-            <div className="flex items-center gap-3 bg-[#1A1A1A] border border-[#fff]/5 rounded-2xl py-4 px-5">
-              <span className="text-[#fff]/40">🔍</span>
-              <span className="text-[#fff]/40 text-sm font-medium">{t('search_games')}</span>
-            </div>
+    <div className="slide-up flex flex-col h-full bg-bg">
+      <div className="flex-1 overflow-y-auto no-sb pb-32">
+        
+        {/* ── Header ── */}
+        <div className="pt-safe flex-shrink-0 bg-bg border-b border-border">
+          <div className="flex items-center justify-between px-4 pt-3 pb-2">
+            <button onClick={onBack} className="tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-white text-lg">←</button>
+            <span className="text-white font-extrabold text-base tracking-tight">🎮 {t('discover')}</span>
+            <button onClick={() => go('search')} className="tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-muted text-lg">🔍</button>
           </div>
         </div>
 
-        <div className="px-5 mb-8">
-          <h2 className="text-[#fff] text-lg font-bold mb-5 tracking-tight">{t('categories')}</h2>
-          <div className="flex gap-6 overflow-x-auto no-sb">
-            {gameCategories.map(cat => (
-              <button key={cat.id} onClick={() => handleCategoryPress(cat.id)}
-                className="tap flex-shrink-0 flex flex-col items-center gap-3">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${activeCategory === cat.id ? 'bg-accent shadow-[0_0_20px_rgba(155,132,255,0.4)]' : 'bg-[#fff]/5'}`}>
-                  <span className="text-2xl">{cat.emoji}</span>
+        {/* ── 1. Featured Game (Large Image) ── */}
+        {featuredGame && (
+          <div className="mt-6 px-5">
+            <div className="flex items-center justify-between mb-4">
+               <span className="text-white font-black text-xl tracking-tight">{t('featured_game')}</span>
+            </div>
+            <button onClick={() => openDetail(featuredGame)}
+              className="tap w-full group relative flex flex-col">
+              <div className="w-full aspect-[16/9] rounded-3xl overflow-hidden relative border border-border bg-surface">
+                {featuredGame.featured_image ? (
+                  <img src={featuredGame.featured_image} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-30" style={{ background: heroBgs[0] }}>
+                     <span className="text-6xl">{featuredGame.emoji}</span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
+                   <AppIcon app={featuredGame} size="sm" />
+                   <div className="flex-1 text-left">
+                      <div className="text-white font-bold text-lg leading-tight">{featuredGame.name}</div>
+                      <div className="text-white/60 text-xs">{t('cat_' + featuredGame.gameCategory)} · ★ {featuredGame.rating}</div>
+                   </div>
                 </div>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${activeCategory === cat.id ? 'text-[#fff]' : 'text-[#fff]/40'}`}>{t('cat_' + cat.id)}</span>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* ── 2. Recommended Games ── */}
+        <SectionHeader title="recommended_games" />
+        <HorizontalScroll apps={recommended} size="lg" />
+
+        {/* ── 3. Trending Games ── */}
+        <SectionHeader title="trending_games" />
+        <HorizontalScroll apps={trending} size="md" />
+
+        {/* ── 4. Featured Games ── */}
+        <SectionHeader title="featured_games" />
+        <HorizontalScroll apps={featuredGames} size="md" />
+
+        {/* ── 5. Hot Right Now ── */}
+        <SectionHeader title="hot_right_now" />
+        <HorizontalScroll apps={hotRightNow} size="md" />
+
+        {/* ── 6. Top Pick For You ── */}
+        <SectionHeader title="top_pick_for_you" />
+        <HorizontalScroll apps={topPicks} size="md" />
+
+        {/* ── 7. Editors Picks ── */}
+        <SectionHeader title="editors_picks" />
+        <div className="px-5 grid grid-cols-2 gap-4">
+          {editorsPicks.slice(0, 4).map(game => (
+            <button key={game.id} onClick={() => openDetail(game)}
+              className="tap flex items-center gap-3 p-2 bg-surface rounded-2xl border border-border">
+              <AppIcon app={game} size="xs" />
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-white text-xs font-bold truncate">{game.name}</div>
+                <div className="text-muted text-[9px] truncate uppercase">{t('cat_' + game.gameCategory)}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* ── 8. Popular Games ── */}
+        <SectionHeader title="popular_games" />
+        <HorizontalScroll apps={popular} size="md" />
+
+        {/* ── 9. New Experience ── */}
+        <SectionHeader title="new_experience" />
+        <HorizontalScroll apps={newExp} size="md" />
+
+        {/* ── 10. Super Games ── */}
+        <SectionHeader title="super_games" />
+        <div className="px-5 flex flex-col gap-3">
+          {superGames.map(game => (
+            <button key={game.id} onClick={() => openDetail(game)}
+              className="tap flex items-center gap-4 p-3 bg-surface rounded-2xl border border-border">
+              <AppIcon app={game} size="sm" />
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-white text-base font-bold truncate">{game.name}</div>
+                <div className="text-muted text-xs truncate">{game.desc || t('cat_' + game.gameCategory)}</div>
+              </div>
+              <div className="text-accent font-bold text-xs uppercase tracking-widest">{t('play_now')}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* ── 11. Games You might Like ── */}
+        <SectionHeader title="games_might_like" />
+        <HorizontalScroll apps={mightLike} size="md" />
+
+        {/* ── 12. Personalize Recomendations ── */}
+        <SectionHeader title="personalize_recommendations" />
+        <div className="px-5">
+           <PersonalizedCard 
+             type="game" 
+             data={liveGames} 
+             t={t} 
+             openDetail={openDetail} 
+           />
+        </div>
+
+        {/* ── 13. Crowd Favorites ── */}
+        <SectionHeader title="crowd_favorites" />
+        <HorizontalScroll apps={crowdFavs} size="md" />
+
+        {/* ── 14. This Month's Best ── */}
+        <SectionHeader title="this_month_best" />
+        <div className="px-5 pb-10">
+          <div className="grid grid-cols-1 gap-4">
+            {monthBest.map((game, idx) => (
+              <button key={game.id} onClick={() => openDetail(game)}
+                className="tap flex items-center gap-4">
+                <span className="text-white/20 font-black text-2xl italic w-8 text-center">{idx + 1}</span>
+                <AppIcon app={game} size="sm" />
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-white text-base font-bold truncate">{game.name}</div>
+                  <div className="text-muted text-xs truncate uppercase tracking-widest">{t('cat_' + game.gameCategory)}</div>
+                </div>
+                <div className="flex items-center gap-1 text-amber-400 font-bold text-sm">
+                   <span>★</span> {game.rating}
+                </div>
               </button>
             ))}
           </div>
         </div>
 
-        <div className="px-5">
-          {categoriesToShow.map(cat => {
-            const catGames = liveGames.filter(g => g.gameCategory === cat.id);
-            if (catGames.length === 0) return null;
-            return (
-              <div key={cat.id} ref={el => sectionRefs.current[cat.id] = el} className="mb-12">
-                <h3 className="text-[#fff] font-black text-xs uppercase mb-5 tracking-[0.2em] opacity-40">{t('cat_' + cat.id)}</h3>
-                <div className="grid grid-cols-3 gap-5">
-                  {catGames.slice(0, 6).map(game => (
-                    <button key={game.id} onClick={() => openDetail(game)} className="tap group flex flex-col items-center w-full">
-                      <div className="aspect-square w-full flex items-center justify-center mb-3 transition-transform active:scale-95 duration-200">
-                        <AppLogo app={game} size="md" />
-                      </div>
-                      <div className="w-full text-center px-0.5">
-                        <div className="text-[#fff] text-[11px] font-bold truncate leading-tight">{game.name}</div>
-                        <div className="flex items-center justify-center gap-1 mt-1 text-[10px] text-amber-400 font-bold">
-                          <span>★</span> {game.rating || "4.8"}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );

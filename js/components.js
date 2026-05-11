@@ -536,3 +536,96 @@ function StarRating({ rating }) {
     </div>
   );
 }
+function PersonalizedCard({ type, data, t, openDetail }) {
+  const [query, setQuery] = React.useState('');
+  const [filter, setFilter] = React.useState('all'); // 'all', 'top_rated', 'new'
+  
+  const results = React.useMemo(() => {
+    let list = data;
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      list = list.filter(item => 
+        item.name.toLowerCase().includes(q) || 
+        (item.desc && item.desc.toLowerCase().includes(q)) ||
+        (item.category && item.category.toLowerCase().includes(q)) ||
+        (item.gameCategory && item.gameCategory.toLowerCase().includes(q))
+      );
+    }
+    
+    if (filter === 'top_rated') {
+      list = [...list].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    } else if (filter === 'new') {
+      list = [...list].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    }
+    
+    return list.slice(0, 4);
+  }, [query, filter, data]);
+
+  return (
+    <div className="bg-gradient-to-r from-accent/20 to-purple-900/20 rounded-3xl p-6 border border-accent/20">
+      <div className="flex items-center gap-4 mb-4">
+        <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center text-2xl">
+          {type === 'app' ? '✨' : '🎮'}
+        </div>
+        <div className="flex-1">
+          <div className="text-white font-bold text-lg">{t('personalize_recommendations')}</div>
+          <div className="text-white/60 text-sm">
+            {type === 'app' ? 'Tell us what apps you need' : 'Find your next favorite game'}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="relative">
+          <input 
+            type="text" 
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={type === 'app' ? "E.g. Photo editor, AI..." : "E.g. Action, Racing..."}
+            className="w-full bg-black/40 border border-white/10 rounded-2xl py-3 px-4 text-white text-sm focus:outline-none focus:border-accent/50 transition-colors"
+          />
+          {query && (
+            <button onClick={() => setQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted text-xs font-bold">CLEAR</button>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setFilter('all')}
+            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${filter === 'all' ? 'bg-accent text-white shadow-lg' : 'bg-white/5 text-muted hover:bg-white/10'}`}>
+            All
+          </button>
+          <button 
+            onClick={() => setFilter('top_rated')}
+            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${filter === 'top_rated' ? 'bg-accent text-white shadow-lg' : 'bg-white/5 text-muted hover:bg-white/10'}`}>
+            Top Rated
+          </button>
+          <button 
+            onClick={() => setFilter('new')}
+            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${filter === 'new' ? 'bg-accent text-white shadow-lg' : 'bg-white/5 text-muted hover:bg-white/10'}`}>
+            New Arrival
+          </button>
+        </div>
+
+        {results.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            {results.map(item => (
+              <button key={item.id} onClick={() => openDetail(item)}
+                className="tap flex items-center gap-3 p-2.5 bg-black/20 rounded-2xl border border-white/5 hover:border-accent/30 transition-all">
+                <AppIcon app={item} size="xs" />
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-white text-[11px] font-bold truncate">{item.name}</div>
+                  <div className="text-amber-400 text-[9px] font-bold">★ {item.rating}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="py-8 text-center">
+            <span className="text-muted text-xs">No matches found. Try another query!</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

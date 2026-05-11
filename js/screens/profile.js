@@ -161,6 +161,20 @@ function ProfileScreen() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-white font-bold text-sm truncate">{sub.name}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-muted text-[10px] uppercase tracking-widest">{sub.region || 'Global'}</span>
+                        <button 
+                          onClick={async () => {
+                            const newRegion = prompt('Enter Region (Global, PK, US, UK, AE):', sub.region || 'Global');
+                            if (newRegion && newRegion !== sub.region) {
+                              const { error } = await supabase.from(sub.gameCategory ? 'games' : 'apps').update({ region: newRegion }).eq('id', sub.id);
+                              if (!error) window.location.reload();
+                            }
+                          }}
+                          className="text-accent text-[9px] font-bold hover:underline">
+                          Change
+                        </button>
+                      </div>
                       {sub.status === 'rejected' && sub.rejection_comment && (
                         <div className="text-red-400 text-[10px] mt-0.5 leading-tight line-clamp-2">{sub.rejection_comment}</div>
                       )}
@@ -359,7 +373,7 @@ function ProfileScreen() {
 // I will just ensure "Privacy Policy" and "Terms of Service" are localized now.
 
 function SettingsScreen() {
-  var { user, signOut, goBack, userProfile, updateProfileName, t, lang, setLang, theme, setTheme } = useApp();
+  var { user, signOut, goBack, userProfile, updateProfileName, t, lang, setLang, theme, setTheme, userRegion, setUserRegion } = useApp();
   const [showNameModal, setShowNameModal] = React.useState(false);
   const [newName, setNewName] = React.useState(userProfile?.display_name || '');
 
@@ -408,7 +422,23 @@ function SettingsScreen() {
           label: t('language'), 
           value: languages.find(l => l.code === lang)?.label || 'English', 
           isDropdown: true,
+          dropdownOptions: languages,
+          currentValue: lang,
           action: (e) => setLang(e.target.value)
+        },
+        { 
+          label: t('region'), 
+          value: 'Global', 
+          isDropdown: true,
+          dropdownOptions: [
+            { code: 'Global', label: 'Global' },
+            { code: 'PK', label: 'Pakistan' },
+            { code: 'US', label: 'USA' },
+            { code: 'UK', label: 'UK' },
+            { code: 'AE', label: 'UAE' }
+          ],
+          currentValue: userRegion,
+          action: (e) => setUserRegion(e.target.value)
         },
       ]
     },
@@ -444,11 +474,11 @@ function SettingsScreen() {
                          </button>
                       ) : item.isDropdown ? (
                         <select 
-                          value={lang} 
+                          value={item.currentValue} 
                           onChange={item.action}
                           className="bg-card border border-border rounded-lg text-muted text-[10px] font-bold px-2 py-1 focus:outline-none cursor-pointer"
                         >
-                          {languages.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+                          {item.dropdownOptions.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
                         </select>
                       ) : (
                         <button onClick={item.action} disabled={!item.action} className={`flex items-center gap-2 ${item.action ? 'tap' : 'cursor-default'}`}>

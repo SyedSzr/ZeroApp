@@ -5,7 +5,7 @@ const Ctx = createContext(null);
 function useApp() { return useContext(Ctx); }
 
 function ls(key, def) { try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? def; } catch { return def; } }
-function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch { } }
 
 // ── SUPABASE CLIENT ───────────────────────────────────────────────────────────
 const SB_URL = 'https://sjotifqahfcylcooaqxm.supabase.co';
@@ -14,10 +14,10 @@ const supabase = (typeof window.supabase !== 'undefined') ? window.supabase.crea
 
 function AppProvider({ children }) {
   // ── Catalog State (Live from Supabase) ──
-  const [liveApps, setLiveApps]   = useState(typeof APPS !== 'undefined' ? APPS : []);
+  const [liveApps, setLiveApps] = useState(typeof APPS !== 'undefined' ? APPS : []);
   const [liveGames, setLiveGames] = useState(typeof GAMES !== 'undefined' ? GAMES : []);
-  const [liveCats, setLiveCats]   = useState(typeof HOME_CATEGORIES !== 'undefined' ? [...HOME_CATEGORIES.map(c=>({...c,type:'app'})), ...GAME_CATEGORIES.map(c=>({...c,type:'game'}))] : []);
-  const [settings, setSettings]   = useState({ app_name: 'ZeroApp' });
+  const [liveCats, setLiveCats] = useState(typeof HOME_CATEGORIES !== 'undefined' ? [...HOME_CATEGORIES.map(c => ({ ...c, type: 'app' })), ...GAME_CATEGORIES.map(c => ({ ...c, type: 'game' }))] : []);
+  const [settings, setSettings] = useState({ app_name: 'ZeroApp' });
 
   // ── Auth State ──
   const [user, setUser] = useState(null);
@@ -26,7 +26,7 @@ function AppProvider({ children }) {
 
   useEffect(() => {
     if (!supabase) return;
-    
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user || null);
@@ -43,7 +43,7 @@ function AppProvider({ children }) {
   useEffect(() => {
     if (user && supabase) {
       supabase.from('profiles').select('*').eq('id', user.id).single()
-        .then(({data, error}) => {
+        .then(({ data, error }) => {
           if (data) setUserProfile(data);
         });
     } else {
@@ -68,7 +68,7 @@ function AppProvider({ children }) {
   const signUp = useCallback(async (email, password) => await supabase.auth.signUp({ email, password }), []);
   const signOut = useCallback(async () => await supabase.auth.signOut(), []);
   const signInWithGoogle = useCallback(async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({ 
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: window.location.origin + window.location.pathname,
@@ -83,27 +83,32 @@ function AppProvider({ children }) {
   }, []);
 
   // ── Navigation state (Native Stack) ──
-  const [history, setHistory]     = useState([{ key: 'root-apps', id: 'apps', params: {} }]);
-  const [mainTab, setMainTab]     = useState('apps'); // 'apps' | 'games'
+  const [history, setHistory] = useState([{ key: 'root-apps', id: 'apps', params: {} }]);
+  const [mainTab, setMainTab] = useState('apps'); // 'apps' | 'games'
 
   const screen = history[history.length - 1].id;
 
   // ── Domain state ──
-  const [searchQ, setSearchQ]             = useState('');
+  const [searchQ, setSearchQ] = useState('');
 
   // ── Persistent ──
-  const [recents, setRecents]     = useState(() => ls('zero_recents', []));
+  const [recents, setRecents] = useState(() => ls('zero_recents', []));
   const [savedApps, setSavedApps] = useState(() => ls('zero_saved_apps', []));
-  const [folders, setFolders]     = useState(() => ls('zero_folders', []));
-  const [lang, setLangState]      = useState(() => ls('zero_lang', 'en'));
-  const [theme, setThemeState]    = useState(() => ls('zero_theme', 'dark'));
+  const [folders, setFolders] = useState(() => ls('zero_folders', []));
+  const [lang, setLangState] = useState(() => ls('zero_lang', 'en'));
+  const [theme, setThemeState] = useState(() => ls('zero_theme', 'dark'));
+  const [userRegion, setUserRegionState] = useState(() => ls('zero_region', 'Global'));
+  const [promotions, setPromotions] = useState([]);
 
-  const setLang = (l) => { setLangState(l); lsSet('zero_lang', l); };
-  const setTheme = (t) => { 
-    setThemeState(t); 
-    lsSet('zero_theme', t); 
-    document.documentElement.className = t === 'light' ? 'light-mode' : ''; 
-  };
+  useEffect(() => {
+    document.documentElement.dir = (lang === 'ar' || lang === 'ur') ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
+    document.documentElement.className = theme === 'light' ? 'light-mode' : '';
+  }, []);
+
+  const setLang = useCallback((l) => { setLangState(l); lsSet('zero_lang', l); }, []);
+  const setTheme = useCallback((t) => { setThemeState(t); lsSet('zero_theme', t); document.documentElement.className = t === 'light' ? 'light-mode' : ''; }, []);
+  const setUserRegion = useCallback((r) => { setUserRegionState(r); lsSet('zero_region', r); }, []);
 
   // ── Localization ──
   const translations = {
@@ -150,6 +155,28 @@ function AppProvider({ children }) {
       all_apps: 'All Apps',
       all_games: 'All Games',
       no_apps: 'No apps in this category yet',
+      no_games: 'No games in this category yet',
+      featured_app: 'Featured App',
+      recommended_for_you: 'Recommended for you',
+      trending: 'Trending',
+      featured_apps: 'Featured Apps',
+      hot_right_now: 'Hot Right Now',
+      top_pick_for_you: 'Top Pick For You',
+      editors_picks: "Editor's Picks",
+      popular_apps: 'Popular Apps',
+      new_experience: 'New Experience',
+      super_apps: 'Super Apps',
+      apps_might_like: 'Apps You Might Like',
+      personalize_recommendations: 'Personalize Recommendations',
+      crowd_favorites: 'Crowd Favorites',
+      this_month_best: "This Month's Best",
+      featured_game: 'Featured Game',
+      recommended_games: 'Recommended Games',
+      trending_games: 'Trending Games',
+      featured_games: 'Featured Games',
+      popular_games: 'Popular Games',
+      super_games: 'Super Games',
+      games_might_like: 'Games You Might Like',
       comments_count: 'Comments',
       leaderboard: 'Leaderboard',
       developer: 'Developer',
@@ -287,7 +314,29 @@ function AppProvider({ children }) {
       recommended: 'Recomendado para ti',
       all_apps: 'Todas las aplicaciones',
       all_games: 'Todos los juegos',
+      featured_app: 'App Destacada',
+      recommended_for_you: 'Recomendado para ti',
+      trending: 'Tendencias',
+      featured_apps: 'Apps Destacadas',
+      hot_right_now: 'Popular ahora',
+      top_pick_for_you: 'Mejor selección para ti',
+      editors_picks: 'Selección del editor',
+      popular_apps: 'Apps populares',
+      new_experience: 'Nueva experiencia',
+      super_apps: 'Súper Apps',
+      apps_might_like: 'Apps que te podrían gustar',
+      personalize_recommendations: 'Personalizar recomendaciones',
+      crowd_favorites: 'Favoritos del público',
+      this_month_best: 'Lo mejor de este mes',
+      featured_game: 'Juego Destacado',
+      recommended_games: 'Juegos Recomendados',
+      trending_games: 'Juegos en Tendencia',
+      featured_games: 'Juegos Destacados',
+      popular_games: 'Juegos Populares',
+      super_games: 'Súper Juegos',
+      games_might_like: 'Juegos que te podrían gustar',
       no_apps: 'Aún no hay aplicaciones en esta categoría',
+      no_games: 'Aún no hay juegos en esta categoría',
       comments_count: 'Comentarios',
       leaderboard: 'Tabla de clasificación',
       developer: 'Desarrollador',
@@ -426,6 +475,7 @@ function AppProvider({ children }) {
       all_apps: 'Toutes les applications',
       all_games: 'Tous les jeux',
       no_apps: 'Pas encore d\'applications dans cette catégorie',
+      no_games: 'Pas encore de jeux dans cette catégorie',
       comments_count: 'Commentaires',
       leaderboard: 'Classement',
       developer: 'Développeur',
@@ -564,6 +614,7 @@ function AppProvider({ children }) {
       all_apps: '全部应用',
       all_games: '全部游戏',
       no_apps: '此类别中尚无应用',
+      no_games: '此类别中尚无游戏',
       comments_count: '评论',
       leaderboard: '排行榜',
       developer: '开发者',
@@ -702,6 +753,7 @@ function AppProvider({ children }) {
       all_apps: 'Alle Apps',
       all_games: 'Alle Spiele',
       no_apps: 'Noch keine Apps in dieser Kategorie',
+      no_games: 'Noch keine Spiele in dieser Kategorie',
       comments_count: 'Kommentare',
       leaderboard: 'Bestenliste',
       developer: 'Entwickler',
@@ -840,6 +892,7 @@ function AppProvider({ children }) {
       all_apps: 'تمام ایپس',
       all_games: 'تمام گیمز',
       no_apps: 'اس زمرے میں ابھی کوئی ایپس نہیں ہیں',
+      no_games: 'اس زمرے میں ابھی کوئی گیمز نہیں ہیں',
       comments_count: 'تبصرے',
       leaderboard: 'لیڈر بورڈ',
       developer: 'ڈویلپر',
@@ -978,6 +1031,7 @@ function AppProvider({ children }) {
       all_apps: 'सभी ऐप्स',
       all_games: 'सभी गेम',
       no_apps: 'इस श्रेणी में अभी कोई ऐप नहीं है',
+      no_games: 'इस श्रेणी में अभी कोई खेल नहीं है',
       comments_count: 'टिप्पणियाँ',
       leaderboard: 'लीडरबोर्ड',
       developer: 'डेवलपर',
@@ -1116,6 +1170,7 @@ function AppProvider({ children }) {
       all_apps: 'সব অ্যাপ',
       all_games: 'সব গেম',
       no_apps: 'এই বিভাগে এখনো কোনো অ্যাপ নেই',
+      no_games: 'এই বিভাগে এখনো কোনো গেম নেই',
       comments_count: 'মন্তব্য',
       leaderboard: 'লিডারবোর্ড',
       developer: 'ডেভেলপার',
@@ -1253,7 +1308,29 @@ function AppProvider({ children }) {
       recommended: 'موصى به لك',
       all_apps: 'كل التطبيقات',
       all_games: 'كل الألعاب',
+      featured_app: 'التطبيق المميز',
+      recommended_for_you: 'موصى به لك',
+      trending: 'الرائج',
+      featured_apps: 'تطبيقات مميزة',
+      hot_right_now: 'الأكثر رواجاً الآن',
+      top_pick_for_you: 'أفضل اختيار لك',
+      editors_picks: 'اختيارات المحرر',
+      popular_apps: 'التطبيقات الشهيرة',
+      new_experience: 'تجربة جديدة',
+      super_apps: 'تطبيقات سوبر',
+      apps_might_like: 'تطبيقات قد تعجبك',
+      personalize_recommendations: 'تخصيص التوصيات',
+      crowd_favorites: 'المفضلة لدى الجمهور',
+      this_month_best: 'الأفضل هذا الشهر',
+      featured_game: 'اللعبة المميزة',
+      recommended_games: 'ألعاب موصى بها',
+      trending_games: 'ألعاب رائجة',
+      featured_games: 'ألعاب مميزة',
+      popular_games: 'ألعاب شهيرة',
+      super_games: 'ألعاب سوبر',
+      games_might_like: 'ألعاب قد تعجبك',
       no_apps: 'لا توجد تطبيقات في هذه الفئة بعد',
+      no_games: 'لا توجد ألعاب في هذه الفئة بعد',
       comments_count: 'تعليقات',
       leaderboard: 'لوحة المتصدرين',
       developer: 'مطور',
@@ -1359,7 +1436,7 @@ function AppProvider({ children }) {
     document.documentElement.className = theme === 'light' ? 'light-mode' : '';
   }, []);
 
-  const [tasks, setTasks]         = useState([]); // { id, app, status: 'active'|'minimized' }
+  const [tasks, setTasks] = useState([]); // { id, app, status: 'active'|'minimized' }
   const [activeTaskId, setActiveTaskId] = useState(null);
 
   // ── Real-time Catalog Logic ──
@@ -1367,25 +1444,33 @@ function AppProvider({ children }) {
     if (!supabase) return;
 
     const fetchAll = async () => {
-      const [a, g, c, s] = await Promise.all([
+      const [a, g, c, s, p] = await Promise.all([
         supabase.from('apps').select('*'),
         supabase.from('games').select('*'),
         supabase.from('categories').select('*'),
-        supabase.from('settings').select('*')
+        supabase.from('settings').select('*'),
+        supabase.from('promotions').select('*')
       ]);
 
-      if (a.data && a.data.length > 0) { 
-        const approved = a.data.filter(app => app.status === 'approved');
-        setLiveApps(approved); 
-        window.liveApps = approved; 
+      if (a.data && a.data.length > 0) {
+        const approved = a.data.filter(app => 
+          app.status === 'approved' && 
+          (app.region === userRegion || app.region === 'Global' || !app.region)
+        );
+        setLiveApps(approved);
+        window.liveApps = approved;
       }
-      if (g.data && g.data.length > 0) { 
-        const approved = g.data.filter(game => game.status === 'approved');
-        setLiveGames(approved); 
-        window.liveGames = approved; 
+      if (g.data && g.data.length > 0) {
+        const approved = g.data.filter(game => 
+          game.status === 'approved' && 
+          (game.region === userRegion || game.region === 'Global' || !game.region)
+        );
+        setLiveGames(approved);
+        window.liveGames = approved;
       }
       if (c.data && c.data.length > 0) { setLiveCats(c.data); window.liveCats = c.data; }
-      
+      if (p.data) setPromotions(p.data);
+
       if (s.data && s.data.length > 0) {
         const sMap = {};
         s.data.forEach(item => sMap[item.key] = item.value);
@@ -1412,7 +1497,7 @@ function AppProvider({ children }) {
     else if (params.viewerApp) query.push(`id=${params.viewerApp.id || params.viewerApp}`);
     else if (params.exploreCategory) query.push(`id=${params.exploreCategory}`);
     else if (frame.id === 'search' && searchQ) query.push(`q=${encodeURIComponent(searchQ)}`);
-    
+
     return query.length > 0 ? `${url}?${query.join('&')}` : url;
   }, [searchQ]);
 
@@ -1421,7 +1506,7 @@ function AppProvider({ children }) {
     const isRootTab = ['apps', 'games', 'explore', 'profile'].includes(s);
     const key = s + '-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
     const frame = { key, id: s, params: extra };
-    
+
     setHistory(h => {
       // If switching to a main tab, reset the stack to keep performance high
       // and prevent multiple bottom-navs from overlapping.
@@ -1435,7 +1520,7 @@ function AppProvider({ children }) {
         }
         return next;
       }
-      
+
       const next = [...h, frame];
       window.history.pushState({ stackIndex: next.length - 1 }, '', getUrlForFrame(frame));
       return next;
@@ -1461,7 +1546,7 @@ function AppProvider({ children }) {
     const handlePop = (e) => {
       const hash = window.location.hash;
       const [idPart] = (hash.slice(1) || 'apps').split('?');
-      
+
       setHistory(h => {
         // If the browser went back and the current hash matches the PREVIOUS screen in our stack, pop it.
         if (h.length > 1 && h[h.length - 2].id === idPart) {
@@ -1471,8 +1556,8 @@ function AppProvider({ children }) {
         }
         // Otherwise, if the browser is at a completely different root, re-hydrate.
         if (['apps', 'games', 'explore', 'profile'].includes(idPart)) {
-           // Resolve extra params if needed... for now just reset to that root
-           return [{ key: 'pop-'+Date.now(), id: idPart, params: {} }];
+          // Resolve extra params if needed... for now just reset to that root
+          return [{ key: 'pop-' + Date.now(), id: idPart, params: {} }];
         }
         return h;
       });
@@ -1502,8 +1587,8 @@ function AppProvider({ children }) {
     else if (frameId === 'explore' && params.id) extra = { exploreCategory: params.id };
     else if (frameId === 'viewer' && params.id) extra = { viewerApp: params.id };
     else if (frameId === 'search' && params.q) {
-       extra = {};
-       setSearchQ(params.q);
+      extra = {};
+      setSearchQ(params.q);
     }
 
     // Boot with Home + the Deep Link screen so "back" works
@@ -1511,7 +1596,7 @@ function AppProvider({ children }) {
       { key: 'root-apps', id: 'apps', params: {} },
       { key: 'deep-link-' + Date.now(), id: frameId, params: extra }
     ]);
-    
+
     // Replace current state so browser knows we are at index 1
     window.history.replaceState({ stackIndex: 1 }, '', hash);
   }, []);
@@ -1530,7 +1615,7 @@ function AppProvider({ children }) {
   // ── Multi-tasking Logic ──
   const launchApp = useCallback((app) => {
     if (!app || !app.url) return;
-    
+
     setTasks(prev => {
       // Check if already running
       const existing = prev.find(t => t.id === app.id);
@@ -1576,7 +1661,7 @@ function AppProvider({ children }) {
       if (has) {
         // If un-saving, also remove from any folders
         setFolders(oldFolders => {
-          const nextFolders = oldFolders.map(f => ({...f, appIds: f.appIds.filter(id => id !== app.id)}));
+          const nextFolders = oldFolders.map(f => ({ ...f, appIds: f.appIds.filter(id => id !== app.id) }));
           lsSet('zero_folders', nextFolders);
           return nextFolders;
         });
@@ -1644,16 +1729,36 @@ function AppProvider({ children }) {
   const greeting = useMemo(() => {
     const hr = new Date().getHours();
     let key = 'good_evening';
-    if(hr < 12) key = 'good_morning';
-    else if(hr < 18) key = 'good_afternoon';
-    
+    if (hr < 12) key = 'good_morning';
+    else if (hr < 18) key = 'good_afternoon';
+
     const timeGreeting = t(key);
-    
+
     if (userProfile && userProfile.display_name) {
       return `${timeGreeting}, ${userProfile.display_name.split(' ')[0]}`;
     }
     return timeGreeting;
   }, [userProfile, t]);
+
+  const getPromoItems = useCallback((categoryKey, type = 'app') => {
+    const now = new Date();
+    const sectionPromos = promotions.filter(p => 
+      p.category_key === categoryKey && 
+      p.item_type === type &&
+      p.is_active !== false &&
+      (p.region === userRegion || p.region === 'Global') &&
+      (!p.start_date || new Date(p.start_date) <= now) &&
+      (!p.end_date || new Date(p.end_date) >= now)
+    );
+
+    if (sectionPromos.length > 0) {
+      const dataSet = type === 'app' ? liveApps : liveGames;
+      return sectionPromos
+        .map(p => dataSet.find(it => it.id === p.item_id))
+        .filter(Boolean);
+    }
+    return null;
+  }, [promotions, userRegion, liveApps, liveGames]);
 
   const value = {
     supabase,
@@ -1664,13 +1769,14 @@ function AppProvider({ children }) {
     tasks, activeTaskId, minimizeTask, closeTask, switchTask,
     searchQ, setSearchQ,
     recents, clearRecents,
-    savedApps, folders, toggleSaveApp, isSaved, 
+    savedApps, folders, toggleSaveApp, isSaved,
     createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder,
     liveApps, liveGames, liveCats, settings,
     greeting,
     userProfile,
     updateProfileName,
-    t, lang, setLang, theme, setTheme
+    t, lang, setLang, theme, setTheme,
+    userRegion, setUserRegion, promotions, getPromoItems
   };
 
   return React.createElement(Ctx.Provider, { value }, children);

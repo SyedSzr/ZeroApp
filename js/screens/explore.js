@@ -48,9 +48,9 @@ function ExploreScreen({ exploreCategory }) {
       {/* ── Header ── */}
       <div className="pt-safe flex-shrink-0 bg-bg border-b border-border">
         <div className="flex items-center justify-between px-4 pt-3 pb-2">
-          <button onClick={() => go('apps')} className="tap text-white text-xl">←</button>
+          <button onClick={() => go('apps')} className="tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-white text-lg">←</button>
           <span className="text-white font-extrabold text-base tracking-tight">{headerLabel}</span>
-          <button onClick={() => go('search')} className="tap text-muted text-xl">🔍</button>
+          <button onClick={() => go('search')} className="tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-muted text-lg">🔍</button>
         </div>
 
         {/* ── Tab Strip: All + 12 categories ── */}

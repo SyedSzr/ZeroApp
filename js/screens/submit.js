@@ -33,6 +33,7 @@ function SubmitScreen() {
         long_description: fd.get('long_description'),
         tags: fd.get('tags') ? fd.get('tags').split(',').map(t => t.trim()).filter(Boolean) : [],
         homeCategory: fd.get('category'),
+        region: fd.get('region') || 'Global',
         rating: 4.5 + (Math.random() * 0.5),
         emoji: '🌐',
         reviews: '1',
@@ -149,6 +150,20 @@ function SubmitScreen() {
                 placeholder="https://example.com"
                 className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none transition-all"
               />
+            </div>
+
+            <div>
+              <label className="block text-muted text-[10px] font-black uppercase tracking-widest mb-2 px-1">Region</label>
+              <select 
+                name="region"
+                className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none transition-all"
+              >
+                <option value="Global">All Over the World</option>
+                <option value="PK">Pakistan</option>
+                <option value="US">USA</option>
+                <option value="UK">UK</option>
+                <option value="AE">UAE</option>
+              </select>
             </div>
 
             <div>

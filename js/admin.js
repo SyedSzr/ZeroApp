@@ -6,11 +6,13 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
 // ── STATE ──────────────────────────────────────────────────────────────────────
 let currentRoute = 'dashboard';
-let data = { apps: [], games: [], categories: [], settings: {}, profiles: [] };
+let data = { apps: [], games: [], categories: [], settings: {}, profiles: [], promotions: [] };
 let editingId = null;
+let editingPromoId = null;
 let selectedUserId = null;
 let filterCategory = null;
 let filterStatus = 'all'; // 'all', 'pending', 'approved', 'rejected'
+let filterRegion = 'all'; 
 
 const EMOJI_LIST = [
   '🤖','🎮','👶','🛒','💼','💄','🎨','💰','📚','🎬','🔧','🏃','💬','🧩','⚔️','♟️','🕹️','📝','🎲','⚽','🗺️','🖼️','🧠',
@@ -62,7 +64,8 @@ async function fetchAllData() {
       sb.from('apps').select('*'),
       sb.from('games').select('*'),
       sb.from('categories').select('*'),
-      sb.from('settings').select('*')
+      sb.from('settings').select('*'),
+      sb.from('promotions').select('*')
     ]);
 
     let resProfiles = { data: [] };
@@ -76,6 +79,7 @@ async function fetchAllData() {
     data.games = resGames.data || [];
     data.categories = resCats.data || [];
     data.profiles = resProfiles.data || [];
+    data.promotions = (resPromos && resPromos.data) || [];
     
     const sMap = {};
     (resSettings.data || []).forEach(s => sMap[s.key] = s.value);
@@ -148,6 +152,10 @@ function setRoute(route) {
       if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Cloud Migration</h2><p class="text-muted text-xs">Push local data</p>`;
       if (addBtn) addBtn.classList.add('hidden');
       break;
+    case 'promotions':
+      if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Spotlight Manager</h2><p class="text-muted text-xs">Manage ${data.promotions.length} active promotions</p>`;
+      if (addBtn) addBtn.onclick = () => openPromoModal();
+      break;
     case 'settings':
       if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Configuration</h2><p class="text-muted text-xs">Global parameters</p>`;
       if (addBtn) addBtn.classList.add('hidden');
@@ -177,7 +185,7 @@ function renderCurrentView() {
       <div class="grid grid-cols-4 gap-6 mb-10">
         ${renderStatCard('Total Apps', data.apps.length, '📱', 'Apps in catalog')}
         ${renderStatCard('Live Games', data.games.length, '🎮', 'Games in feed')}
-        ${renderStatCard('Categories', data.categories.length, '🏷️', 'Active groups')}
+        ${renderStatCard('Active Promos', data.promotions.length, '✨', 'Featured & Trending')}
         ${renderStatCard('System Status', 'Online', '⚡', 'Supabase Connected')}
       </div>
       <div class="grid grid-cols-2 gap-8">
@@ -186,6 +194,7 @@ function renderCurrentView() {
           <div class="space-y-3">
              <button onclick="setRoute('apps')" class="w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-left text-sm transition-all border border-white/5">Manage Applications</button>
              <button onclick="setRoute('games')" class="w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-left text-sm transition-all border border-white/5">Manage Games Feed</button>
+             <button onclick="setRoute('promotions')" class="w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-left text-sm transition-all border border-white/5">Spotlight & Promotions</button>
              <button onclick="setRoute('categories')" class="w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-left text-sm transition-all border border-white/5">Edit Categories</button>
           </div>
         </div>
@@ -196,6 +205,138 @@ function renderCurrentView() {
              GO TO SYNC TOOL
           </button>
         </div>
+      </div>
+    `;
+  } else if (currentRoute === 'promotions') {
+    const selectedSection = window._selectedPromoSection || null;
+
+    const ALL_SECTIONS = [
+      { key: 'featured_app',            label: 'Featured App',                  type: 'app',  icon: '⭐' },
+      { key: 'recommended_for_you',     label: 'Recommended For You',           type: 'app',  icon: '💡' },
+      { key: 'trending',                label: 'Trending',                      type: 'app',  icon: '🔥' },
+      { key: 'featured_apps',           label: 'Featured Apps (Small)',         type: 'app',  icon: '📌' },
+      { key: 'hot_right_now',           label: 'Hot Right Now',                 type: 'app',  icon: '⚡' },
+      { key: 'top_pick_for_you',        label: 'Top Picks For You',             type: 'app',  icon: '🎯' },
+      { key: 'editors_picks',           label: "Editor's Picks",               type: 'app',  icon: '✍️' },
+      { key: 'popular_apps',            label: 'Popular Apps',                  type: 'app',  icon: '📈' },
+      { key: 'new_experience',          label: 'New Experience',                type: 'app',  icon: '🆕' },
+      { key: 'super_apps',              label: 'Super Apps',                    type: 'app',  icon: '🚀' },
+      { key: 'apps_might_like',         label: 'Apps You Might Like',           type: 'app',  icon: '💭' },
+      { key: 'crowd_favorites',         label: 'Crowd Favorites',               type: 'app',  icon: '👥' },
+      { key: 'this_month_best',         label: "This Month's Best",             type: 'app',  icon: '🏆' },
+      { key: 'featured_game',           label: 'Featured Game',                 type: 'game', icon: '🎮' },
+      { key: 'recommended_games',       label: 'Recommended Games',             type: 'game', icon: '💡' },
+      { key: 'trending_games',          label: 'Trending Games',                type: 'game', icon: '🔥' },
+      { key: 'featured_games',          label: 'Featured Games (Small)',        type: 'game', icon: '📌' },
+      { key: 'popular_games',           label: 'Popular Games',                 type: 'game', icon: '📈' },
+      { key: 'super_games',             label: 'Super Games',                   type: 'game', icon: '🚀' },
+      { key: 'games_might_like',        label: 'Games You Might Like',          type: 'game', icon: '💭' },
+      { key: 'personalize_recommendations', label: 'Personalize Recommendations', type: 'both', icon: '🎨' },
+    ];
+
+    const now = new Date();
+
+    function renderSectionItems(sec) {
+      const promos = data.promotions.filter(p => p.category_key === sec.key);
+      if (promos.length === 0) {
+        return `<div class="text-muted text-sm text-center py-8 opacity-50">No items spotlighted in this section yet.</div>`;
+      }
+      return promos.map(promo => {
+        const item = promo.item_type === 'app'
+          ? data.apps.find(a => a.id === promo.item_id)
+          : data.games.find(g => g.id === promo.item_id);
+        if (!item) return '';
+        const isExpired = promo.end_date && new Date(promo.end_date) < now;
+        const isActive = promo.is_active !== false && !isExpired;
+        const startVal = promo.start_date ? promo.start_date.split('T')[0] : '';
+        const endVal   = promo.end_date   ? promo.end_date.split('T')[0]   : '';
+        return `
+          <div class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 ${isExpired ? 'opacity-40' : ''}">
+            <div class="w-12 h-12 rounded-2xl bg-bg flex items-center justify-center text-xl flex-shrink-0 overflow-hidden">
+              ${item.icon_url ? `<img src="${item.icon_url}" class="w-full h-full object-cover rounded-2xl"/>` : item.emoji || '📱'}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-white font-bold text-sm">${item.name}</span>
+                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${promo.item_type === 'app' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}">${promo.item_type}</span>
+                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">${isExpired ? 'Expired' : (isActive ? 'Live' : 'Inactive')}</span>
+                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/20 text-accent">${promo.region || 'Global'}</span>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-muted text-[10px]">Start:</span>
+                <input type="date" value="${startVal}" 
+                  onchange="updatePromoDate('${promo.id}', 'start_date', this.value)"
+                  class="text-white text-[10px] font-bold bg-white/5 border border-white/10 rounded-lg px-2 py-1 focus:border-accent outline-none cursor-pointer"/>
+                <span class="text-muted text-[10px]">End:</span>
+                <input type="date" value="${endVal}" 
+                  onchange="updatePromoDate('${promo.id}', 'end_date', this.value)"
+                  class="text-white text-[10px] font-bold bg-white/5 border border-white/10 rounded-lg px-2 py-1 focus:border-accent outline-none cursor-pointer"/>
+                <button onclick="togglePromoActive('${promo.id}', ${!isActive})"
+                  class="text-[9px] font-black uppercase px-2 py-1 rounded-lg ${isActive ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/40' : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/40'} transition-colors">
+                  ${isActive ? 'Pause' : 'Activate'}
+                </button>
+              </div>
+            </div>
+            <button onclick="deletePromotion('${promo.id}')" 
+              class="flex-shrink-0 w-8 h-8 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-all flex items-center justify-center text-sm font-bold">
+              ×
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    container.innerHTML = `
+      <div class="mb-6 flex items-center justify-between">
+        <div>
+          <h2 class="text-white font-black text-2xl">Spotlight Manager</h2>
+          <p class="text-muted text-sm mt-1">Click any section to manage its spotlighted apps & games</p>
+        </div>
+        <button onclick="openPromoModal()" class="bg-accent hover:bg-accent/80 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all shadow-lg glow-purple active:scale-95">
+          + New Spotlight
+        </button>
+      </div>
+
+      <div class="mb-3 flex gap-2">
+        <button onclick="filterPromoType('all')" id="pf-all" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 text-white">All Sections</button>
+        <button onclick="filterPromoType('app')" id="pf-app" class="px-4 py-2 rounded-xl text-xs font-bold transition-all text-muted hover:text-white">Apps</button>
+        <button onclick="filterPromoType('game')" id="pf-game" class="px-4 py-2 rounded-xl text-xs font-bold transition-all text-muted hover:text-white">Games</button>
+      </div>
+
+      <div id="promo-sections-grid" class="space-y-3">
+        ${ALL_SECTIONS.map(sec => {
+          const count = data.promotions.filter(p => p.category_key === sec.key).length;
+          const isOpen = selectedSection === sec.key;
+          return `
+            <div class="glass rounded-[24px] overflow-hidden section-card" data-type="${sec.type}">
+              <button onclick="togglePromoSection('${sec.key}')"
+                class="w-full flex items-center gap-4 px-6 py-4 text-left hover:bg-white/5 transition-all">
+                <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
+                  style="background:${sec.type === 'game' ? 'rgba(251,146,60,0.15)' : sec.type === 'both' ? 'rgba(139,92,246,0.15)' : 'rgba(124,106,247,0.15)'}">
+                  ${sec.icon}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="text-white font-bold text-sm">${sec.label}</span>
+                    <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${sec.type === 'game' ? 'bg-orange-500/20 text-orange-400' : sec.type === 'both' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}">${sec.type}</span>
+                  </div>
+                  <p class="text-muted text-[10px] mt-0.5">${count > 0 ? `${count} item${count > 1 ? 's' : ''} spotlighted` : 'No items – using default algorithm'}</p>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                  ${count > 0 ? `<span class="w-6 h-6 rounded-full bg-accent flex items-center justify-center text-white font-black text-[10px]">${count}</span>` : ''}
+                  <button onclick="event.stopPropagation(); openPromoModal(null, '${sec.key}')" 
+                    class="text-[9px] font-black uppercase px-3 py-1.5 rounded-lg bg-accent/20 text-accent hover:bg-accent hover:text-white transition-all">
+                    + Add
+                  </button>
+                  <span class="text-muted text-lg transition-transform ${isOpen ? 'rotate-90' : ''}" id="arrow-${sec.key}">›</span>
+                </div>
+              </button>
+              <div id="section-items-${sec.key}" class="${isOpen ? '' : 'hidden'} px-6 pb-5 pt-1 border-t border-white/5 space-y-3">
+                ${renderSectionItems(sec)}
+              </div>
+            </div>
+          `;
+        }).join('')}
       </div>
     `;
   } else if (currentRoute === 'apps' || currentRoute === 'games') {
@@ -222,6 +363,17 @@ function renderCurrentView() {
           <button onclick="setStatusFilter('rejected')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterStatus === 'rejected' ? 'bg-red-500/20 text-red-500' : 'text-muted hover:text-white'}">Rejected</button>
         </div>
 
+        <div class="flex items-center gap-4 bg-card border border-border p-2 rounded-2xl w-fit">
+           <span class="text-muted text-[10px] font-black uppercase tracking-widest px-2">Region:</span>
+           <select onchange="setRegionFilter(this.value)" class="bg-transparent text-white text-xs font-bold outline-none pr-4">
+              <option value="all" ${filterRegion === 'all' ? 'selected' : ''}>All Regions</option>
+              <option value="Global" ${filterRegion === 'Global' ? 'selected' : ''}>Global</option>
+              <option value="PK" ${filterRegion === 'PK' ? 'selected' : ''}>Pakistan</option>
+              <option value="US" ${filterRegion === 'US' ? 'selected' : ''}>USA</option>
+              <option value="UK" ${filterRegion === 'UK' ? 'selected' : ''}>UK</option>
+           </select>
+        </div>
+
         ${filterCategory ? `
           <div class="flex items-center justify-between px-4 bg-accent/5 p-4 rounded-3xl border border-accent/10">
             <div class="flex items-center gap-3">
@@ -244,6 +396,7 @@ function renderCurrentView() {
             <tr class="text-muted text-[11px] font-black uppercase tracking-widest border-b border-white/5">
               <th class="px-8 py-4">Item</th>
               <th class="px-8 py-4">Category</th>
+              <th class="px-8 py-4">Region</th>
               <th class="px-8 py-4 text-center">Status</th>
               <th class="px-8 py-4 text-right">Actions</th>
             </tr>
@@ -264,6 +417,9 @@ function renderCurrentView() {
                 </td>
                 <td class="px-8 py-4">
                   <span class="pill bg-accent/10 text-accent text-[10px] px-2 py-1 font-bold uppercase">${item.homeCategory || item.gameCategory}</span>
+                </td>
+                <td class="px-8 py-4 text-white text-xs font-bold">
+                  ${item.region || 'Global'}
                 </td>
                 <td class="px-8 py-4 text-center">
                   ${renderStatusBadge(item.status)}
@@ -749,6 +905,203 @@ async function seedSupabase() {
   finally { if (btn) { btn.innerText = 'START FULL DATA SYNC'; btn.disabled = false; } }
 }
 
+function setRegionFilter(region) {
+  filterRegion = region;
+  renderCurrentView();
+}
+
+function togglePromoSection(sectionKey) {
+  const content = document.getElementById(`section-items-${sectionKey}`);
+  const arrow = document.getElementById(`arrow-${sectionKey}`);
+  if (!content) return;
+  const isHidden = content.classList.contains('hidden');
+  document.querySelectorAll('[id^="section-items-"]').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('[id^="arrow-"]').forEach(el => { el.style.transform = 'rotate(0deg)'; });
+  if (isHidden) {
+    content.classList.remove('hidden');
+    if (arrow) arrow.style.transform = 'rotate(90deg)';
+    content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    window._selectedPromoSection = sectionKey;
+  } else {
+    window._selectedPromoSection = null;
+  }
+}
+
+function filterPromoType(type) {
+  document.querySelectorAll('.section-card').forEach(card => {
+    const cardType = card.dataset.type;
+    card.style.display = (type === 'all' || cardType === type || cardType === 'both') ? '' : 'none';
+  });
+  ['all', 'app', 'game'].forEach(t => {
+    const btn = document.getElementById(`pf-${t}`);
+    if (!btn) return;
+    if (t === type) {
+      btn.classList.add('bg-white/10', 'text-white');
+      btn.classList.remove('text-muted');
+    } else {
+      btn.classList.remove('bg-white/10', 'text-white');
+      btn.classList.add('text-muted');
+    }
+  });
+}
+
+async function updatePromoDate(promoId, field, value) {
+  try {
+    const update = {};
+    update[field] = value || null;
+    await sb.from('promotions').update(update).eq('id', promoId);
+    showSyncStatus('Date updated ✓', 'bg-emerald-500');
+  } catch (err) {
+    alert('Error updating date: ' + err.message);
+  }
+}
+
+async function togglePromoActive(promoId, newState) {
+  try {
+    await sb.from('promotions').update({ is_active: newState }).eq('id', promoId);
+    fetchAllData();
+  } catch (err) {
+    alert('Error toggling status: ' + err.message);
+  }
+}
+
+function openPromoModal(promoId = null, presetSection = null) {
+  editingPromoId = promoId;
+  const promo = typeof promoId === 'string' ? data.promotions.find(p => p.id === promoId) : null;
+  
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md';
+  modal.id = 'promo-modal';
+  
+  const appOptions = data.apps.map(a => `<option value="${a.id}" ${promo && promo.item_id === a.id ? 'selected' : ''}>App: ${a.name}</option>`).join('');
+  const gameOptions = data.games.map(g => `<option value="${g.id}" ${promo && promo.item_id === g.id ? 'selected' : ''}>Game: ${g.name}</option>`).join('');
+  
+  const sectionKeys = [
+    'featured_app', 'recommended_for_you', 'trending', 'featured_apps', 
+    'hot_right_now', 'top_pick_for_you', 'editors_picks', 'popular_apps', 
+    'new_experience', 'super_apps', 'apps_might_like', 'personalize_recommendations', 
+    'crowd_favorites', 'this_month_best', 'featured_game', 'recommended_games',
+    'trending_games', 'featured_games', 'popular_games', 'super_games', 'games_might_like'
+  ];
+  
+  const sectionOptions = sectionKeys.map(k => `<option value="${k}" ${promo && promo.category_key === k ? 'selected' : ''}>${k.replace(/_/g,' ').toUpperCase()}</option>`).join('');
+
+  modal.innerHTML = `
+    <div class="glass w-full max-w-xl p-8 rounded-[40px] animate-in slide-up border border-white/10 shadow-2xl relative">
+      <button onclick="closePromoModal()" class="absolute top-6 right-6 text-muted hover:text-white transition-colors">×</button>
+      <h3 class="text-white text-2xl font-black mb-6">${typeof promoId === 'string' ? 'Edit Promotion' : 'Create Promotion'}</h3>
+      <form id="promo-form" class="space-y-6">
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Target Item</label>
+            <select name="item_id" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
+              <optgroup label="Applications">${appOptions}</optgroup>
+              <optgroup label="Games">${gameOptions}</optgroup>
+            </select>
+          </div>
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Display Section</label>
+            <select name="category_key" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
+              ${sectionOptions}
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Target Region</label>
+            <select name="region" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
+              <option value="Global" ${promo && promo.region === 'Global' ? 'selected' : ''}>Global</option>
+              <option value="PK" ${promo && promo.region === 'PK' ? 'selected' : ''}>Pakistan</option>
+              <option value="US" ${promo && promo.region === 'US' ? 'selected' : ''}>USA</option>
+              <option value="UK" ${promo && promo.region === 'UK' ? 'selected' : ''}>UK</option>
+              <option value="AE" ${promo && promo.region === 'AE' ? 'selected' : ''}>UAE</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Status</label>
+            <select name="is_active" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
+              <option value="true" ${promo && promo.is_active !== false ? 'selected' : ''}>Active</option>
+              <option value="false" ${promo && promo.is_active === false ? 'selected' : ''}>Inactive / Scheduled</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Start Date</label>
+            <input type="date" name="start_date" value="${promo && promo.start_date ? promo.start_date.split('T')[0] : ''}" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none"/>
+          </div>
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">End Date (Optional)</label>
+            <input type="date" name="end_date" value="${promo && promo.end_date ? promo.end_date.split('T')[0] : ''}" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none"/>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-4 bg-accent text-white font-black rounded-2xl shadow-lg glow-purple active:scale-95 transition-all mt-4">
+          ${typeof promoId === 'string' ? 'SAVE CHANGES' : 'CREATE SPOTLIGHT'}
+        </button>
+      </form>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  const form = document.getElementById('promo-form');
+  form.onsubmit = handlePromoSubmit;
+
+  // Pre-select section if provided via + Add button
+  if (presetSection) {
+    const sel = form.querySelector('[name="category_key"]');
+    if (sel) sel.value = presetSection;
+  }
+}
+
+function closePromoModal() {
+  const modal = document.getElementById('promo-modal');
+  if (modal) modal.remove();
+  editingPromoId = null;
+}
+
+async function handlePromoSubmit(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const itemId = fd.get('item_id');
+  const isGame = data.games.some(g => g.id === itemId);
+  
+  const payload = {
+    item_id: itemId,
+    item_type: isGame ? 'game' : 'app',
+    category_key: fd.get('category_key'),
+    region: fd.get('region'),
+    start_date: fd.get('start_date') || null,
+    end_date: fd.get('end_date') || null,
+    is_active: fd.get('is_active') === 'true'
+  };
+
+  try {
+    if (editingPromoId) {
+      await sb.from('promotions').update(payload).eq('id', editingPromoId);
+    } else {
+      await sb.from('promotions').insert(payload);
+    }
+    closePromoModal();
+    fetchAllData();
+  } catch (err) {
+    alert('Error saving promotion: ' + err.message);
+  }
+}
+
+async function deletePromotion(id) {
+  if (!confirm('Are you sure you want to remove this promotion?')) return;
+  try {
+    await sb.from('promotions').delete().eq('id', id);
+    fetchAllData();
+  } catch (err) {
+    alert('Error deleting promotion');
+  }
+}
+
 function setStatusFilter(s) {
   filterStatus = s;
   renderCurrentView();
@@ -792,6 +1145,137 @@ async function handleQuickReject() {
   } catch (err) { alert(err.message); }
 }
 
+
+function openPromoModal(promoId = null) {
+  editingPromoId = promoId;
+  const promo = typeof promoId === 'string' ? data.promotions.find(p => p.id === promoId) : null;
+  
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md';
+  modal.id = 'promo-modal';
+  
+  const appOptions = data.apps.map(a => `<option value="${a.id}" ${promo && promo.item_id === a.id ? 'selected' : ''}>App: ${a.name}</option>`).join('');
+  const gameOptions = data.games.map(g => `<option value="${g.id}" ${promo && promo.item_id === g.id ? 'selected' : ''}>Game: ${g.name}</option>`).join('');
+  
+  const sectionKeys = [
+    'featured_app', 'recommended_for_you', 'trending', 'featured_apps', 
+    'hot_right_now', 'top_pick_for_you', 'editors_picks', 'popular_apps', 
+    'new_experience', 'super_apps', 'apps_might_like', 'personalize_recommendations', 
+    'crowd_favorites', 'this_month_best', 'featured_game', 'recommended_games',
+    'trending_games', 'featured_games', 'popular_games', 'super_games', 'games_might_like'
+  ];
+  
+  const sectionOptions = sectionKeys.map(k => `<option value="${k}" ${promo && promo.category_key === k ? 'selected' : ''}>${k.replace(/_/g,' ').toUpperCase()}</option>`).join('');
+
+  modal.innerHTML = `
+    <div class="glass w-full max-w-xl p-8 rounded-[40px] animate-in slide-up border border-white/10 shadow-2xl relative">
+      <button onclick="closePromoModal()" class="absolute top-6 right-6 text-muted hover:text-white transition-colors">×</button>
+      <h3 class="text-white text-2xl font-black mb-6">${typeof promoId === 'string' ? 'Edit Promotion' : 'Create Promotion'}</h3>
+      <form id="promo-form" class="space-y-6">
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Target Item</label>
+            <select name="item_id" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
+              <optgroup label="Applications">${appOptions}</optgroup>
+              <optgroup label="Games">${gameOptions}</optgroup>
+            </select>
+          </div>
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Display Section</label>
+            <select name="category_key" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
+              ${sectionOptions}
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Target Region</label>
+            <select name="region" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
+              <option value="Global" ${promo && promo.region === 'Global' ? 'selected' : ''}>Global</option>
+              <option value="PK" ${promo && promo.region === 'PK' ? 'selected' : ''}>Pakistan</option>
+              <option value="US" ${promo && promo.region === 'US' ? 'selected' : ''}>USA</option>
+              <option value="UK" ${promo && promo.region === 'UK' ? 'selected' : ''}>UK</option>
+              <option value="AE" ${promo && promo.region === 'AE' ? 'selected' : ''}>UAE</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Status</label>
+            <select name="is_active" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
+              <option value="true" ${promo && promo.is_active !== false ? 'selected' : ''}>Active</option>
+              <option value="false" ${promo && promo.is_active === false ? 'selected' : ''}>Inactive / Scheduled</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Start Date</label>
+            <input type="date" name="start_date" value="${promo && promo.start_date ? promo.start_date.split('T')[0] : ''}" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none"/>
+          </div>
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">End Date (Optional)</label>
+            <input type="date" name="end_date" value="${promo && promo.end_date ? promo.end_date.split('T')[0] : ''}" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none"/>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-4 bg-accent text-white font-black rounded-2xl shadow-lg glow-purple active:scale-95 transition-all mt-4">
+          ${typeof promoId === 'string' ? 'SAVE CHANGES' : 'CREATE SPOTLIGHT'}
+        </button>
+      </form>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  document.getElementById('promo-form').onsubmit = handlePromoSubmit;
+}
+
+function closePromoModal() {
+  const modal = document.getElementById('promo-modal');
+  if (modal) modal.remove();
+  editingPromoId = null;
+}
+
+async function handlePromoSubmit(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const itemId = fd.get('item_id');
+  const isGame = data.games.some(g => g.id === itemId);
+  
+  const payload = {
+    item_id: itemId,
+    item_type: isGame ? 'game' : 'app',
+    category_key: fd.get('category_key'),
+    region: fd.get('region'),
+    start_date: fd.get('start_date') || null,
+    end_date: fd.get('end_date') || null,
+    is_active: fd.get('is_active') === 'true'
+  };
+
+  try {
+    if (editingPromoId) {
+      await sb.from('promotions').update(payload).eq('id', editingPromoId);
+    } else {
+      await sb.from('promotions').insert(payload);
+    }
+    closePromoModal();
+    fetchAllData();
+  } catch (err) {
+    alert('Error saving promotion: ' + err.message);
+  }
+}
+
+async function deletePromotion(id) {
+  if (!confirm('Are you sure you want to remove this promotion?')) return;
+  try {
+    await sb.from('promotions').delete().eq('id', id);
+    fetchAllData();
+  } catch (err) {
+    alert('Error deleting promotion');
+  }
+}
+
 // ── EXPOSE TO WINDOW ───────────────────────────────────────────────────────────
 window.setRoute = setRoute;
 window.init = init;
@@ -813,3 +1297,12 @@ window.handleQuickReject = handleQuickReject;
 window.toggleRejectInput = toggleRejectInput;
 window.clearFilter = () => { filterCategory = null; renderCurrentView(); };
 window.viewUser = (id) => { selectedUserId = id; renderCurrentView(); };
+window.editPromotion = openPromoModal;
+window.deletePromotion = deletePromotion;
+window.closePromoModal = closePromoModal;
+window.setRegionFilter = setRegionFilter;
+window.openPromoModal = openPromoModal;
+window.togglePromoSection = togglePromoSection;
+window.filterPromoType = filterPromoType;
+window.updatePromoDate = updatePromoDate;
+window.togglePromoActive = togglePromoActive;
