@@ -60,7 +60,7 @@ async function testConnection(e) {
 
 async function fetchAllData() {
   try {
-    const [resApps, resGames, resCats, resSettings] = await Promise.all([
+    const [resApps, resGames, resCats, resSettings, resPromos] = await Promise.all([
       sb.from('apps').select('*'),
       sb.from('games').select('*'),
       sb.from('categories').select('*'),
@@ -209,6 +209,16 @@ function renderCurrentView() {
     `;
   } else if (currentRoute === 'promotions') {
     const selectedSection = window._selectedPromoSection || null;
+    const activeRegion = window._promoRegion || 'All';
+
+    const REGIONS = [
+      { key: 'All',    label: 'All Regions', flag: '🌐' },
+      { key: 'Global', label: 'Global',      flag: '🌍' },
+      { key: 'PK',     label: 'Pakistan',    flag: '🇵🇰' },
+      { key: 'US',     label: 'USA',         flag: '🇺🇸' },
+      { key: 'UK',     label: 'UK',          flag: '🇬🇧' },
+      { key: 'AE',     label: 'UAE',         flag: '🇦🇪' },
+    ];
 
     const ALL_SECTIONS = [
       { key: 'featured_app',            label: 'Featured App',                  type: 'app',  icon: '⭐' },
@@ -237,7 +247,11 @@ function renderCurrentView() {
     const now = new Date();
 
     function renderSectionItems(sec) {
-      const promos = data.promotions.filter(p => p.category_key === sec.key);
+      const promos = data.promotions.filter(p => {
+        if (p.category_key !== sec.key) return false;
+        if (activeRegion === 'All') return true;
+        return (p.region || 'Global') === activeRegion;
+      });
       if (promos.length === 0) {
         return `<div class="text-muted text-sm text-center py-8 opacity-50">No items spotlighted in this section yet.</div>`;
       }
@@ -297,15 +311,33 @@ function renderCurrentView() {
         </button>
       </div>
 
-      <div class="mb-3 flex gap-2">
+      <!-- Region Selector -->
+      <div class="glass rounded-[20px] p-4 mb-5 flex items-center gap-3 flex-wrap">
+        <span class="text-muted text-[10px] font-black uppercase tracking-widest flex-shrink-0">Filter by Region:</span>
+        ${REGIONS.map(r => `
+          <button onclick="setPromoRegion('${r.key}')"
+            class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeRegion === r.key ? 'bg-accent text-white shadow-lg' : 'bg-white/5 text-muted hover:text-white hover:bg-white/10'}">
+            <span>${r.flag}</span>
+            <span>${r.label}</span>
+            ${activeRegion === r.key ? `<span class="ml-1 text-[9px] bg-white/20 px-1.5 py-0.5 rounded-full">${data.promotions.filter(p => r.key === 'All' || (p.region || 'Global') === r.key).length}</span>` : ''}
+          </button>
+        `).join('')}
+      </div>
+
+      <!-- Section Type Filters -->
+      <div class="mb-4 flex gap-2">
         <button onclick="filterPromoType('all')" id="pf-all" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 text-white">All Sections</button>
-        <button onclick="filterPromoType('app')" id="pf-app" class="px-4 py-2 rounded-xl text-xs font-bold transition-all text-muted hover:text-white">Apps</button>
-        <button onclick="filterPromoType('game')" id="pf-game" class="px-4 py-2 rounded-xl text-xs font-bold transition-all text-muted hover:text-white">Games</button>
+        <button onclick="filterPromoType('app')" id="pf-app" class="px-4 py-2 rounded-xl text-xs font-bold transition-all text-muted hover:text-white">📱 Apps</button>
+        <button onclick="filterPromoType('game')" id="pf-game" class="px-4 py-2 rounded-xl text-xs font-bold transition-all text-muted hover:text-white">🎮 Games</button>
       </div>
 
       <div id="promo-sections-grid" class="space-y-3">
         ${ALL_SECTIONS.map(sec => {
-          const count = data.promotions.filter(p => p.category_key === sec.key).length;
+          const count = data.promotions.filter(p => {
+            if (p.category_key !== sec.key) return false;
+            if (activeRegion === 'All') return true;
+            return (p.region || 'Global') === activeRegion;
+          }).length;
           const isOpen = selectedSection === sec.key;
           return `
             <div class="glass rounded-[24px] overflow-hidden section-card" data-type="${sec.type}">
@@ -965,6 +997,11 @@ async function togglePromoActive(promoId, newState) {
   }
 }
 
+function setPromoRegion(region) {
+  window._promoRegion = region;
+  renderCurrentView();
+}
+
 function openPromoModal(promoId = null, presetSection = null) {
   editingPromoId = promoId;
   const promo = typeof promoId === 'string' ? data.promotions.find(p => p.id === promoId) : null;
@@ -1146,136 +1183,6 @@ async function handleQuickReject() {
 }
 
 
-function openPromoModal(promoId = null) {
-  editingPromoId = promoId;
-  const promo = typeof promoId === 'string' ? data.promotions.find(p => p.id === promoId) : null;
-  
-  const modal = document.createElement('div');
-  modal.className = 'fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md';
-  modal.id = 'promo-modal';
-  
-  const appOptions = data.apps.map(a => `<option value="${a.id}" ${promo && promo.item_id === a.id ? 'selected' : ''}>App: ${a.name}</option>`).join('');
-  const gameOptions = data.games.map(g => `<option value="${g.id}" ${promo && promo.item_id === g.id ? 'selected' : ''}>Game: ${g.name}</option>`).join('');
-  
-  const sectionKeys = [
-    'featured_app', 'recommended_for_you', 'trending', 'featured_apps', 
-    'hot_right_now', 'top_pick_for_you', 'editors_picks', 'popular_apps', 
-    'new_experience', 'super_apps', 'apps_might_like', 'personalize_recommendations', 
-    'crowd_favorites', 'this_month_best', 'featured_game', 'recommended_games',
-    'trending_games', 'featured_games', 'popular_games', 'super_games', 'games_might_like'
-  ];
-  
-  const sectionOptions = sectionKeys.map(k => `<option value="${k}" ${promo && promo.category_key === k ? 'selected' : ''}>${k.replace(/_/g,' ').toUpperCase()}</option>`).join('');
-
-  modal.innerHTML = `
-    <div class="glass w-full max-w-xl p-8 rounded-[40px] animate-in slide-up border border-white/10 shadow-2xl relative">
-      <button onclick="closePromoModal()" class="absolute top-6 right-6 text-muted hover:text-white transition-colors">×</button>
-      <h3 class="text-white text-2xl font-black mb-6">${typeof promoId === 'string' ? 'Edit Promotion' : 'Create Promotion'}</h3>
-      <form id="promo-form" class="space-y-6">
-        <div class="grid grid-cols-2 gap-6">
-          <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Target Item</label>
-            <select name="item_id" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
-              <optgroup label="Applications">${appOptions}</optgroup>
-              <optgroup label="Games">${gameOptions}</optgroup>
-            </select>
-          </div>
-          <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Display Section</label>
-            <select name="category_key" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
-              ${sectionOptions}
-            </select>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-6">
-          <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Target Region</label>
-            <select name="region" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
-              <option value="Global" ${promo && promo.region === 'Global' ? 'selected' : ''}>Global</option>
-              <option value="PK" ${promo && promo.region === 'PK' ? 'selected' : ''}>Pakistan</option>
-              <option value="US" ${promo && promo.region === 'US' ? 'selected' : ''}>USA</option>
-              <option value="UK" ${promo && promo.region === 'UK' ? 'selected' : ''}>UK</option>
-              <option value="AE" ${promo && promo.region === 'AE' ? 'selected' : ''}>UAE</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Status</label>
-            <select name="is_active" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
-              <option value="true" ${promo && promo.is_active !== false ? 'selected' : ''}>Active</option>
-              <option value="false" ${promo && promo.is_active === false ? 'selected' : ''}>Inactive / Scheduled</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-6">
-          <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Start Date</label>
-            <input type="date" name="start_date" value="${promo && promo.start_date ? promo.start_date.split('T')[0] : ''}" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none"/>
-          </div>
-          <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">End Date (Optional)</label>
-            <input type="date" name="end_date" value="${promo && promo.end_date ? promo.end_date.split('T')[0] : ''}" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none"/>
-          </div>
-        </div>
-
-        <button type="submit" class="w-full py-4 bg-accent text-white font-black rounded-2xl shadow-lg glow-purple active:scale-95 transition-all mt-4">
-          ${typeof promoId === 'string' ? 'SAVE CHANGES' : 'CREATE SPOTLIGHT'}
-        </button>
-      </form>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-  
-  document.getElementById('promo-form').onsubmit = handlePromoSubmit;
-}
-
-function closePromoModal() {
-  const modal = document.getElementById('promo-modal');
-  if (modal) modal.remove();
-  editingPromoId = null;
-}
-
-async function handlePromoSubmit(e) {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const itemId = fd.get('item_id');
-  const isGame = data.games.some(g => g.id === itemId);
-  
-  const payload = {
-    item_id: itemId,
-    item_type: isGame ? 'game' : 'app',
-    category_key: fd.get('category_key'),
-    region: fd.get('region'),
-    start_date: fd.get('start_date') || null,
-    end_date: fd.get('end_date') || null,
-    is_active: fd.get('is_active') === 'true'
-  };
-
-  try {
-    if (editingPromoId) {
-      await sb.from('promotions').update(payload).eq('id', editingPromoId);
-    } else {
-      await sb.from('promotions').insert(payload);
-    }
-    closePromoModal();
-    fetchAllData();
-  } catch (err) {
-    alert('Error saving promotion: ' + err.message);
-  }
-}
-
-async function deletePromotion(id) {
-  if (!confirm('Are you sure you want to remove this promotion?')) return;
-  try {
-    await sb.from('promotions').delete().eq('id', id);
-    fetchAllData();
-  } catch (err) {
-    alert('Error deleting promotion');
-  }
-}
-
 // ── EXPOSE TO WINDOW ───────────────────────────────────────────────────────────
 window.setRoute = setRoute;
 window.init = init;
@@ -1306,3 +1213,4 @@ window.togglePromoSection = togglePromoSection;
 window.filterPromoType = filterPromoType;
 window.updatePromoDate = updatePromoDate;
 window.togglePromoActive = togglePromoActive;
+window.setPromoRegion = setPromoRegion;
