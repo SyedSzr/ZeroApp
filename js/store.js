@@ -16,6 +16,8 @@ function AppProvider({ children }) {
   // ── Catalog State (Live from Supabase) ──
   const [liveApps, setLiveApps] = useState(typeof APPS !== 'undefined' ? APPS : []);
   const [liveGames, setLiveGames] = useState(typeof GAMES !== 'undefined' ? GAMES : []);
+  const [rawApps, setRawApps] = useState([]);
+  const [rawGames, setRawGames] = useState([]);
   const [liveCats, setLiveCats] = useState(typeof HOME_CATEGORIES !== 'undefined' ? [...HOME_CATEGORIES.map(c => ({ ...c, type: 'app' })), ...GAME_CATEGORIES.map(c => ({ ...c, type: 'game' }))] : []);
   const [settings, setSettings] = useState({ app_name: 'ZeroApp' });
 
@@ -108,7 +110,40 @@ function AppProvider({ children }) {
 
   const setLang = useCallback((l) => { setLangState(l); lsSet('zero_lang', l); }, []);
   const setTheme = useCallback((t) => { setThemeState(t); lsSet('zero_theme', t); document.documentElement.className = t === 'light' ? 'light-mode' : ''; }, []);
-  const setUserRegion = useCallback((r) => { setUserRegionState(r); lsSet('zero_region', r); }, []);
+  const setUserRegion = useCallback((r) => { 
+    setUserRegionState(r); 
+    lsSet('zero_region', r);
+    lsSet('zero_region_detected', true); // User manually changed, so we mark it as "detected" (handled)
+  }, []);
+
+  // ── Geolocation Detection ──
+  useEffect(() => {
+    const isDetected = ls('zero_region_detected', false);
+    if (!isDetected) {
+      fetch('https://ipapi.co/json/')
+        .then(res => res.json())
+        .then(data => {
+          if (data.country_code) {
+             const code = data.country_code;
+             let region = 'Global';
+             if (code === 'PK') region = 'PK';
+             else if (code === 'US') region = 'US';
+             else if (code === 'GB') region = 'UK';
+             else if (code === 'AE') region = 'AE';
+             
+             if (region !== 'Global') {
+               setUserRegionState(region); // Use state directly to avoid triggering the "detected" flag too early if we want
+               lsSet('zero_region', region);
+             }
+          }
+          lsSet('zero_region_detected', true);
+        })
+        .catch(err => {
+          console.error('Region detection failed:', err);
+          lsSet('zero_region_detected', true); // Don't keep trying if it fails
+        });
+    }
+  }, []);
 
   // ── Localization ──
   const translations = {
@@ -1452,22 +1487,8 @@ function AppProvider({ children }) {
         supabase.from('promotions').select('*')
       ]);
 
-      if (a.data && a.data.length > 0) {
-        const approved = a.data.filter(app => 
-          app.status === 'approved' && 
-          (app.region === userRegion || app.region === 'Global' || !app.region)
-        );
-        setLiveApps(approved);
-        window.liveApps = approved;
-      }
-      if (g.data && g.data.length > 0) {
-        const approved = g.data.filter(game => 
-          game.status === 'approved' && 
-          (game.region === userRegion || game.region === 'Global' || !game.region)
-        );
-        setLiveGames(approved);
-        window.liveGames = approved;
-      }
+      if (a.data) setRawApps(a.data);
+      if (g.data) setRawGames(g.data);
       if (c.data && c.data.length > 0) { setLiveCats(c.data); window.liveCats = c.data; }
       if (p.data) setPromotions(p.data);
 
@@ -1486,6 +1507,33 @@ function AppProvider({ children }) {
 
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  // ── Dynamic Filtering (Region Based) ──
+  useEffect(() => {
+    const filter = (list) => list.filter(item => {
+      // 1. Status Check (for database items)
+      if (item.status && item.status !== 'approved') return false;
+
+      // 2. Region Check
+      // Rule: USA or Global should show on USA. Pakistan should only be visible in Pakistan.
+      // Logic: (item.region === userRegion || item.region === 'Global' || !item.region)
+      const matchesRegion = (item.region === userRegion || item.region === 'Global' || !item.region);
+      
+      return matchesRegion;
+    });
+
+    const sourceApps = rawApps.length > 0 ? rawApps : (typeof APPS !== 'undefined' ? APPS : []);
+    const sourceGames = rawGames.length > 0 ? rawGames : (typeof GAMES !== 'undefined' ? GAMES : []);
+
+    const approvedApps = filter(sourceApps);
+    const approvedGames = filter(sourceGames);
+
+    setLiveApps(approvedApps);
+    window.liveApps = approvedApps;
+    
+    setLiveGames(approvedGames);
+    window.liveGames = approvedGames;
+  }, [rawApps, rawGames, userRegion]);
 
   // ── URL Helpers ──
   const getUrlForFrame = useCallback((frame) => {

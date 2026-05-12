@@ -2,7 +2,7 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function SearchScreen() {
-  const { goBack, searchQ, setSearchQ, openDetail, liveApps, t } = useApp();
+  const { goBack, searchQ, setSearchQ, openDetail, liveApps, liveGames, t } = useApp();
   const inputRef = useRef(null);
 
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 150); }, []);
@@ -11,12 +11,18 @@ function SearchScreen() {
 
   const results = useMemo(() => {
     if (!q) return [];
-    return liveApps.filter(a =>
-      a.name.toLowerCase().includes(q) ||
-      a.category.toLowerCase().includes(q) ||
-      (a.tags && a.tags.some(t_tag => t_tag.includes(q)))
-    );
-  }, [q, liveApps]);
+    // Combine both apps and games for a unified search experience
+    const all = [...(liveApps || []), ...(liveGames || [])];
+    return all.filter(a => {
+      const name = (a.name || '').toLowerCase();
+      const cat  = (a.category || a.gameCategory || '').toLowerCase();
+      const tags = Array.isArray(a.tags) ? a.tags : [];
+      
+      return name.includes(q) || 
+             cat.includes(q) || 
+             tags.some(t_tag => String(t_tag).toLowerCase().includes(q));
+    });
+  }, [q, liveApps, liveGames]);
 
   const topResults = results.slice(0, 4);
   const moreResults = results.slice(4);
@@ -49,7 +55,7 @@ function SearchScreen() {
       {/* ── Results ── */}
       <div className="flex-1 overflow-y-auto no-sb pb-28">
 
-        {/* Empty state */}
+        {/* Empty state - show recent or all apps */}
         {!q && (
           <div className="px-5 pt-6">
             <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{t('all_apps')} ({liveApps.length})</p>
@@ -82,7 +88,7 @@ function SearchScreen() {
           </div>
         )}
 
-        {/* More Apps */}
+        {/* More Results */}
         {moreResults.length > 0 && (
           <div className="px-4 pt-5">
             <p className="text-muted text-xs font-bold uppercase tracking-widest mb-3">{t('more_apps')}</p>
