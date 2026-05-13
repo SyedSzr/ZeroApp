@@ -101,12 +101,13 @@ function AppProvider({ children }) {
   const [theme, setThemeState] = useState(() => ls('zero_theme', 'dark'));
   const [userRegion, setUserRegionState] = useState(() => ls('zero_region', 'Global'));
   const [promotions, setPromotions] = useState([]);
+  const [recentSearches, setRecentSearchesState] = useState(() => ls('zero_recent_searches', []));
 
   useEffect(() => {
     document.documentElement.dir = (lang === 'ar' || lang === 'ur') ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
     document.documentElement.className = theme === 'light' ? 'light-mode' : '';
-  }, []);
+  }, [lang, theme]);
 
   const setLang = useCallback((l) => { setLangState(l); lsSet('zero_lang', l); }, []);
   const setTheme = useCallback((t) => { setThemeState(t); lsSet('zero_theme', t); document.documentElement.className = t === 'light' ? 'light-mode' : ''; }, []);
@@ -114,6 +115,21 @@ function AppProvider({ children }) {
     setUserRegionState(r); 
     lsSet('zero_region', r);
     lsSet('zero_region_detected', true); // User manually changed, so we mark it as "detected" (handled)
+  }, []);
+
+  const updateSearchHistory = useCallback((term) => {
+    if (!term || term.length < 2) return;
+    logActivity('search', null, { term });
+    setRecentSearchesState(prev => {
+      const next = [term, ...prev.filter(t => t !== term)].slice(0, 10);
+      lsSet('zero_recent_searches', next);
+      return next;
+    });
+  }, []);
+
+  const clearSearchHistory = useCallback(() => {
+    setRecentSearchesState([]);
+    lsSet('zero_recent_searches', []);
   }, []);
 
   // ── Geolocation Detection ──
@@ -1535,6 +1551,140 @@ function AppProvider({ children }) {
     window.liveGames = approvedGames;
   }, [rawApps, rawGames, userRegion]);
 
+  // ── Smart Recommendations ──
+  const getSmartRecommendations = useCallback((type = 'app') => {
+    const pool = type === 'game' ? liveGames : liveApps;
+    if (pool.length === 0) return [];
+
+    // 1. Collect user interests (tags from saved apps and recents)
+    const saved = pool.filter(a => savedApps.includes(a.id));
+    const recent = pool.filter(a => recents.some(r => r.id === a.id));
+    
+    const userTags = new Set();
+    [...saved, ...recent].forEach(a => {
+      if (Array.isArray(a.tags)) a.tags.forEach(t => userTags.add(t.toLowerCase()));
+    });
+
+    if (userTags.size === 0) return pool.slice(0, 10); // Fallback to first few
+
+    // 2. Score apps based on tag matches
+    const scored = pool.map(app => {
+      let score = 0;
+      if (Array.isArray(app.tags)) {
+        app.tags.forEach(t => {
+          if (userTags.has(t.toLowerCase())) score += 1;
+        });
+      }
+      // Boost highly rated apps slightly
+      score += (app.rating || 0) / 10;
+      return { ...app, _score: score };
+    });
+
+    // 3. Filter out already saved/recent apps from the "For You" list
+    const excludeIds = new Set([...savedApps, ...recents.map(r => r.id)]);
+    
+    return scored
+      .filter(a => !excludeIds.has(a.id))
+      .sort((a, b) => b._score - a._score)
+      .slice(0, 10);
+  }, [liveApps, liveGames, savedApps, recents]);
+
+  // ── Analytics & Identity Logic ──
+  const logActivity = useCallback(async (action, itemId = null, metadata = {}) => {
+    if (!supabase) return;
+    const entry = {
+      action,
+      item_id: itemId ? String(itemId) : null,
+      user_id: user?.id || null,
+      metadata
+    };
+    await supabase.from('activity_log').insert(entry);
+  }, [supabase, user]);
+
+  const uploadAvatar = useCallback(async (file) => {
+    if (!supabase || !user) return { error: 'Login required' };
+    
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
+
+    // 1. Upload to Storage
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file);
+
+    if (uploadError) return { error: uploadError };
+
+    // 2. Get Public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    // 3. Update Profile
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .upsert({ id: user.id, avatar_url: publicUrl, updated_at: new Date() });
+
+    if (updateError) return { error: updateError };
+    
+    // Refresh user profile state
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    setUserProfile(profile);
+
+    return { publicUrl };
+  }, [supabase, user]);
+
+  // ── Social Logic ──
+  const fetchComments = useCallback(async (itemId) => {
+    if (!supabase) return [];
+    // Join with profiles to get display_name
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*, profile:profiles(display_name, avatar_url)')
+      .eq('item_id', itemId)
+      .order('created_at', { ascending: false });
+    if (error) { console.error('Error fetching comments:', error); return []; }
+    return data;
+  }, [supabase]);
+
+  const postComment = useCallback(async (itemId, content) => {
+    if (!supabase || !user) return { error: 'Login required' };
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({ item_id: itemId, user_id: user.id, content })
+      .select('*, profile:profiles(display_name, avatar_url)')
+      .single();
+    return { data, error };
+  }, [supabase, user]);
+
+  const submitRating = useCallback(async (itemId, stars) => {
+    if (!supabase || !user) return { error: 'Login required' };
+    const { data, error } = await supabase
+      .from('ratings')
+      .upsert({ item_id: itemId, user_id: user.id, stars }, { onConflict: 'item_id,user_id' });
+    return { data, error };
+  }, [supabase, user]);
+
+  const fetchScores = useCallback(async (gameId) => {
+    if (!supabase) return [];
+    const { data, error } = await supabase
+      .from('leaderboards')
+      .select('*, profile:profiles(display_name, avatar_url)')
+      .eq('game_id', gameId)
+      .order('score', { ascending: false })
+      .limit(10);
+    if (error) { console.error('Error fetching scores:', error); return []; }
+    return data;
+  }, [supabase]);
+
+  const postScore = useCallback(async (gameId, score, metadata = {}) => {
+    if (!supabase || !user) return { error: 'Login required' };
+    const { data, error } = await supabase
+      .from('leaderboards')
+      .insert({ game_id: gameId, user_id: user.id, score, metadata });
+    return { data, error };
+  }, [supabase, user]);
+
   // ── URL Helpers ──
   const getUrlForFrame = useCallback((frame) => {
     if (!frame) return '#apps';
@@ -1657,12 +1807,15 @@ function AppProvider({ children }) {
 
   // ── Open app detail ──
   const openDetail = useCallback((app) => {
+    logActivity('detail_view', app.id, { name: app.name });
     go('detail', { detailApp: app });
-  }, []);
+  }, [logActivity]);
 
   // ── Multi-tasking Logic ──
   const launchApp = useCallback((app) => {
     if (!app || !app.url) return;
+
+    logActivity('app_open', app.id, { name: app.name });
 
     setTasks(prev => {
       // Check if already running
@@ -1814,7 +1967,8 @@ function AppProvider({ children }) {
     screen, history, go, goBack, goHome,
     mainTab, setMainTab,
     openDetail, launchApp,
-    tasks, activeTaskId, minimizeTask, closeTask, switchTask,
+    tasks, setTasks, activeTaskId, setActiveTaskId,
+    minimizeTask, closeTask, switchTask,
     searchQ, setSearchQ,
     recents, clearRecents,
     savedApps, folders, toggleSaveApp, isSaved,
@@ -1824,7 +1978,11 @@ function AppProvider({ children }) {
     userProfile,
     updateProfileName,
     t, lang, setLang, theme, setTheme,
-    userRegion, setUserRegion, promotions, getPromoItems
+    userRegion, setUserRegion, promotions, getPromoItems,
+    fetchComments, postComment, submitRating, fetchScores, postScore,
+    getSmartRecommendations,
+    recentSearches, updateSearchHistory, clearSearchHistory,
+    logActivity, uploadAvatar
   };
 
   return React.createElement(Ctx.Provider, { value }, children);

@@ -2,7 +2,7 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function SearchScreen() {
-  const { goBack, searchQ, setSearchQ, openDetail, liveApps, liveGames, t } = useApp();
+  const { goBack, searchQ, setSearchQ, openDetail, liveApps, liveGames, t, recentSearches, updateSearchHistory, clearSearchHistory } = useApp();
   const inputRef = useRef(null);
 
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 150); }, []);
@@ -58,10 +58,33 @@ function SearchScreen() {
         {/* Empty state - show recent or all apps */}
         {!q && (
           <div className="px-5 pt-6">
+            {recentSearches.length > 0 && (
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-muted text-xs font-bold uppercase tracking-widest">{t('recent')}</p>
+                  <button onClick={clearSearchHistory} className="text-accent text-[10px] font-bold uppercase">{t('clear_all')}</button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {recentSearches.map(term => (
+                    <button 
+                      key={term} 
+                      onClick={() => setSearchQ(term)}
+                      className="tap bg-surface border border-border px-4 py-2 rounded-xl text-white text-xs font-medium"
+                    >
+                      {term}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{t('all_apps')} ({liveApps.length})</p>
             <div className="flex flex-col gap-2">
               {liveApps.map(app => (
-                <ListAppRow key={app.id} app={app} onPress={openDetail} />
+                <ListAppRow key={app.id} app={app} onPress={(a) => {
+                  updateSearchHistory(a.name);
+                  openDetail(a);
+                }} />
               ))}
             </div>
           </div>
@@ -81,7 +104,10 @@ function SearchScreen() {
             <p className="text-muted text-xs font-bold uppercase tracking-widest mb-3">{t('top_results')}</p>
             <div className="flex flex-col gap-2">
               {topResults.map(app => (
-                <ListAppRow key={app.id} app={app} onPress={openDetail}
+                <ListAppRow key={app.id} app={app} onPress={(a) => {
+                  updateSearchHistory(searchQ);
+                  openDetail(a);
+                }}
                   rightSlot={<span className="text-muted text-sm">›</span>} />
               ))}
             </div>
@@ -94,7 +120,10 @@ function SearchScreen() {
             <p className="text-muted text-xs font-bold uppercase tracking-widest mb-3">{t('more_apps')}</p>
             <div className="flex flex-col gap-2">
               {moreResults.map(app => (
-                <ListAppRow key={app.id} app={app} onPress={openDetail} />
+                <ListAppRow key={app.id} app={app} onPress={(a) => {
+                  updateSearchHistory(searchQ);
+                  openDetail(a);
+                }} />
               ))}
             </div>
           </div>

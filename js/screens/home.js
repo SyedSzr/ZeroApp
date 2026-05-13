@@ -2,10 +2,10 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function AppsScreen() {
-  const { greeting, recents, openDetail, go, liveApps, liveCats, t, getPromoItems } = useApp();
+  const { greeting, recents, openDetail, go, liveApps, liveCats, t, getPromoItems, getSmartRecommendations } = useApp();
   
   const featuredApp = getPromoItems('featured_app', 'app')?.[0] || liveApps.find(a => a.is_featured) || liveApps[0];
-  const recommended = getPromoItems('recommended_for_you', 'app') || liveApps.slice(0, 6);
+  const recommended = getSmartRecommendations('app');
   const trending = getPromoItems('trending', 'app') || liveApps.slice(6, 12);
   const featuredSmall = getPromoItems('featured_apps', 'app') || liveApps.filter(a => a.is_featured).slice(0, 8);
   const hotRightNow = getPromoItems('hot_right_now', 'app') || liveApps.slice(3, 9);
@@ -15,7 +15,7 @@ function AppsScreen() {
   const newExp = getPromoItems('new_experience', 'app') || liveApps.slice(15, 21);
   const superApps = getPromoItems('super_apps', 'app') || liveApps.slice(0, 4);
   const mightLike = getPromoItems('apps_might_like', 'app') || liveApps.slice(10, 16);
-  const personalized = getPromoItems('personalize_recommendations', 'app') || liveApps.slice(5, 11);
+  const personalized = getSmartRecommendations('app').slice(0, 6);
   const crowdFavs = getPromoItems('crowd_favorites', 'app') || liveApps.slice(2, 8);
   const monthBest = getPromoItems('this_month_best', 'app') || liveApps.slice(4, 10);
 

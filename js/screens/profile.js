@@ -2,7 +2,9 @@
 var { useState } = React;
 
 function ProfileScreen() {
-  var { savedApps, folders, createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder, toggleSaveApp, go, openDetail, user, supabase, signOut, userProfile, updateProfileName, t } = useApp();
+  var { savedApps, folders, createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder, toggleSaveApp, go, openDetail, user, supabase, signOut, userProfile, updateProfileName, t, uploadAvatar, logActivity } = useApp();
+  
+  const [isUploading, setIsUploading] = useState(false);
   
   const [mySubmissions, setMySubmissions] = useState([]);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -18,6 +20,30 @@ function ProfileScreen() {
       fetchSubs();
     }
   }, [user, supabase]);
+
+  const onAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploading(true);
+    const { publicUrl, error } = await uploadAvatar(file);
+    setIsUploading(false);
+    if (!error) {
+      logActivity('avatar_update', null, { url: publicUrl });
+    }
+  };
+
+  const personalStats = [
+    { label: t('my_apps'), count: savedApps.length, icon: '📦' },
+    { label: t('new_folder'), count: folders.length, icon: '📁' },
+    { label: t('my_submissions'), count: mySubmissions.length, icon: '🚀' },
+  ];
+
+  const { liveApps, liveGames } = useApp();
+  const platformStats = [
+    { label: t('apps'), count: liveApps.length, icon: '📱' },
+    { label: t('games_nav'), count: liveGames.length, icon: '🎮' },
+    { label: 'Users', count: '10K+', icon: '👥' },
+  ];
 
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -102,9 +128,22 @@ function ProfileScreen() {
         {/* ── User Card ── */}
         {user ? (
           <div className="px-5 py-5 flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-violet-400 flex items-center justify-center text-3xl text-white font-bold flex-shrink-0">
-              {userProfile?.display_name ? userProfile.display_name.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : 'U')}
+            <div 
+              onClick={() => document.getElementById('avatar-input').click()}
+              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-violet-400 flex items-center justify-center text-3xl text-white font-bold flex-shrink-0 relative overflow-hidden tap cursor-pointer border-2 border-accent/20 group">
+              {isUploading ? (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : null}
+              {userProfile?.avatar_url ? (
+                <img src={userProfile.avatar_url} className="w-full h-full object-cover" />
+              ) : (
+                <span>{userProfile?.display_name ? userProfile.display_name.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : 'U')}</span>
+              )}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] uppercase font-black tracking-tighter">Edit</div>
             </div>
+            <input type="file" id="avatar-input" className="hidden" accept="image/*" onChange={onAvatarChange} />
             <div className="flex-1 min-w-0">
               {isEditingName ? (
                 <div className="flex items-center gap-2">
@@ -131,6 +170,17 @@ function ProfileScreen() {
             </div>
           </div>
         )}
+
+        {/* ── Quick Stats ── */}
+        <div className="px-5 grid grid-cols-3 gap-3 mb-6">
+          {(user ? personalStats : platformStats).map(s => (
+            <div key={s.label} className="bg-card border border-border p-3 rounded-2xl text-center shadow-sm">
+              <div className="text-xl mb-1">{s.icon}</div>
+              <div className="text-white font-black text-sm">{s.count}</div>
+              <div className="text-muted text-[9px] uppercase tracking-tighter font-bold">{s.label}</div>
+            </div>
+          ))}
+        </div>
 
         {/* ── My Submissions (My Games) ── */}
         <div className="px-5 mt-2 mb-8">

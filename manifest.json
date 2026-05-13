@@ -2,13 +2,37 @@
   "name": "ZeroApp",
   "short_name": "ZeroApp",
   "description": "Instantly access web applications without downloading them.",
-  "start_url": "index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0d0d14",
-  "theme_color": "#0d0d14",
+  "theme_color": "#7c6af7",
+  "categories": ["productivity", "games", "utilities"],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search",
+      "short_name": "Search",
+      "description": "Search for apps and games",
+      "url": "./index.html#search",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Games",
+      "short_name": "Games",
+      "description": "Explore the game feed",
+      "url": "./index.html#games",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Explore",
+      "short_name": "Explore",
+      "description": "Discover new applications",
+      "url": "./index.html#explore",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }
