@@ -207,42 +207,34 @@ function AppDetailScreen({ detailApp: initialApp }) {
               </div>
 
               {/* Post Comment Input */}
-              {user ? (
-                <div className="mb-10">
-                  <div className="relative bg-card border border-border rounded-[28px] p-4 focus-within:border-accent/50 transition-colors shadow-inner">
-                    <textarea 
-                      value={newComment}
-                      onChange={e => setNewComment(e.target.value)}
-                      placeholder="Share your thoughts with the community..."
-                      className="w-full bg-transparent text-white text-sm focus:outline-none min-h-[80px] resize-none placeholder:text-muted/60"
-                    />
-                    <div className="flex justify-end pt-2">
-                      <button 
-                        onClick={async () => {
-                          if (!newComment.trim()) return;
-                          setIsPosting(true);
-                          const { data, error } = await postComment(app.id, newComment);
-                          if (!error) {
-                            setComments(prev => [data, ...prev]);
-                            setNewComment('');
-                          }
-                          setIsPosting(false);
-                        }}
-                        disabled={isPosting || !newComment.trim()}
-                        className="bg-accent hover:bg-accent/80 text-white px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-accent/20 disabled:opacity-30 transition-all"
-                      >
-                        {isPosting ? '...' : 'Post Review'}
-                      </button>
-                    </div>
+              <div className="mb-10">
+                <div className="relative bg-card border border-border rounded-[28px] p-4 focus-within:border-accent/50 transition-colors shadow-inner">
+                  <textarea 
+                    value={newComment}
+                    onChange={e => setNewComment(e.target.value)}
+                    placeholder="Share your thoughts with the community..."
+                    className="w-full bg-transparent text-white text-sm focus:outline-none min-h-[80px] resize-none placeholder:text-muted/60"
+                  />
+                  <div className="flex justify-end pt-2">
+                    <button 
+                      onClick={async () => {
+                        if (!newComment.trim()) return;
+                        setIsPosting(true);
+                        const { data, error } = await postComment(app.id, newComment);
+                        if (!error) {
+                          setComments(prev => [data, ...prev]);
+                          setNewComment('');
+                        }
+                        setIsPosting(false);
+                      }}
+                      disabled={isPosting || !newComment.trim()}
+                      className="bg-accent hover:bg-accent/80 text-white px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-accent/20 disabled:opacity-30 transition-all"
+                    >
+                      {isPosting ? '...' : 'Post Review'}
+                    </button>
                   </div>
                 </div>
-              ) : (
-                <button onClick={() => go('auth')}
-                  className="tap w-full bg-surface border border-dashed border-border rounded-3xl p-6 mb-10 text-center flex flex-col items-center justify-center">
-                  <p className="text-accent text-xs font-black uppercase tracking-widest mb-1">{t('sign_in')} to review</p>
-                  <p className="text-muted text-[10px]">{t('login_review_sub')}</p>
-                </button>
-              )}
+              </div>
 
               {/* Comment List */}
               <div className="space-y-4">

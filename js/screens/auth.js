@@ -1,7 +1,7 @@
 // ── AUTH SCREENS ─────────────────────────────────────────────────────────────
 var { useState } = React;
 
-window.AuthScreen = function AuthScreen() {
+function AuthScreen() {
   var { signIn, signUp, signInWithGoogle, goBack } = useApp();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');

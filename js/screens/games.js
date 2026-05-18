@@ -220,29 +220,20 @@ function CommentsOverlay({ game, onClose }) {
           ))}
         </div>
         <div className="p-4 pb-20 border-t border-[#fff]/10 flex gap-2">
-          {user ? (
-            <>
-              <input
-                type="text"
-                value={text}
-                onChange={e => setText(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handlePost()}
-                placeholder={t('add_comment')}
-                className="flex-1 bg-[#fff]/10 border-none rounded-full px-4 py-2 text-sm text-[#fff] focus:outline-none"
-              />
-              <button
-                onClick={handlePost}
-                disabled={posting || !text.trim()}
-                className="bg-[#6b4eff] text-[#fff] p-2 rounded-full w-10 h-10 flex items-center justify-center disabled:opacity-40">
-                ➤
-              </button>
-            </>
-          ) : (
-            <button onClick={() => go('auth')}
-              className="flex-1 bg-[#6b4eff] text-[#fff] rounded-full py-2 text-sm font-bold">
-              Sign in to comment
-            </button>
-          )}
+          <input
+            type="text"
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handlePost()}
+            placeholder={t('add_comment')}
+            className="flex-1 bg-[#fff]/10 border-none rounded-full px-4 py-2 text-sm text-[#fff] focus:outline-none"
+          />
+          <button
+            onClick={handlePost}
+            disabled={posting || !text.trim()}
+            className="bg-[#6b4eff] text-[#fff] p-2 rounded-full w-10 h-10 flex items-center justify-center disabled:opacity-40">
+            ➤
+          </button>
         </div>
       </div>
     </div>
