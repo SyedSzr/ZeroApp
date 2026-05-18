@@ -1685,6 +1685,44 @@ function AppProvider({ children }) {
     return { data, error };
   }, [supabase, user]);
 
+  // ── Love / React Logic ──
+  const toggleLove = useCallback(async (itemId) => {
+    if (!supabase || !user) return { error: 'Login required' };
+    // Check if already loved
+    const { data: existing } = await supabase
+      .from('loves')
+      .select('id')
+      .eq('item_id', itemId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (existing) {
+      const { error } = await supabase.from('loves').delete().eq('id', existing.id);
+      return { loved: false, error };
+    } else {
+      const { error } = await supabase.from('loves').insert({ item_id: itemId, user_id: user.id });
+      return { loved: true, error };
+    }
+  }, [supabase, user]);
+
+  const fetchLoves = useCallback(async (itemId) => {
+    if (!supabase) return { count: 0, loved: false };
+    const { count } = await supabase
+      .from('loves')
+      .select('id', { count: 'exact', head: true })
+      .eq('item_id', itemId);
+    let loved = false;
+    if (user) {
+      const { data } = await supabase
+        .from('loves')
+        .select('id')
+        .eq('item_id', itemId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      loved = !!data;
+    }
+    return { count: count || 0, loved };
+  }, [supabase, user]);
+
   // ── URL Helpers ──
   const getUrlForFrame = useCallback((frame) => {
     if (!frame) return '#apps';
@@ -1980,6 +2018,7 @@ function AppProvider({ children }) {
     t, lang, setLang, theme, setTheme,
     userRegion, setUserRegion, promotions, getPromoItems,
     fetchComments, postComment, submitRating, fetchScores, postScore,
+    toggleLove, fetchLoves,
     getSmartRecommendations,
     recentSearches, updateSearchHistory, clearSearchHistory,
     logActivity, uploadAvatar

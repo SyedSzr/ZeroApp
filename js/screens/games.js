@@ -1,12 +1,258 @@
-// ── GAMES SCREEN — PlayScroll Immersive Feed (Pixel Perfect Figma) ────────────
-var { useState, useRef } = React;
+// ── GAMES SCREEN — PlayScroll Immersive Feed ─────────────────────────────────
+var { useState, useRef, useEffect, useCallback } = React;
+
+// ── Per-Game Card (owns love/comment state) ───────────────────────────────────
+function GameCard({ game, onCommentOpen }) {
+  const { user, go, toggleSaveApp, isSaved, launchApp, fetchLoves, toggleLove, fetchComments, t } = useApp();
+
+  const [loveCount, setLoveCount] = useState(0);
+  const [loved, setLoved] = useState(false);
+  const [commentCount, setCommentCount] = useState(0);
+  const [lovePending, setLovePending] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchLoves(game.id).then(({ count, loved: isLoved }) => {
+      if (!cancelled) { setLoveCount(count); setLoved(isLoved); }
+    });
+    fetchComments(game.id).then(arr => {
+      if (!cancelled) setCommentCount(arr.length);
+    });
+    return () => { cancelled = true; };
+  }, [game.id, user]);
+
+  const handleLove = async () => {
+    if (!user) { go('auth'); return; }
+    if (lovePending) return;
+    setLovePending(true);
+    // Optimistic
+    const wasLoved = loved;
+    setLoved(!wasLoved);
+    setLoveCount(c => wasLoved ? Math.max(0, c - 1) : c + 1);
+    const result = await toggleLove(game.id);
+    if (result.error) { setLoved(wasLoved); setLoveCount(c => wasLoved ? c + 1 : Math.max(0, c - 1)); }
+    setLovePending(false);
+  };
+
+  const handleShare = () => {
+    const deepLink = `${window.location.origin}${window.location.pathname}#games?gameId=${game.id}`;
+    if (navigator.share) {
+      navigator.share({ title: game.name, text: `Check out ${game.name} on ZeroApp!`, url: deepLink }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(deepLink);
+      alert('Link copied: ' + deepLink);
+    }
+  };
+
+  const tags = game.tags ? (Array.isArray(game.tags) ? game.tags : game.tags.split(',').map(t => t.trim())) : [];
+  const developerName = game.developer || game.author || 'ZeroApp Studios';
+
+  return (
+    <div className="h-full w-full relative flex flex-col justify-end flex-shrink-0">
+      {/* Background */}
+      <div className="absolute inset-0 z-0">
+        {game.featured_image ? (
+          <img src={game.featured_image} className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-[#0d0d12]" />
+            <div className="absolute inset-0 flex items-center justify-center opacity-10 blur-3xl">
+              <span style={{ fontSize: '350px' }}>{game.emoji}</span>
+            </div>
+          </>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+      </div>
+
+      {/* Right Action Stack */}
+      <div className="absolute right-4 bottom-24 flex flex-col items-center gap-6 z-20 pointer-events-auto">
+        {/* Avatar */}
+        <div className="relative mb-2">
+          <div className="w-12 h-12 rounded-full border-[1.5px] border-[#fff] flex items-center justify-center bg-card overflow-hidden">
+            <AppIcon app={game} size="md" />
+          </div>
+          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#FF2D55] border-2 border-black flex items-center justify-center text-[#fff] text-[10px] font-bold">+</div>
+        </div>
+
+        {/* Love */}
+        <div className="flex flex-col items-center gap-1" onClick={handleLove} style={{ cursor: 'pointer' }}>
+          <svg width="30" height="30" viewBox="0 0 24 24"
+            fill={loved ? '#FF2D55' : 'none'}
+            stroke={loved ? '#FF2D55' : '#fff'}
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            className={`drop-shadow-md transition-transform ${lovePending ? 'scale-90' : 'hover:scale-110'}`}>
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+          <span className="text-[#fff] text-[12px] font-bold drop-shadow-md">{loveCount > 0 ? loveCount : ''}</span>
+        </div>
+
+        {/* Comments */}
+        <div className="flex flex-col items-center gap-1" onClick={() => onCommentOpen(game)} style={{ cursor: 'pointer' }}>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <span className="text-[#fff] text-[12px] font-bold drop-shadow-md">{commentCount > 0 ? commentCount : ''}</span>
+        </div>
+
+        {/* Save */}
+        <div className="flex flex-col items-center gap-1" onClick={() => toggleSaveApp(game)} style={{ cursor: 'pointer' }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill={isSaved(game.id) ? '#fff' : 'none'} stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+          </svg>
+          <span className="text-[#fff] text-[12px] font-bold drop-shadow-md">{t('save')}</span>
+        </div>
+
+        {/* Leaderboard — disabled */}
+        <div className="flex flex-col items-center gap-1" style={{ opacity: 0.3, cursor: 'not-allowed' }}>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+            <path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+            <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" />
+          </svg>
+        </div>
+
+        {/* Share */}
+        <div className="flex flex-col items-center gap-1 mt-1" onClick={handleShare} style={{ cursor: 'pointer' }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform">
+            <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Bottom Info */}
+      <div className="px-5 pb-24 pt-20 bg-gradient-to-t from-black via-black/80 to-transparent z-10 flex items-end justify-between pointer-events-none">
+        <div className="flex-1 pr-16 pointer-events-auto">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[#fff] font-bold text-[15px] drop-shadow-md">{developerName}</span>
+            <span className="bg-[#fff]/20 backdrop-blur-sm px-2 py-0.5 rounded-full text-[#fff] text-[10px] font-bold tracking-wide">{t('developer')}</span>
+          </div>
+          <h2 className="text-[#fff] text-[26px] font-black leading-tight mb-2 drop-shadow-lg">{game.name}</h2>
+          <p className="text-[#fff]/80 text-[13px] font-medium leading-snug mb-3 line-clamp-2 drop-shadow-md">
+            {game.desc || ''}
+          </p>
+          {tags.length > 0 && (
+            <div className="flex gap-2 mb-5 flex-wrap">
+              {tags.slice(0, 3).map(tag => (
+                <span key={tag} className="bg-black/40 border border-[#fff]/10 backdrop-blur-sm px-2.5 py-1 rounded-md text-[#fff]/90 text-[11px] font-semibold">
+                  {tag.startsWith('#') ? tag : '#' + tag}
+                </span>
+              ))}
+            </div>
+          )}
+          <button onClick={() => launchApp(game)}
+            className="w-[85%] py-3.5 rounded-xl bg-gradient-to-r from-[#5a3eff] to-[#7b5cff] text-[#fff] font-bold text-[16px] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(90,62,255,0.4)] active:scale-[0.97] transition-transform">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+            {t('play_now')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Comments Overlay (real DB) ────────────────────────────────────────────────
+function CommentsOverlay({ game, onClose }) {
+  const { user, go, fetchComments, postComment, t } = useApp();
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [text, setText] = useState('');
+  const [posting, setPosting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchComments(game.id).then(data => {
+      if (!cancelled) { setComments(data); setLoading(false); }
+    });
+    return () => { cancelled = true; };
+  }, [game.id]);
+
+  const handlePost = async () => {
+    if (!user) { go('auth'); return; }
+    if (!text.trim() || posting) return;
+    setPosting(true);
+    const { data, error } = await postComment(game.id, text.trim());
+    if (!error && data) { setComments(prev => [data, ...prev]); setText(''); }
+    setPosting(false);
+  };
+
+  const initials = (c) => {
+    const name = c.profile?.display_name || 'U';
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const timeAgo = (ts) => {
+    const diff = (Date.now() - new Date(ts)) / 1000;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  };
+
+  return (
+    <div className="absolute inset-0 z-50 flex flex-col justify-end pointer-events-auto">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="bg-[#111] w-full h-[65%] rounded-t-3xl relative flex flex-col slide-up shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        <div className="w-12 h-1 bg-[#fff]/20 rounded-full mx-auto mt-3 mb-2" />
+        <h3 className="text-[#fff] font-bold text-center py-2 border-b border-[#fff]/10">
+          {comments.length > 0 ? `${comments.length} ${t('comments_count')}` : t('comments_count')}
+        </h3>
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+          {loading && <div className="text-[#fff]/40 text-sm text-center py-8">Loading...</div>}
+          {!loading && comments.length === 0 && (
+            <div className="text-[#fff]/40 text-sm text-center py-8">No comments yet. Be the first!</div>
+          )}
+          {comments.map(c => (
+            <div key={c.id} className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#6b4eff] to-[#ff2d55] flex items-center justify-center text-xs text-[#fff] font-bold flex-shrink-0">
+                {c.profile?.avatar_url
+                  ? <img src={c.profile.avatar_url} className="w-full h-full rounded-full object-cover" />
+                  : initials(c)}
+              </div>
+              <div className="flex-1">
+                <div className="text-[#fff]/60 text-xs font-semibold">{c.profile?.display_name || 'Anonymous'}</div>
+                <div className="text-[#fff] text-sm mt-0.5">{c.content}</div>
+                <div className="text-[#fff]/40 text-[10px] mt-1">{timeAgo(c.created_at)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="p-4 border-t border-[#fff]/10 flex gap-2">
+          {user ? (
+            <>
+              <input
+                type="text"
+                value={text}
+                onChange={e => setText(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handlePost()}
+                placeholder={t('add_comment')}
+                className="flex-1 bg-[#fff]/10 border-none rounded-full px-4 py-2 text-sm text-[#fff] focus:outline-none"
+              />
+              <button
+                onClick={handlePost}
+                disabled={posting || !text.trim()}
+                className="bg-[#6b4eff] text-[#fff] p-2 rounded-full w-10 h-10 flex items-center justify-center disabled:opacity-40">
+                ➤
+              </button>
+            </>
+          ) : (
+            <button onClick={() => go('auth')}
+              className="flex-1 bg-[#6b4eff] text-[#fff] rounded-full py-2 text-sm font-bold">
+              Sign in to comment
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function GamesScreen() {
-  const { greeting, openDetail, go, toggleSaveApp, isSaved, liveGames, liveCats, launchApp, user, t } = useApp();
+  const { greeting, openDetail, go, liveGames, launchApp, user, t } = useApp();
   const [viewMode, setViewMode] = useState('feed');
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [activeOverlay, setActiveOverlay] = useState(null); // 'comments' | 'leaderboard'
-  const sectionRefs = useRef({});
+  const [commentGame, setCommentGame] = useState(null); // game whose comments overlay is open
   const feedRef = useRef(null);
   const scrollLock = useRef(false);
 
@@ -50,11 +296,7 @@ function GamesScreen() {
     };
   }, [viewMode]);
 
-  const allGames = [...liveGames].sort((a, b) => {
-    const dateA = new Date(a.created_at || 0);
-    const dateB = new Date(b.created_at || 0);
-    return dateB - dateA;
-  });
+  const allGames = [...liveGames].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
   if (viewMode === 'discover') {
     return <GamesDiscoveryView onBack={() => setViewMode('feed')} />;
@@ -63,7 +305,7 @@ function GamesScreen() {
   return (
     <div className="relative h-full w-full bg-black overflow-hidden font-sans">
 
-      {/* ── TOP NAV (Header & Discover) ── */}
+      {/* Top Nav gradient */}
       <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-black/90 via-black/40 to-transparent z-30 pointer-events-none" />
 
       <div className="absolute top-0 left-0 right-0 pt-safe px-5 pt-5 pb-1 z-40 pointer-events-none">
@@ -75,15 +317,12 @@ function GamesScreen() {
             </div>
             <p className="text-[#fff] text-2xl font-bold leading-tight">{greeting} 👋</p>
             <p className="text-[#fff]/60 text-sm mt-0.5">{t('games_header')}</p>
-
-            {/* Discover Button - On the Left */}
             <button onClick={() => setViewMode('discover')}
               className="mt-4 flex items-center gap-1.5 bg-[#6b4eff] rounded-full py-1.5 px-3.5 shadow-[0_0_20px_rgba(107,78,255,0.4)] pointer-events-auto active:scale-95 transition-transform">
               <span className="text-[#fff] text-[13px]">🔍</span>
               <span className="text-[#fff] text-[13px] font-bold">{t('discover')}</span>
             </button>
           </div>
-
           <div className="flex flex-col items-center gap-2 mt-1 pointer-events-auto">
             <button className="tap w-10 h-10 rounded-xl bg-black/40 backdrop-blur-md border border-[#fff]/10 flex items-center justify-center">
               <span className="text-xl">🔔</span>
@@ -97,173 +336,21 @@ function GamesScreen() {
         </div>
       </div>
 
-      {/* ── Feed Container (Strict 1-by-1 JS Scroll) ── */}
+      {/* Feed */}
       <div ref={feedRef} className="h-full w-full overflow-hidden no-sb">
-        {allGames.map((game, idx) => (
-          <div key={game.id} className="h-full w-full relative flex flex-col justify-end flex-shrink-0">
-
-            {/* Background Visual */}
-            <div className="absolute inset-0 z-0">
-              {game.featured_image ? (
-                <img src={game.featured_image} className="absolute inset-0 w-full h-full object-cover" />
-              ) : (
-                <>
-                  <div className={`absolute inset-0 bg-[#0d0d12]`} />
-                  <div className="absolute inset-0 flex items-center justify-center opacity-10 blur-3xl">
-                    <span style={{ fontSize: '350px' }}>{game.emoji}</span>
-                  </div>
-                </>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-            </div>
-
-            {/* Pagination Dots (from screenshot) */}
-            <div className="absolute bottom-52 left-5 flex gap-1 z-20 opacity-50">
-              <div className="w-2 h-1 bg-[#fff] rounded-full"></div>
-              <div className="w-1 h-1 bg-[#fff]/50 rounded-full"></div>
-              <div className="w-1 h-1 bg-[#fff]/50 rounded-full"></div>
-            </div>
-
-            {/* ── Right Side Action Stack (All Icons) ── */}
-            <div className="absolute right-4 bottom-24 flex flex-col items-center gap-6 z-20 pointer-events-auto">
-              <div className="relative mb-2">
-                <div className="w-12 h-12 rounded-full border-[1.5px] border-[#fff] flex items-center justify-center bg-card overflow-hidden">
-                  <AppIcon app={game} size="md" />
-                </div>
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#FF2D55] border-2 border-black flex items-center justify-center text-[#fff] text-[10px] font-bold">+</div>
-              </div>
-
-              <div className="flex flex-col items-center gap-1">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="#FF2D55" stroke="#FF2D55" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                <span className="text-[#fff] text-[12px] font-bold drop-shadow-md">1206</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-1" onClick={() => setActiveOverlay('comments')}>
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                <span className="text-[#fff] text-[12px] font-bold drop-shadow-md">45</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-1" onClick={() => toggleSaveApp(game)}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill={isSaved(game.id) ? "#fff" : "none"} stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-                <span className="text-[#fff] text-[12px] font-bold drop-shadow-md">{t('save')}</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-1" onClick={() => setActiveOverlay('leaderboard')}>
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
-              </div>
-
-              <div className="flex flex-col items-center gap-1 mt-1">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform cursor-pointer"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-              </div>
-            </div>
-
-            {/* ── Bottom Info Section ── */}
-            <div className="px-5 pb-24 pt-20 bg-gradient-to-t from-black via-black/80 to-transparent z-10 flex items-end justify-between pointer-events-none">
-              <div className="flex-1 pr-16 pointer-events-auto">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[#fff] font-bold text-[15px] drop-shadow-md">PixelStudios</span>
-                  <span className="bg-[#fff]/20 backdrop-blur-sm px-2 py-0.5 rounded-full text-[#fff] text-[10px] font-bold tracking-wide">{t('developer')}</span>
-                </div>
-                <h2 className="text-[#fff] text-[26px] font-black leading-tight mb-2 drop-shadow-lg">{game.name}</h2>
-                <p className="text-[#fff]/80 text-[13px] font-medium leading-snug mb-3 line-clamp-2 drop-shadow-md">
-                  {game.desc || "High speed racing in a neon city.\nDodge traffic and hit the checkpoints!"}
-                </p>
-
-                {/* Tags */}
-                <div className="flex gap-2 mb-5">
-                  {['#Racing', '#Action', '#Cyberpunk'].map(tag => (
-                    <span key={tag} className="bg-black/40 border border-[#fff]/10 backdrop-blur-sm px-2.5 py-1 rounded-md text-[#fff]/90 text-[11px] font-semibold">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Play Button */}
-                <button onClick={() => { launchApp(game); }}
-                  className="w-[85%] py-3.5 rounded-xl bg-gradient-to-r from-[#5a3eff] to-[#7b5cff] text-[#fff] font-bold text-[16px] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(90,62,255,0.4)] active:scale-[0.97] transition-transform">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                  {t('play_now')}
-                </button>
-              </div>
-            </div>
-          </div>
+        {allGames.map((game) => (
+          <GameCard key={game.id} game={game} onCommentOpen={(g) => setCommentGame(g)} />
         ))}
       </div>
 
-      {/* ── Overlays ── */}
-      {activeOverlay === 'comments' && (
-        <div className="absolute inset-0 z-50 flex flex-col justify-end pointer-events-auto">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setActiveOverlay(null)}></div>
-          <div className="bg-[#111] w-full h-[65%] rounded-t-3xl relative flex flex-col slide-up shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-            <div className="w-12 h-1 bg-[#fff]/20 rounded-full mx-auto mt-3 mb-2"></div>
-            <h3 className="text-[#fff] font-bold text-center py-2 border-b border-[#fff]/10">{t('comments_count')}</h3>
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-xs text-[#fff] font-bold">JD</div>
-                <div className="flex-1">
-                  <div className="text-[#fff]/60 text-xs font-semibold">John Doe</div>
-                  <div className="text-[#fff] text-sm mt-0.5">This game is incredibly addictive! I can't stop playing it.</div>
-                  <div className="text-[#fff]/40 text-[10px] mt-1">2h ago</div>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-xs text-[#fff] font-bold">AS</div>
-                <div className="flex-1">
-                  <div className="text-[#fff]/60 text-xs font-semibold">Alice Smith</div>
-                  <div className="text-[#fff] text-sm mt-0.5">The graphics are insane. Love the new update!</div>
-                  <div className="text-[#fff]/40 text-[10px] mt-1">5h ago</div>
-                </div>
-              </div>
-            </div>
-            <div className="p-4 border-t border-[#fff]/10 flex gap-2">
-              <input type="text" placeholder={t('add_comment')} className="flex-1 bg-[#fff]/10 border-none rounded-full px-4 py-2 text-sm text-[#fff] focus:outline-none" />
-              <button className="bg-[#6b4eff] text-[#fff] p-2 rounded-full w-10 h-10 flex items-center justify-center">➤</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeOverlay === 'leaderboard' && (
-        <div className="absolute inset-0 z-50 flex flex-col justify-end pointer-events-auto">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setActiveOverlay(null)}></div>
-          <div className="bg-[#111] w-full h-[75%] rounded-t-3xl relative flex flex-col slide-up shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-            <div className="w-12 h-1 bg-[#fff]/20 rounded-full mx-auto mt-3 mb-2"></div>
-            <h3 className="text-[#fff] font-bold text-center py-2 border-b border-[#fff]/10">{t('leaderboard')}</h3>
-            <div className="flex-1 overflow-y-auto px-4 py-6">
-              <div className="flex justify-center items-end gap-4 mb-8">
-                {/* 2nd Place */}
-                <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 rounded-full bg-gray-400 border-4 border-[#111] z-10 flex items-center justify-center text-[#fff] font-bold">S</div>
-                  <div className="bg-gradient-to-t from-gray-500 to-gray-300 w-16 h-20 rounded-t-xl mt-[-10px] flex items-center justify-center text-xl font-black text-[#fff]/50">2</div>
-                </div>
-                {/* 1st Place */}
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-yellow-400 border-4 border-[#111] z-10 flex items-center justify-center text-black text-xl font-black">👑</div>
-                  <div className="bg-gradient-to-t from-yellow-600 to-yellow-400 w-20 h-28 rounded-t-xl mt-[-15px] flex items-center justify-center text-3xl font-black text-[#fff]/50">1</div>
-                </div>
-                {/* 3rd Place */}
-                <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 rounded-full bg-amber-700 border-4 border-[#111] z-10 flex items-center justify-center text-[#fff] font-bold">B</div>
-                  <div className="bg-gradient-to-t from-amber-800 to-amber-600 w-16 h-16 rounded-t-xl mt-[-10px] flex items-center justify-center text-xl font-black text-[#fff]/50">3</div>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {[4, 5, 6, 7, 8].map(rank => (
-                  <div key={rank} className="flex items-center gap-4 bg-[#fff]/5 p-3 rounded-2xl">
-                    <span className="text-[#fff]/40 font-bold w-4 text-center">{rank}</span>
-                    <div className="w-8 h-8 rounded-full bg-[#fff]/20 flex items-center justify-center text-xs font-bold text-[#fff]">U</div>
-                    <span className="text-[#fff] font-medium flex-1">User {rank}29</span>
-                    <span className="text-[#fff] font-bold">{10000 - rank * 450} {t('pts')}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Comments Overlay */}
+      {commentGame && (
+        <CommentsOverlay game={commentGame} onClose={() => setCommentGame(null)} />
       )}
     </div>
   );
 }
+
 
 // ── DISCOVERY VIEW (The previous grid layout) ──────────────────────────────────
 function GamesDiscoveryView({ onBack }) {
