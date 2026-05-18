@@ -219,7 +219,7 @@ function CommentsOverlay({ game, onClose }) {
             </div>
           ))}
         </div>
-        <div className="p-4 border-t border-[#fff]/10 flex gap-2">
+        <div className="p-4 pb-20 border-t border-[#fff]/10 flex gap-2">
           {user ? (
             <>
               <input

@@ -237,10 +237,11 @@ function AppDetailScreen({ detailApp: initialApp }) {
                   </div>
                 </div>
               ) : (
-                <div className="bg-surface border border-dashed border-border rounded-3xl p-6 mb-10 text-center">
+                <button onClick={() => go('auth')}
+                  className="tap w-full bg-surface border border-dashed border-border rounded-3xl p-6 mb-10 text-center flex flex-col items-center justify-center">
                   <p className="text-accent text-xs font-black uppercase tracking-widest mb-1">{t('sign_in')} to review</p>
-                  <p className="text-muted text-[10px]">{t('login_sub')}</p>
-                </div>
+                  <p className="text-muted text-[10px]">{t('login_review_sub')}</p>
+                </button>
               )}
 
               {/* Comment List */}
