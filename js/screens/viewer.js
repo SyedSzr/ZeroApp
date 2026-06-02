@@ -70,16 +70,16 @@ function AppViewerScreen({ viewerApp: initialApp }) {
             <button onClick={reload} className="tap text-muted text-xs underline">Try Again</button>
           </div>
         )}
-        <iframe
-          key={ikey}
-          src={app.url}
-          title={app.name}
-          className="w-full h-full border-0"
-          style={{ opacity: loading || error ? 0 : 1, transition: 'opacity .4s' }}
-          onLoad={() => { clearTimeout(timer.current); setLoading(false); }}
-          onError={() => { setError(true); setLoading(false); }}
-          allow="autoplay; fullscreen"
-        />
+            <GameIframe
+              key={ikey}
+              src={app.url}
+              title={app.name}
+              className="w-full h-full border-0"
+              hideSpinner={true}
+              style={{ opacity: loading || error ? 0 : 1, transition: 'opacity .4s' }}
+              onLoad={() => { clearTimeout(timer.current); setLoading(false); }}
+              onError={() => { setError(true); setLoading(false); }}
+            />
       </div>
 
       {/* ── Bottom mini bar ── */}

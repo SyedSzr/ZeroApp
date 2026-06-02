@@ -2,6 +2,103 @@
 
 // ── ZeroOS Multi-tasking System ──────────────────────────────────────────────
 
+function GameIframe({ src, className, onLoad, onError, hideSpinner, ...props }) {
+  const [iframeSrc, setIframeSrc] = React.useState('');
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let active = true;
+    const isPlayPage = src && (src.includes('//play.famobi.com') || src.startsWith('play.famobi.com'));
+    if (isPlayPage) {
+      let playUrl = src;
+      if (!playUrl.includes('/play')) {
+        const parts = playUrl.split('?');
+        const base = parts[0].replace(/\/$/, '') + '/play';
+        playUrl = parts[1] ? `${base}?${parts[1]}` : base;
+      }
+
+      setLoading(true);
+
+      const tryResolveGame = async () => {
+        // 1. Try CodeTabs CORS Proxy (Very fast)
+        try {
+          const res = await fetch(`https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(playUrl)}`);
+          if (!res.ok) throw new Error('CodeTabs proxy failed');
+          const html = await res.text();
+          const match = html.match(/redirectUrl\s*=\s*["'](https:\/\/games\.cdn\.famobi\.com\/[^"']+)["']/);
+          if (match && match[1]) {
+            return match[1];
+          }
+        } catch (e) {
+          console.warn('CodeTabs proxy failed, trying AllOrigins...', e);
+        }
+
+        // 2. Try AllOrigins CORS Proxy (Fallback)
+        try {
+          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(playUrl)}`);
+          if (!res.ok) throw new Error('AllOrigins proxy failed');
+          const data = await res.json();
+          const html = data.contents;
+          const match = html.match(/redirectUrl\s*=\s*["'](https:\/\/games\.cdn\.famobi\.com\/[^"']+)["']/);
+          if (match && match[1]) {
+            return match[1];
+          }
+        } catch (e) {
+          console.warn('AllOrigins proxy failed:', e);
+        }
+
+        return null;
+      };
+
+      tryResolveGame().then(resolvedUrl => {
+        if (!active) return;
+        if (resolvedUrl) {
+          setIframeSrc(resolvedUrl);
+        } else {
+          // Fallback to standard URL if all proxies fail
+          setIframeSrc(playUrl);
+        }
+        setLoading(false);
+      });
+    } else {
+      setIframeSrc(src);
+      setLoading(false);
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [src]);
+
+  const combinedStyle = {
+    opacity: (loading && !hideSpinner) ? 0 : 1,
+    transition: 'opacity .4s',
+    ...props.style
+  };
+
+  return (
+    <div className="relative w-full h-full">
+      {loading && !hideSpinner && (
+        <div className="absolute inset-0 bg-bg flex flex-col items-center justify-center gap-4 z-10">
+          <div className="spin" />
+          <p className="text-white/70 text-sm font-medium">Resolving game...</p>
+        </div>
+      )}
+      {iframeSrc && (
+        <iframe
+          src={iframeSrc}
+          className={className}
+          allow="autoplay; fullscreen"
+          style={combinedStyle}
+          onLoad={onLoad}
+          onError={onError}
+          {...props}
+        />
+      )}
+    </div>
+  );
+}
+
 function TaskLayer() {
   var { tasks, activeTaskId, minimizeTask, closeTask } = useApp();
   
@@ -15,9 +112,7 @@ function TaskLayer() {
           <div key={task.id} 
                className={`absolute inset-0 bg-bg transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-auto ${isActive ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-full opacity-0 scale-95'}`}
                style={{ zIndex: isActive ? 50 : 0 }}>
-            
-            {/* App Content */}
-            <iframe src={task.app.url} className="w-full h-full border-none" allow="autoplay; fullscreen" />
+            <GameIframe src={task.app.url} className="w-full h-full border-none" />
 
             {/* Floating Control Hub */}
             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-black/40 backdrop-blur-xl border border-white/10 p-2 rounded-3xl shadow-2xl">
