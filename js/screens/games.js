@@ -244,8 +244,19 @@ function GamesScreen() {
   const { greeting, openDetail, go, liveGames, launchApp, user, t } = useApp();
   const [viewMode, setViewMode] = useState('feed');
   const [commentGame, setCommentGame] = useState(null); // game whose comments overlay is open
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [maxVisible, setMaxVisible] = useState(3);
   const feedRef = useRef(null);
   const scrollLock = useRef(false);
+
+  const handleScroll = (e) => {
+    const el = e.currentTarget;
+    const index = Math.round(el.scrollTop / el.clientHeight);
+    if (index !== activeIndex) {
+      setActiveIndex(index);
+      setMaxVisible(prev => Math.max(prev, index + 3));
+    }
+  };
 
   React.useEffect(() => {
     const el = feedRef.current;
@@ -288,6 +299,7 @@ function GamesScreen() {
   }, [viewMode]);
 
   const allGames = [...liveGames].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  const visibleGames = allGames.slice(0, maxVisible);
 
   if (viewMode === 'discover') {
     return <GamesDiscoveryView onBack={() => setViewMode('feed')} />;
@@ -309,9 +321,9 @@ function GamesScreen() {
             <p className="text-[#fff] text-2xl font-bold leading-tight">{greeting} 👋</p>
             <p className="text-[#fff]/60 text-sm mt-0.5">{t('games_header')}</p>
             <button onClick={() => setViewMode('discover')}
-              className="mt-4 flex items-center gap-1.5 bg-[#6b4eff] rounded-full py-1.5 px-3.5 shadow-[0_0_20px_rgba(107,78,255,0.4)] pointer-events-auto active:scale-95 transition-transform">
-              <span className="text-[#fff] text-[13px]">🔍</span>
-              <span className="text-[#fff] text-[13px] font-bold">{t('discover')}</span>
+              className="mt-5 flex items-center gap-2 bg-gradient-to-r from-[#7c6af7] via-[#9b84ff] to-[#6b4eff] text-[#fff] font-black text-xs uppercase tracking-widest py-3 px-6 rounded-2xl shadow-[0_8px_30px_rgba(124,106,247,0.5)] border border-white/20 active:scale-95 transition-all pointer-events-auto">
+              <span className="text-sm">🔍</span>
+              <span>{t('discover')}</span>
             </button>
           </div>
           <div className="flex flex-col items-center gap-2 mt-1 pointer-events-auto">
@@ -328,8 +340,8 @@ function GamesScreen() {
       </div>
 
       {/* Feed */}
-      <div ref={feedRef} className="h-full w-full overflow-hidden no-sb">
-        {allGames.map((game) => (
+      <div ref={feedRef} onScroll={handleScroll} className="h-full w-full overflow-hidden no-sb">
+        {visibleGames.map((game) => (
           <GameCard key={game.id} game={game} onCommentOpen={(g) => setCommentGame(g)} />
         ))}
       </div>
