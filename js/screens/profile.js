@@ -2,7 +2,7 @@
 var { useState } = React;
 
 function ProfileScreen() {
-  var { savedApps, folders, createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder, toggleSaveApp, go, openDetail, user, supabase, signOut, userProfile, updateProfileName, t, uploadAvatar, logActivity } = useApp();
+  var { savedApps, folders, createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder, toggleSaveApp, go, openDetail, user, supabase, signOut, userProfile, updateProfileName, t, uploadAvatar, logActivity, launchApp } = useApp();
   
   const [isUploading, setIsUploading] = useState(false);
   
@@ -86,7 +86,11 @@ function ProfileScreen() {
     if (isEditing) {
       setMovingAppId(movingAppId === app.id ? null : app.id);
     } else {
-      openDetail(app);
+      if (app.gameCategory) {
+        launchApp(app);
+      } else {
+        openDetail(app);
+      }
     }
   };
 

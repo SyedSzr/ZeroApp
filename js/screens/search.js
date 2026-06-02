@@ -2,7 +2,7 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function SearchScreen() {
-  const { goBack, searchQ, setSearchQ, openDetail, liveApps, liveGames, t, recentSearches, updateSearchHistory, clearSearchHistory } = useApp();
+  const { goBack, searchQ, setSearchQ, openDetail, liveApps, liveGames, t, recentSearches, updateSearchHistory, clearSearchHistory, launchApp } = useApp();
   const inputRef = useRef(null);
 
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 150); }, []);
@@ -106,7 +106,11 @@ function SearchScreen() {
               {topResults.map(app => (
                 <ListAppRow key={app.id} app={app} onPress={(a) => {
                   updateSearchHistory(searchQ);
-                  openDetail(a);
+                  if (a.gameCategory) {
+                    launchApp(a);
+                  } else {
+                    openDetail(a);
+                  }
                 }}
                   rightSlot={<span className="text-muted text-sm">›</span>} />
               ))}
@@ -122,7 +126,11 @@ function SearchScreen() {
               {moreResults.map(app => (
                 <ListAppRow key={app.id} app={app} onPress={(a) => {
                   updateSearchHistory(searchQ);
-                  openDetail(a);
+                  if (a.gameCategory) {
+                    launchApp(a);
+                  } else {
+                    openDetail(a);
+                  }
                 }} />
               ))}
             </div>

@@ -345,8 +345,15 @@ function GamesScreen() {
 
 // ── DISCOVERY VIEW (The previous grid layout) ──────────────────────────────────
 function GamesDiscoveryView({ onBack }) {
-  const { openDetail, go, liveGames, liveCats, t, getPromoItems } = useApp();
+  const { openDetail, go, liveGames, liveCats, t, getPromoItems, launchApp } = useApp();
   const gameCategories = liveCats.filter(c => c.type === 'game');
+
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [visibleCount, setVisibleCount] = useState(24);
+
+  const filteredGames = activeCategory === 'all'
+    ? liveGames
+    : liveGames.filter(g => g.gameCategory === activeCategory);
 
   const featuredGame = getPromoItems('featured_game', 'game')?.[0] || liveGames.find(g => g.is_featured) || liveGames[0];
   const recommended = getPromoItems('recommended_games', 'game') || liveGames.slice(0, 6);
@@ -385,7 +392,7 @@ function GamesDiscoveryView({ onBack }) {
   const HorizontalScroll = ({ apps, size = 'md' }) => (
     <div className="flex gap-5 px-5 overflow-x-auto no-sb pb-2">
       {apps.map(app => (
-        <button key={app.id} onClick={() => openDetail(app)}
+        <button key={app.id} onClick={() => launchApp(app)}
           className="tap flex-shrink-0 flex flex-col items-center" style={{ width: size === 'lg' ? 115 : size === 'md' ? 86 : 64 }}>
           <div className="w-full aspect-square flex items-center justify-center transition-transform active:scale-95 duration-200">
             <AppIcon app={app} size={size} />
@@ -418,7 +425,7 @@ function GamesDiscoveryView({ onBack }) {
             <div className="flex items-center justify-between mb-4">
                <span className="text-white font-black text-xl tracking-tight">{t('featured_game')}</span>
             </div>
-            <button onClick={() => openDetail(featuredGame)}
+            <button onClick={() => launchApp(featuredGame)}
               className="tap w-full group relative flex flex-col">
               <div className="w-full aspect-[16/9] rounded-3xl overflow-hidden relative border border-border bg-surface">
                 {featuredGame.featured_image ? (
@@ -465,7 +472,7 @@ function GamesDiscoveryView({ onBack }) {
         <SectionHeader title="editors_picks" />
         <div className="px-5 grid grid-cols-2 gap-4">
           {editorsPicks.slice(0, 4).map(game => (
-            <button key={game.id} onClick={() => openDetail(game)}
+            <button key={game.id} onClick={() => launchApp(game)}
               className="tap flex items-center gap-3 p-2 bg-surface rounded-2xl border border-border">
               <AppIcon app={game} size="xs" />
               <div className="flex-1 min-w-0 text-left">
@@ -488,7 +495,7 @@ function GamesDiscoveryView({ onBack }) {
         <SectionHeader title="super_games" />
         <div className="px-5 flex flex-col gap-3">
           {superGames.map(game => (
-            <button key={game.id} onClick={() => openDetail(game)}
+            <button key={game.id} onClick={() => launchApp(game)}
               className="tap flex items-center gap-4 p-3 bg-surface rounded-2xl border border-border">
               <AppIcon app={game} size="sm" />
               <div className="flex-1 min-w-0 text-left">
@@ -511,7 +518,7 @@ function GamesDiscoveryView({ onBack }) {
              type="game" 
              data={liveGames} 
              t={t} 
-             openDetail={openDetail} 
+             openDetail={launchApp} 
            />
         </div>
 
@@ -524,7 +531,7 @@ function GamesDiscoveryView({ onBack }) {
         <div className="px-5 pb-10">
           <div className="grid grid-cols-1 gap-4">
             {monthBest.map((game, idx) => (
-              <button key={game.id} onClick={() => openDetail(game)}
+              <button key={game.id} onClick={() => launchApp(game)}
                 className="tap flex items-center gap-4">
                 <span className="text-white/20 font-black text-2xl italic w-8 text-center">{idx + 1}</span>
                 <AppIcon app={game} size="sm" />
@@ -538,6 +545,99 @@ function GamesDiscoveryView({ onBack }) {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* ── 15. All Games categorically ── */}
+        <div className="border-t border-border mt-10 pt-8 pb-32">
+          <div className="px-5 mb-4">
+            <span className="text-white font-black text-2xl tracking-tight">
+              {t('all_games') || 'All Games'}
+              <span className="text-muted text-sm font-normal ml-2">({liveGames.length})</span>
+            </span>
+          </div>
+
+          {/* Horizontally scrolling category pills */}
+          <div className="flex overflow-x-auto no-sb px-5 gap-2 mb-6">
+            <button
+              onClick={() => { setActiveCategory('all'); setVisibleCount(24); }}
+              className={`tap flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all border ${
+                activeCategory === 'all'
+                  ? 'bg-gradient-to-r from-[#5a3eff] to-[#7b5cff] border-transparent text-white shadow-[0_0_15px_rgba(90,62,255,0.4)]'
+                  : 'bg-surface border-border text-muted hover:text-white'
+              }`}
+            >
+              🎮 {t('all') || 'All'}
+            </button>
+            {gameCategories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => { setActiveCategory(cat.id); setVisibleCount(24); }}
+                className={`tap flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all border ${
+                  activeCategory === cat.id
+                    ? 'bg-gradient-to-r from-[#5a3eff] to-[#7b5cff] border-transparent text-white shadow-[0_0_15px_rgba(90,62,255,0.4)]'
+                    : 'bg-surface border-border text-muted hover:text-white'
+                }`}
+              >
+                {cat.emoji} {t('cat_' + cat.id) || cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Games Grid */}
+          <div className="px-5 grid grid-cols-2 gap-4">
+            {filteredGames.slice(0, visibleCount).map(game => (
+              <button
+                key={game.id}
+                onClick={() => launchApp(game)}
+                className="tap group flex flex-col bg-surface border border-border rounded-2xl overflow-hidden transition-all duration-300 hover:border-white/20 hover:-translate-y-0.5"
+              >
+                {/* Immersive Splash Banner */}
+                <div className="w-full aspect-[16/10] relative bg-black/40 overflow-hidden flex-shrink-0">
+                  {game.featured_image ? (
+                    <img
+                      src={game.featured_image}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1a1a3e] to-[#11071f] opacity-40">
+                      <span className="text-3xl">{game.emoji || '🎮'}</span>
+                    </div>
+                  )}
+                  {/* Rating Badge Overlay */}
+                  <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] font-bold text-amber-400 flex items-center gap-0.5">
+                    <span>★</span> {game.rating}
+                  </div>
+                </div>
+
+                {/* Info and Brand Icon */}
+                <div className="p-3 w-full flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl overflow-hidden border border-border shadow-md flex-shrink-0 bg-white">
+                    <AppIcon app={game} size="xs" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="text-white text-xs font-bold truncate leading-tight group-hover:text-accent transition-colors">
+                      {game.name}
+                    </div>
+                    <div className="text-muted text-[10px] mt-0.5 uppercase tracking-wider truncate font-medium">
+                      {t('cat_' + game.gameCategory) || game.gameCategory}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Load More Button */}
+          {filteredGames.length > visibleCount && (
+            <div className="px-5 mt-6 flex justify-center">
+              <button
+                onClick={() => setVisibleCount(c => c + 24)}
+                className="tap py-3 px-6 rounded-xl bg-surface border border-border text-white font-bold text-sm hover:border-white/20 active:scale-95 transition-all flex items-center gap-2"
+              >
+                <span>➕</span> {t('load_more') || 'Load More'}
+              </button>
+            </div>
+          )}
         </div>
 
       </div>

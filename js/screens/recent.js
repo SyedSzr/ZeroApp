@@ -2,7 +2,7 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function RecentScreen() {
-  const { recents, clearRecents, openDetail, goBack, t } = useApp();
+  const { recents, clearRecents, openDetail, goBack, t, launchApp } = useApp();
 
   function groupByDate(list) {
     const groups = {};
@@ -58,7 +58,13 @@ function RecentScreen() {
               <p className="px-5 text-muted text-xs font-bold uppercase tracking-widest mb-3">{label}</p>
               <div className="flex flex-col gap-2 px-4">
                 {apps.map(app => (
-                  <button key={app.id + app.openedAt} onClick={() => openDetail(app)}
+                  <button key={app.id + app.openedAt} onClick={() => {
+                    if (app.gameCategory) {
+                      launchApp(app);
+                    } else {
+                      openDetail(app);
+                    }
+                  }}
                     className="tap flex items-center gap-3 px-4 py-3 rounded-2xl bg-card border border-border hover:border-white/20 transition-colors">
                     <AppIcon app={app} size="sm" />
                     <div className="flex-1 min-w-0 text-left">

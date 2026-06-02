@@ -72,13 +72,12 @@ function AppViewerScreen({ viewerApp: initialApp }) {
         )}
         <iframe
           key={ikey}
-          src={app.url.includes('corsproxy.io') ? app.url : `https://corsproxy.io/?${encodeURIComponent(app.url)}`}
+          src={app.url}
           title={app.name}
           className="w-full h-full border-0"
           style={{ opacity: loading || error ? 0 : 1, transition: 'opacity .4s' }}
           onLoad={() => { clearTimeout(timer.current); setLoading(false); }}
           onError={() => { setError(true); setLoading(false); }}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
           allow="autoplay; fullscreen"
         />
       </div>
