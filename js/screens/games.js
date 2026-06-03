@@ -18,7 +18,18 @@ function GameCard({ game, onCommentOpen }) {
     fetchComments(game.id).then(arr => {
       if (!cancelled) setCommentCount(arr.length);
     });
-    return () => { cancelled = true; };
+
+    const handleCommentPosted = (e) => {
+      if (e.detail && e.detail.itemId === game.id) {
+        setCommentCount(c => c + 1);
+      }
+    };
+    window.addEventListener('comment-posted', handleCommentPosted);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('comment-posted', handleCommentPosted);
+    };
   }, [game.id, user]);
 
   const handleLove = async () => {
@@ -91,7 +102,7 @@ function GameCard({ game, onCommentOpen }) {
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
-          <span className="text-[#fff] text-[12px] font-bold drop-shadow-md">{commentCount > 0 ? commentCount : ''}</span>
+          <span className="text-[#fff] text-[12px] font-bold drop-shadow-md">{commentCount}</span>
         </div>
 
         {/* Save */}
@@ -174,12 +185,23 @@ function CommentsOverlay({ game, onClose }) {
     if (!text.trim() || posting) return;
     setPosting(true);
     const { data, error } = await postComment(game.id, text.trim());
-    if (!error && data) { setComments(prev => [data, ...prev]); setText(''); }
+    if (error) {
+      console.error('Error posting comment:', error);
+    } else if (data) {
+      setComments(prev => [data, ...prev]);
+      setText('');
+    }
     setPosting(false);
   };
 
+  const getUserName = (c) => {
+    if (c.profile?.display_name) return c.profile.display_name;
+    if (c.profile?.email) return c.profile.email.split('@')[0];
+    return 'Anonymous';
+  };
+
   const initials = (c) => {
-    const name = c.profile?.display_name || 'U';
+    const name = getUserName(c);
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   };
 
@@ -212,7 +234,7 @@ function CommentsOverlay({ game, onClose }) {
                   : initials(c)}
               </div>
               <div className="flex-1">
-                <div className="text-[#fff]/60 text-xs font-semibold">{c.profile?.display_name || 'Anonymous'}</div>
+                <div className="text-[#fff]/60 text-xs font-semibold">{getUserName(c)}</div>
                 <div className="text-[#fff] text-sm mt-0.5">{c.content}</div>
                 <div className="text-[#fff]/40 text-[10px] mt-1">{timeAgo(c.created_at)}</div>
               </div>
@@ -267,7 +289,9 @@ function GamesScreen() {
       if (scrollLock.current) return;
       scrollLock.current = true;
       const dir = e.deltaY > 0 ? 1 : -1;
-      el.scrollBy({ top: dir * el.clientHeight, behavior: 'smooth' });
+      const currentIndex = Math.round(el.scrollTop / el.clientHeight);
+      const targetIndex = Math.max(0, currentIndex + dir);
+      el.scrollTo({ top: targetIndex * el.clientHeight, behavior: 'smooth' });
       setTimeout(() => { scrollLock.current = false; }, 500);
     };
 
@@ -280,7 +304,9 @@ function GamesScreen() {
       if (Math.abs(delta) > 30) {
         scrollLock.current = true;
         const dir = delta > 0 ? 1 : -1;
-        el.scrollBy({ top: dir * el.clientHeight, behavior: 'smooth' });
+        const currentIndex = Math.round(el.scrollTop / el.clientHeight);
+        const targetIndex = Math.max(0, currentIndex + dir);
+        el.scrollTo({ top: targetIndex * el.clientHeight, behavior: 'smooth' });
         setTimeout(() => { scrollLock.current = false; }, 500);
       }
     };

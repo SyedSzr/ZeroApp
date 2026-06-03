@@ -1669,7 +1669,7 @@ function AppProvider({ children }) {
     if (userIds.length > 0) {
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, display_name, avatar_url')
+        .select('id, display_name, email')
         .in('id', userIds);
       
       if (profilesData) {
@@ -1689,10 +1689,22 @@ function AppProvider({ children }) {
     const { data, error } = await supabase
       .from('comments')
       .insert({ item_id: itemId, user_id: effectiveUserId, content })
-      .select('*, profile:profiles(display_name, avatar_url)')
+      .select('*')
       .single();
+    if (!error && data) {
+      data.profile = userProfile || { 
+        id: effectiveUserId, 
+        display_name: userProfile?.display_name || user?.email?.split('@')[0] || 'User',
+        email: userProfile?.email || user?.email
+      };
+      try {
+        window.dispatchEvent(new CustomEvent('comment-posted', { detail: { itemId } }));
+      } catch (e) {
+        console.error(e);
+      }
+    }
     return { data, error };
-  }, [supabase, user]);
+  }, [supabase, user, userProfile]);
 
   const submitRating = useCallback(async (itemId, stars) => {
     if (!supabase || !user) return { error: 'Login required' };
@@ -1704,14 +1716,31 @@ function AppProvider({ children }) {
 
   const fetchScores = useCallback(async (gameId) => {
     if (!supabase) return [];
-    const { data, error } = await supabase
+    const { data: scoresData, error } = await supabase
       .from('leaderboards')
-      .select('*, profile:profiles(display_name, avatar_url)')
+      .select('*')
       .eq('game_id', gameId)
       .order('score', { ascending: false })
       .limit(10);
     if (error) { console.error('Error fetching scores:', error); return []; }
-    return data;
+
+    if (scoresData && scoresData.length > 0) {
+      const userIds = [...new Set(scoresData.map(s => s.user_id).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, display_name, email')
+          .in('id', userIds);
+        if (profilesData) {
+          const profileMap = Object.fromEntries(profilesData.map(p => [p.id, p]));
+          return scoresData.map(s => ({
+            ...s,
+            profile: profileMap[s.user_id] || null
+          }));
+        }
+      }
+    }
+    return scoresData.map(s => ({ ...s, profile: null }));
   }, [supabase]);
 
   const postScore = useCallback(async (gameId, score, metadata = {}) => {
