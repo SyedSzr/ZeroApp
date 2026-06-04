@@ -104,7 +104,7 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
   const [pos, setPos] = React.useState(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isInteractionActive, setIsInteractionActive] = React.useState(false);
-  const dragRef = React.useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 } });
+  const dragRef = React.useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 }, hasMoved: false });
   const longPressTimerRef = React.useRef(null);
 
   // Initialize position to bottom center on mount
@@ -142,18 +142,19 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
     dragRef.current = {
       startX: touch.clientX,
       startY: touch.clientY,
-      startPos: { ...currentPos }
+      startPos: { ...currentPos },
+      hasMoved: false
     };
 
     setIsInteractionActive(true);
 
-    // Start 300ms long-press timer
+    // Start 50ms long-press timer
     longPressTimerRef.current = setTimeout(() => {
       setIsDragging(true);
       if (navigator.vibrate) {
         navigator.vibrate(40);
       }
-    }, 300);
+    }, 50);
   };
 
   const handleMove = (e) => {
@@ -172,6 +173,8 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
       }
       return;
     }
+
+    dragRef.current.hasMoved = true;
 
     const width = isExpanded ? 180 : 56;
     const height = 56;
@@ -192,16 +195,17 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
     }
 
     setIsInteractionActive(false);
+    setIsDragging(false);
 
-    if (isDragging) {
-      setIsDragging(false);
+    if (dragRef.current.hasMoved) {
+      // It was a drag, snap to edge
       if (pos) {
         snapToEdge(pos.x, pos.y, isExpanded);
       }
       return;
     }
 
-    // Toggle expand/collapse since it was a tap
+    // Toggle expand/collapse since it was a tap (no movement)
     toggleExpand();
   };
 
@@ -290,11 +294,8 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
         onMouseDown={handleStart}
         onTouchStart={handleStart}
       >
-        {/* Toggle Expand/Collapse */}
+        {/* Toggle Expand/Collapse (no stopPropagation, allows dragging!) */}
         <button
-          onMouseDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          onClick={(e) => handleAction(e, toggleExpand)}
           className="w-11 h-11 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center tap flex-shrink-0 cursor-pointer"
         >
           <span className="text-sm font-bold text-white/80 select-none">
