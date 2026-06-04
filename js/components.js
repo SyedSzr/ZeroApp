@@ -205,9 +205,6 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
       if (pos) {
         snapToEdge(pos.x, pos.y, isExpanded);
       }
-    } else {
-      // Toggle expand/collapse since it was a tap (no movement)
-      toggleExpand();
     }
   };
 
@@ -262,6 +259,7 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
   const handleAction = (e, action) => {
     e.stopPropagation();
     e.preventDefault();
+    if (dragRef.current.hasMoved) return;
     action();
   };
 
@@ -295,9 +293,11 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
         }`}
         onMouseDown={handleStart}
         onTouchStart={handleStart}
+        onClick={(e) => handleAction(e, toggleExpand)}
       >
-        {/* Toggle Expand/Collapse (no stopPropagation, allows dragging!) */}
+        {/* Toggle Expand/Collapse */}
         <button
+          onClick={(e) => handleAction(e, toggleExpand)}
           className="w-11 h-11 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center tap flex-shrink-0 cursor-pointer"
         >
           <span className="text-sm font-bold text-white/80 select-none">
