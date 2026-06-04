@@ -103,7 +103,9 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
   const [isExpanded, setIsExpanded] = React.useState(true);
   const [pos, setPos] = React.useState(null);
   const [isDragging, setIsDragging] = React.useState(false);
-  const dragRef = React.useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 }, hasDragged: false });
+  const [isInteractionActive, setIsInteractionActive] = React.useState(false);
+  const dragRef = React.useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 } });
+  const longPressTimerRef = React.useRef(null);
 
   // Initialize position to bottom center on mount
   React.useEffect(() => {
@@ -115,6 +117,9 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
   }, []);
 
   const handleStart = (e) => {
+    // If user clicked with secondary button, ignore
+    if (e.button !== undefined && e.button !== 0) return;
+
     const touch = e.touches ? e.touches[0] : e;
     const currentPos = pos || {
       x: window.innerWidth / 2 - (isExpanded ? 180 : 56) / 2,
@@ -124,20 +129,35 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
     dragRef.current = {
       startX: touch.clientX,
       startY: touch.clientY,
-      startPos: { ...currentPos },
-      hasDragged: false
+      startPos: { ...currentPos }
     };
-    setIsDragging(true);
+
+    setIsInteractionActive(true);
+
+    // Start 300ms long-press timer
+    longPressTimerRef.current = setTimeout(() => {
+      setIsDragging(true);
+      if (navigator.vibrate) {
+        navigator.vibrate(40);
+      }
+    }, 300);
   };
 
   const handleMove = (e) => {
-    if (!isDragging) return;
     const touch = e.touches ? e.touches[0] : e;
     const dx = touch.clientX - dragRef.current.startX;
     const dy = touch.clientY - dragRef.current.startY;
 
-    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-      dragRef.current.hasDragged = true;
+    if (!isDragging) {
+      // If user moved finger/mouse more than 8px, cancel the long-press drag
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        if (longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
+        setIsInteractionActive(false);
+      }
+      return;
     }
 
     const width = isExpanded ? 180 : 56;
@@ -152,18 +172,32 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
     setPos({ x: newX, y: newY });
   };
 
-  const handleEnd = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
+  const handleEnd = (e) => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+
+    setIsInteractionActive(false);
+
+    if (isDragging) {
+      setIsDragging(false);
+      return;
+    }
+
+    // Toggle expand/collapse since it was a tap
+    toggleExpand();
   };
 
   React.useEffect(() => {
-    if (isDragging) {
+    if (isInteractionActive) {
       const onMove = (e) => {
-        if (e.cancelable) e.preventDefault();
+        if (isDragging && e.cancelable) {
+          e.preventDefault();
+        }
         handleMove(e);
       };
-      const onEnd = () => handleEnd();
+      const onEnd = (e) => handleEnd(e);
 
       window.addEventListener('mousemove', onMove);
       window.addEventListener('mouseup', onEnd);
@@ -177,13 +211,9 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
         window.removeEventListener('touchend', onEnd);
       };
     }
-  }, [isDragging, pos, isExpanded]);
+  }, [isInteractionActive, isDragging, pos, isExpanded]);
 
-  const toggleExpand = (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (dragRef.current.hasDragged) return;
-
+  const toggleExpand = () => {
     const nextExpanded = !isExpanded;
     setIsExpanded(nextExpanded);
 
@@ -200,7 +230,6 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
   const handleAction = (e, action) => {
     e.stopPropagation();
     e.preventDefault();
-    if (dragRef.current.hasDragged) return;
     action();
   };
 
@@ -220,8 +249,12 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
 
       <div
         style={{ ...style, touchAction: 'none' }}
-        className={`fixed z-[99] h-[56px] flex items-center justify-between bg-black/65 backdrop-blur-2xl border border-white/15 p-1.5 rounded-full shadow-2xl transition-all duration-300 ${
+        className={`fixed z-[99] h-[56px] flex items-center justify-between bg-black/65 backdrop-blur-2xl border border-white/15 p-1.5 rounded-full shadow-2xl transition-[width,transform] duration-300 ${
           isExpanded ? 'w-[180px]' : 'w-[56px]'
+        } ${
+          isDragging 
+            ? 'scale-108 cursor-grabbing border-accent/40 shadow-[0_0_20px_rgba(124,106,247,0.35)] z-[100]' 
+            : 'cursor-grab hover:scale-102 active:scale-95'
         }`}
         onMouseDown={handleStart}
         onTouchStart={handleStart}
@@ -230,7 +263,7 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
         <button
           onMouseDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          onClick={toggleExpand}
+          onClick={(e) => handleAction(e, toggleExpand)}
           className="w-11 h-11 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center tap flex-shrink-0 cursor-pointer"
         >
           <span className="text-sm font-bold text-white/80 select-none">
