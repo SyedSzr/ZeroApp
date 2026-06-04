@@ -116,6 +116,19 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
     });
   }, []);
 
+  const snapToEdge = (currentX, currentY, expandedState) => {
+    const screenWidth = window.innerWidth;
+    const width = expandedState ? 180 : 56;
+    const height = 56;
+    
+    // Snaps to left (10px) or right (screenWidth - width - 10px)
+    const centerX = currentX + width / 2;
+    const targetX = centerX < screenWidth / 2 ? 10 : screenWidth - width - 10;
+    const targetY = Math.max(10, Math.min(window.innerHeight - height - 10, currentY));
+    
+    setPos({ x: targetX, y: targetY });
+  };
+
   const handleStart = (e) => {
     // If user clicked with secondary button, ignore
     if (e.button !== undefined && e.button !== 0) return;
@@ -149,8 +162,8 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
     const dy = touch.clientY - dragRef.current.startY;
 
     if (!isDragging) {
-      // If user moved finger/mouse more than 8px, cancel the long-press drag
-      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+      // Allow slight wiggle (up to 20px) during hold. Cancel if exceeded.
+      if (Math.abs(dx) > 20 || Math.abs(dy) > 20) {
         if (longPressTimerRef.current) {
           clearTimeout(longPressTimerRef.current);
           longPressTimerRef.current = null;
@@ -165,7 +178,7 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
     let newX = dragRef.current.startPos.x + dx;
     let newY = dragRef.current.startPos.y + dy;
 
-    // Boundaries
+    // Boundaries during drag
     newX = Math.max(10, Math.min(window.innerWidth - width - 10, newX));
     newY = Math.max(10, Math.min(window.innerHeight - height - 10, newY));
 
@@ -182,6 +195,9 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
 
     if (isDragging) {
       setIsDragging(false);
+      if (pos) {
+        snapToEdge(pos.x, pos.y, isExpanded);
+      }
       return;
     }
 
@@ -220,9 +236,19 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
     if (pos) {
       const nextWidth = nextExpanded ? 180 : 56;
       let newX = pos.x;
-      if (nextExpanded && newX + nextWidth > window.innerWidth - 10) {
-        newX = window.innerWidth - nextWidth - 10;
+      const screenWidth = window.innerWidth;
+      
+      // Determine current side and align appropriately to prevent offscreen growth
+      const currentWidth = isExpanded ? 180 : 56;
+      const centerX = pos.x + currentWidth / 2;
+      const side = centerX < screenWidth / 2 ? 'L' : 'R';
+
+      if (side === 'L') {
+        newX = 10;
+      } else {
+        newX = screenWidth - nextWidth - 10;
       }
+
       setPos({ ...pos, x: Math.max(10, newX) });
     }
   };
@@ -237,6 +263,11 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
     ? { left: pos.x, top: pos.y, transform: 'none' }
     : { left: '50%', transform: 'translateX(-50%)', bottom: '40px' };
 
+  // Use the exact springy transition as the background app icons when not dragging
+  const transitionClass = isDragging
+    ? 'transition-none'
+    : 'transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]';
+
   return (
     <>
       {/* Invisible overlay during dragging to prevent iframe from stealing events */}
@@ -249,7 +280,7 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
 
       <div
         style={{ ...style, touchAction: 'none' }}
-        className={`fixed z-[99] h-[56px] flex items-center justify-between bg-black/65 backdrop-blur-2xl border border-white/15 p-1.5 rounded-full shadow-2xl transition-[width,transform] duration-300 ${
+        className={`fixed z-[99] h-[56px] flex items-center justify-between bg-black/65 backdrop-blur-2xl border border-white/15 p-1.5 rounded-full shadow-2xl ${transitionClass} ${
           isExpanded ? 'w-[180px]' : 'w-[56px]'
         } ${
           isDragging 
