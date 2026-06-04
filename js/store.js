@@ -1921,18 +1921,27 @@ function AppProvider({ children }) {
 
     logActivity('app_open', app.id, { name: app.name });
 
-    setTasks(prev => {
-      // Check if already running
-      const existing = prev.find(t => t.id === app.id);
-      if (existing) {
+    // Determine if this is a game (games still use in-app iframe TaskLayer)
+    const isGameItem = (rawGames.length > 0 ? rawGames : (typeof GAMES !== 'undefined' ? GAMES : []))
+      .some(g => String(g.id) === String(app.id));
+
+    if (isGameItem) {
+      // Games load in-app via TaskLayer iframe
+      setTasks(prev => {
+        const existing = prev.find(t => t.id === app.id);
+        if (existing) {
+          setActiveTaskId(app.id);
+          return prev.map(t => t.id === app.id ? { ...t, status: 'active' } : { ...t, status: 'minimized' });
+        }
+        const newTask = { id: app.id, app, status: 'active' };
         setActiveTaskId(app.id);
-        return prev.map(t => t.id === app.id ? { ...t, status: 'active' } : { ...t, status: 'minimized' });
-      }
-      // Add new task
-      const newTask = { id: app.id, app, status: 'active' };
-      setActiveTaskId(app.id);
-      return [...prev.map(t => ({ ...t, status: 'minimized' })), newTask];
-    });
+        return [...prev.map(t => ({ ...t, status: 'minimized' })), newTask];
+      });
+    } else {
+      // Regular apps: navigate to viewer screen (has back button)
+      // viewer screen will open the URL in a new browser tab
+      go('viewer', { viewerApp: app });
+    }
 
     // Add to recents
     setRecents(prev => {
@@ -1940,7 +1949,7 @@ function AppProvider({ children }) {
       lsSet('zero_recents', next);
       return next;
     });
-  }, []);
+  }, [rawGames, go]);
 
   const minimizeTask = useCallback((id) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'minimized' } : t));
