@@ -174,18 +174,21 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
       return;
     }
 
-    dragRef.current.hasMoved = true;
+    // Only treat as drag and update positions if movement exceeds 8px wiggle threshold
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+      dragRef.current.hasMoved = true;
 
-    const width = isExpanded ? 180 : 56;
-    const height = 56;
-    let newX = dragRef.current.startPos.x + dx;
-    let newY = dragRef.current.startPos.y + dy;
+      const width = isExpanded ? 180 : 56;
+      const height = 56;
+      let newX = dragRef.current.startPos.x + dx;
+      let newY = dragRef.current.startPos.y + dy;
 
-    // Boundaries during drag
-    newX = Math.max(10, Math.min(window.innerWidth - width - 10, newX));
-    newY = Math.max(10, Math.min(window.innerHeight - height - 10, newY));
+      // Boundaries during drag
+      newX = Math.max(10, Math.min(window.innerWidth - width - 10, newX));
+      newY = Math.max(10, Math.min(window.innerHeight - height - 10, newY));
 
-    setPos({ x: newX, y: newY });
+      setPos({ x: newX, y: newY });
+    }
   };
 
   const handleEnd = (e) => {
@@ -202,11 +205,10 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
       if (pos) {
         snapToEdge(pos.x, pos.y, isExpanded);
       }
-      return;
+    } else {
+      // Toggle expand/collapse since it was a tap (no movement)
+      toggleExpand();
     }
-
-    // Toggle expand/collapse since it was a tap (no movement)
-    toggleExpand();
   };
 
   React.useEffect(() => {
