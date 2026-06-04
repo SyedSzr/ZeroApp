@@ -99,6 +99,173 @@ function GameIframe({ src, className, onLoad, onError, hideSpinner, ...props }) 
   );
 }
 
+function FloatingControlHub({ task, minimizeTask, closeTask }) {
+  const [isExpanded, setIsExpanded] = React.useState(true);
+  const [pos, setPos] = React.useState(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const dragRef = React.useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 }, hasDragged: false });
+
+  // Initialize position to bottom center on mount
+  React.useEffect(() => {
+    const width = isExpanded ? 180 : 56;
+    setPos({
+      x: window.innerWidth / 2 - width / 2,
+      y: window.innerHeight - 100
+    });
+  }, []);
+
+  const handleStart = (e) => {
+    const touch = e.touches ? e.touches[0] : e;
+    const currentPos = pos || {
+      x: window.innerWidth / 2 - (isExpanded ? 180 : 56) / 2,
+      y: window.innerHeight - 100
+    };
+    
+    dragRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startPos: { ...currentPos },
+      hasDragged: false
+    };
+    setIsDragging(true);
+  };
+
+  const handleMove = (e) => {
+    if (!isDragging) return;
+    const touch = e.touches ? e.touches[0] : e;
+    const dx = touch.clientX - dragRef.current.startX;
+    const dy = touch.clientY - dragRef.current.startY;
+
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      dragRef.current.hasDragged = true;
+    }
+
+    const width = isExpanded ? 180 : 56;
+    const height = 56;
+    let newX = dragRef.current.startPos.x + dx;
+    let newY = dragRef.current.startPos.y + dy;
+
+    // Boundaries
+    newX = Math.max(10, Math.min(window.innerWidth - width - 10, newX));
+    newY = Math.max(10, Math.min(window.innerHeight - height - 10, newY));
+
+    setPos({ x: newX, y: newY });
+  };
+
+  const handleEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+  };
+
+  React.useEffect(() => {
+    if (isDragging) {
+      const onMove = (e) => {
+        if (e.cancelable) e.preventDefault();
+        handleMove(e);
+      };
+      const onEnd = () => handleEnd();
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+      window.addEventListener('touchmove', onMove, { passive: false });
+      window.addEventListener('touchend', onEnd);
+
+      return () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onEnd);
+        window.removeEventListener('touchmove', onMove);
+        window.removeEventListener('touchend', onEnd);
+      };
+    }
+  }, [isDragging, pos, isExpanded]);
+
+  const toggleExpand = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (dragRef.current.hasDragged) return;
+
+    const nextExpanded = !isExpanded;
+    setIsExpanded(nextExpanded);
+
+    if (pos) {
+      const nextWidth = nextExpanded ? 180 : 56;
+      let newX = pos.x;
+      if (nextExpanded && newX + nextWidth > window.innerWidth - 10) {
+        newX = window.innerWidth - nextWidth - 10;
+      }
+      setPos({ ...pos, x: Math.max(10, newX) });
+    }
+  };
+
+  const handleAction = (e, action) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (dragRef.current.hasDragged) return;
+    action();
+  };
+
+  const style = pos
+    ? { left: pos.x, top: pos.y, transform: 'none' }
+    : { left: '50%', transform: 'translateX(-50%)', bottom: '40px' };
+
+  return (
+    <>
+      {/* Invisible overlay during dragging to prevent iframe from stealing events */}
+      {isDragging && (
+        <div 
+          className="fixed inset-0 z-[98] cursor-grabbing" 
+          style={{ touchAction: 'none', background: 'transparent' }} 
+        />
+      )}
+
+      <div
+        style={{ ...style, touchAction: 'none' }}
+        className={`fixed z-[99] h-[56px] flex items-center justify-between bg-black/65 backdrop-blur-2xl border border-white/15 p-1.5 rounded-full shadow-2xl transition-all duration-300 ${
+          isExpanded ? 'w-[180px]' : 'w-[56px]'
+        }`}
+        onMouseDown={handleStart}
+        onTouchStart={handleStart}
+      >
+        {/* Toggle Expand/Collapse */}
+        <button
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onClick={toggleExpand}
+          className="w-11 h-11 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center tap flex-shrink-0 cursor-pointer"
+        >
+          <span className="text-sm font-bold text-white/80 select-none">
+            {isExpanded ? '❮' : '❯'}
+          </span>
+        </button>
+
+        {isExpanded && (
+          <>
+            {/* Minimize / Home */}
+            <button
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onClick={(e) => handleAction(e, () => minimizeTask(task.id))}
+              className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center tap flex-shrink-0 cursor-pointer"
+            >
+              <span className="text-lg select-none">🏠</span>
+            </button>
+
+            {/* Close */}
+            <button
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onClick={(e) => handleAction(e, () => closeTask(task.id))}
+              className="w-11 h-11 rounded-full bg-red-500/20 hover:bg-red-500/35 flex items-center justify-center tap flex-shrink-0 cursor-pointer"
+            >
+              <span className="text-lg text-red-500 font-bold select-none">×</span>
+            </button>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
 function TaskLayer() {
   var { tasks, activeTaskId, minimizeTask, closeTask } = useApp();
   
@@ -114,15 +281,7 @@ function TaskLayer() {
                style={{ zIndex: isActive ? 50 : 0 }}>
             <GameIframe src={task.app.url} className="w-full h-full border-none" />
 
-            {/* Floating Control Hub */}
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-black/40 backdrop-blur-xl border border-white/10 p-2 rounded-3xl shadow-2xl">
-               <button onClick={() => minimizeTask(task.id)} className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center tap">
-                  <span className="text-xl">🏠</span>
-               </button>
-               <button onClick={() => closeTask(task.id)} className="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center tap">
-                  <span className="text-xl text-red-500">×</span>
-               </button>
-            </div>
+            <FloatingControlHub task={task} minimizeTask={minimizeTask} closeTask={closeTask} />
           </div>
         );
       })}
