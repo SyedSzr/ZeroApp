@@ -383,7 +383,7 @@ function GamesScreen() {
 
 // ── DISCOVERY VIEW (The previous grid layout) ──────────────────────────────────
 function GamesDiscoveryView({ onBack }) {
-  const { openDetail, go, liveGames, liveCats, t, getPromoItems, launchApp } = useApp();
+  const { openDetail, go, liveGames, liveCats, t, getPromoItems, launchApp, greeting, user } = useApp();
   const gameCategories = liveCats.filter(c => c.type === 'game');
 
   const [activeCategory, setActiveCategory] = useState('all');
@@ -448,16 +448,29 @@ function GamesDiscoveryView({ onBack }) {
     <div className="slide-up flex flex-col h-full bg-bg">
       <div className="flex-1 overflow-y-auto no-sb pb-32">
         
-        {/* ── Header ── */}
-        <div className="pt-safe flex-shrink-0 bg-bg border-b border-border">
-          <div className="flex items-center justify-between px-4 pt-3 pb-2">
-            {onBack ? (
-              <button onClick={onBack} className="tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-white text-lg">←</button>
-            ) : (
-              <div className="w-9 h-9" />
+        {/* ── Rich Header (Same style as Play Screen) ── */}
+        <div className="pt-safe px-5 pt-5 pb-3 flex items-start justify-between flex-shrink-0 bg-bg border-b border-border">
+          <div className="flex-1 text-left">
+            <div className="flex items-center gap-2 mb-1">
+              {onBack ? (
+                <button onClick={onBack} className="tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-white text-lg mr-1">←</button>
+              ) : (
+                <span className="text-2xl">⚡</span>
+              )}
+              <span className="text-[#fff] font-black text-xl tracking-tight font-sans">ZeroApp</span>
+            </div>
+            <p className="text-[#fff] text-2xl font-bold leading-tight">{greeting} 👋</p>
+            <p className="text-[#fff]/60 text-sm mt-0.5">{t('games_header')}</p>
+          </div>
+          <div className="flex flex-col items-center gap-2 mt-1 pointer-events-auto">
+            <button onClick={() => go('search')} className="tap w-10 h-10 rounded-xl bg-black/40 backdrop-blur-md border border-[#fff]/10 flex items-center justify-center text-white">
+              <span className="text-xl">🔍</span>
+            </button>
+            {!user && (
+              <button onClick={() => go('auth')} className="tap bg-[#6b4eff] text-[#fff] text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(107,78,255,0.4)] whitespace-nowrap">
+                {t('sign_in')}
+              </button>
             )}
-            <span className="text-white font-extrabold text-base tracking-tight">🎮 {t('discover')}</span>
-            <button onClick={() => go('search')} className="tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-muted text-lg">🔍</button>
           </div>
         </div>
 
