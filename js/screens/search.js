@@ -11,8 +11,8 @@ function SearchScreen() {
 
   const results = useMemo(() => {
     if (!q) return [];
-    // Combine both apps and games for a unified search experience
-    const all = [...(liveApps || []), ...(liveGames || [])];
+    // Only search games
+    const all = liveGames || [];
     return all.filter(a => {
       const name = (a.name || '').toLowerCase();
       const cat  = (a.category || a.gameCategory || '').toLowerCase();
@@ -22,7 +22,7 @@ function SearchScreen() {
              cat.includes(q) || 
              tags.some(t_tag => String(t_tag).toLowerCase().includes(q));
     });
-  }, [q, liveApps, liveGames]);
+  }, [q, liveGames]);
 
   const topResults = results.slice(0, 4);
   const moreResults = results.slice(4);
@@ -78,12 +78,12 @@ function SearchScreen() {
               </div>
             )}
 
-            <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{t('all_apps')} ({liveApps.length})</p>
+            <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{t('all_games')} ({liveGames.length})</p>
             <div className="flex flex-col gap-2">
-              {liveApps.map(app => (
+              {liveGames.map(app => (
                 <ListAppRow key={app.id} app={app} onPress={(a) => {
                   updateSearchHistory(a.name);
-                  openDetail(a);
+                  launchApp(a);
                 }} />
               ))}
             </div>

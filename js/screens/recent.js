@@ -2,7 +2,11 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function RecentScreen() {
-  const { recents, clearRecents, openDetail, goBack, t, launchApp } = useApp();
+  const { recents, clearRecents, openDetail, goBack, t, launchApp, liveGames } = useApp();
+
+  const gamesOnlyRecents = useMemo(() => {
+    return recents.filter(r => r.gameCategory || (liveGames || []).some(g => String(g.id) === String(r.id)));
+  }, [recents, liveGames]);
 
   function groupByDate(list) {
     const groups = {};
@@ -23,7 +27,7 @@ function RecentScreen() {
     return groups;
   }
 
-  const groups = groupByDate(recents);
+  const groups = groupByDate(gamesOnlyRecents);
 
   function fmtTime(ts) {
     if (!ts) return '';

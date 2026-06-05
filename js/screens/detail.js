@@ -57,7 +57,7 @@ function AppDetailScreen({ detailApp: initialApp }) {
               <AppIcon app={app} size="lg" />
               <div>
                 <h1 className="text-white text-2xl font-extrabold leading-tight">{app.name}</h1>
-                <p className="text-accent text-sm font-semibold mt-1">{app.category}</p>
+                <p className="text-accent text-sm font-semibold mt-1">{app.category || t('cat_' + app.gameCategory) || app.gameCategory}</p>
               </div>
             </div>
 

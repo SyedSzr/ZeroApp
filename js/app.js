@@ -91,9 +91,9 @@ function AppShell() {
   const getScreenComponent = (frame) => {
     const props = frame.params || {};
     switch (frame.id) {
-      case 'apps':      return <AppsScreen {...props} />;
+      case 'apps':      return <GamesDiscoveryView {...props} />;
       case 'games':     return <GamesScreen {...props} />;
-      case 'home':      return <AppsScreen {...props} />;
+      case 'home':      return <GamesDiscoveryView {...props} />;
       case 'explore':   return <ExploreScreen {...props} />;
       case 'detail':    return <AppDetailScreen {...props} />;
       case 'viewer':    return <AppViewerScreen {...props} />;
