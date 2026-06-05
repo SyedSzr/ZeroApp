@@ -135,8 +135,8 @@ function GameCard({ game, onCommentOpen }) {
       {/* Bottom Info */}
       <div className="px-5 pb-24 pt-20 bg-gradient-to-t from-black via-black/80 to-transparent z-10 flex items-end justify-between pointer-events-none">
         <div className="flex-1 pr-16 pointer-events-auto">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[#fff] font-bold text-[15px] drop-shadow-md">{developerName}</span>
+          <div className="flex items-center gap-2 mb-1 cursor-pointer tap" onClick={() => go('developer', { developer: developerName })}>
+            <span className="text-[#fff] font-bold text-[15px] drop-shadow-md hover:underline">{developerName}</span>
             <span className="bg-[#fff]/20 backdrop-blur-sm px-2 py-0.5 rounded-full text-[#fff] text-[10px] font-bold tracking-wide">{t('developer')}</span>
           </div>
           <h2 className="text-[#fff] text-[26px] font-black leading-tight mb-2 drop-shadow-lg">{game.name}</h2>

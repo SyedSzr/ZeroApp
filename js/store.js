@@ -1798,6 +1798,7 @@ function AppProvider({ children }) {
     if (params.detailApp) query.push(`id=${params.detailApp.id || params.detailApp}`);
     else if (params.viewerApp) query.push(`id=${params.viewerApp.id || params.viewerApp}`);
     else if (params.exploreCategory) query.push(`id=${params.exploreCategory}`);
+    else if (params.developer) query.push(`dev=${encodeURIComponent(params.developer)}`);
     else if (frame.id === 'search' && searchQ) query.push(`q=${encodeURIComponent(searchQ)}`);
 
     return query.length > 0 ? `${url}?${query.join('&')}` : url;
@@ -1888,6 +1889,7 @@ function AppProvider({ children }) {
     if (frameId === 'detail' && params.id) extra = { detailApp: params.id };
     else if (frameId === 'explore' && params.id) extra = { exploreCategory: params.id };
     else if (frameId === 'viewer' && params.id) extra = { viewerApp: params.id };
+    else if (frameId === 'developer' && params.dev) extra = { developer: params.dev };
     else if (frameId === 'search' && params.q) {
       extra = {};
       setSearchQ(params.q);

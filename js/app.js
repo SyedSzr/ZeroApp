@@ -102,6 +102,7 @@ function AppShell() {
       case 'profile':   return <ProfileScreen {...props} />;
       case 'submit':    return <SubmitScreen {...props} />;
       case 'auth':      return <AuthScreen {...props} />;
+      case 'developer': return <DeveloperScreen {...props} />;
       case 'settings':  return <SettingsScreen {...props} />;
       case 'help':      return <HelpSupportScreen {...props} />;
       case 'about':     return <AboutScreen {...props} />;
