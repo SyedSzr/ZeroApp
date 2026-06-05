@@ -457,13 +457,13 @@ function GamesDiscoveryView({ onBack }) {
               ) : (
                 <span className="text-2xl">⚡</span>
               )}
-              <span className="text-[#fff] font-black text-xl tracking-tight font-sans">ZeroApp</span>
+              <span className="text-white font-black text-xl tracking-tight font-sans">ZeroApp</span>
             </div>
-            <p className="text-[#fff] text-2xl font-bold leading-tight">{greeting} 👋</p>
-            <p className="text-[#fff]/60 text-sm mt-0.5">{t('games_header')}</p>
+            <p className="text-white text-2xl font-bold leading-tight">{greeting} 👋</p>
+            <p className="text-muted text-sm mt-0.5">{t('games_header')}</p>
           </div>
           <div className="flex flex-col items-center gap-2 mt-1 pointer-events-auto">
-            <button onClick={() => go('search')} className="tap w-10 h-10 rounded-xl bg-black/40 backdrop-blur-md border border-[#fff]/10 flex items-center justify-center text-white">
+            <button onClick={() => go('search')} className="tap w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center text-white">
               <span className="text-xl">🔍</span>
             </button>
             {!user && (
