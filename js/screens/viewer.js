@@ -1,6 +1,6 @@
 // ── APP VIEWER (Opens in new browser tab) ────────────────────────────────────
 function AppViewerScreen({ viewerApp: initialApp }) {
-  const { liveApps, liveGames, goBack } = useApp();
+  const { liveApps, liveGames, goBack, launchApp } = useApp();
 
   const app = React.useMemo(() => {
     if (typeof initialApp === 'object' && initialApp !== null) return initialApp;
@@ -15,6 +15,14 @@ function AppViewerScreen({ viewerApp: initialApp }) {
   // Open the app in a new tab as soon as we land here
   React.useEffect(() => {
     if (!app?.url) return;
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|UniWebView/i.test(navigator.userAgent) || window.UniWebView;
+    if (isMobile) {
+      // On mobile, launch in-app via multitasking TaskLayer and pop viewer screen
+      launchApp(app);
+      goBack();
+      return;
+    }
 
     // Small delay so the screen renders first (feels intentional, not glitchy)
     const t = setTimeout(() => {
@@ -33,7 +41,7 @@ function AppViewerScreen({ viewerApp: initialApp }) {
     }, 300);
 
     return () => clearTimeout(t);
-  }, [app?.url]);
+  }, [app?.url, launchApp, goBack]);
 
   // Focus the external tab when user taps "Switch to App"
   const focusTab = () => {

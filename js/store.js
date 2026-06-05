@@ -1925,8 +1925,10 @@ function AppProvider({ children }) {
     const isGameItem = (rawGames.length > 0 ? rawGames : (typeof GAMES !== 'undefined' ? GAMES : []))
       .some(g => String(g.id) === String(app.id));
 
-    if (isGameItem) {
-      // Games load in-app via TaskLayer iframe
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|UniWebView/i.test(navigator.userAgent) || window.UniWebView;
+
+    if (isGameItem || isMobile) {
+      // Games and all apps on mobile load in-app via TaskLayer iframe
       setTasks(prev => {
         const existing = prev.find(t => t.id === app.id);
         if (existing) {
@@ -1938,7 +1940,7 @@ function AppProvider({ children }) {
         return [...prev.map(t => ({ ...t, status: 'minimized' })), newTask];
       });
     } else {
-      // Regular apps: navigate to viewer screen (has back button)
+      // Regular apps on desktop: navigate to viewer screen (has back button)
       // viewer screen will open the URL in a new browser tab
       go('viewer', { viewerApp: app });
     }

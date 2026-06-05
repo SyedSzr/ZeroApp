@@ -73,7 +73,15 @@ function RecentScreen() {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-muted text-xs">{fmtTime(app.openedAt)}</span>
-                      <button onClick={e => { e.stopPropagation(); window.open(app.url, '_blank'); }}
+                      <button onClick={e => {
+                        e.stopPropagation();
+                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|UniWebView/i.test(navigator.userAgent) || window.UniWebView;
+                        if (isMobile) {
+                          launchApp(app);
+                        } else {
+                          window.open(app.url, '_blank');
+                        }
+                      }}
                         className="tap text-muted text-sm">↗</button>
                     </div>
                   </button>
