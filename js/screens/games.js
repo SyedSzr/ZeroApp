@@ -46,12 +46,12 @@ function GameCard({ game, onCommentOpen }) {
   };
 
   const handleShare = () => {
-    const deepLink = `${window.location.origin}${window.location.pathname}#games?gameId=${game.id}`;
+    const deepLink = `${window.location.origin}/#detail?id=${game.id}`;
     if (navigator.share) {
       navigator.share({ title: game.name, text: `Check out ${game.name} on ZeroApp!`, url: deepLink }).catch(() => {});
     } else {
       navigator.clipboard?.writeText(deepLink);
-      alert('Link copied: ' + deepLink);
+      alert((t('link_copied') || 'Link copied to clipboard!') + '\n' + deepLink);
     }
   };
 
