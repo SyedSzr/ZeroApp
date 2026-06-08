@@ -2,17 +2,24 @@
 function SubmitScreen() {
   const context = useApp();
   if (!context) return null;
-  var { supabase, liveCats, goBack, user } = context;
+  var { supabase, liveCats, goBack, user, userProfile, updateZCoins, go, t } = context;
 
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
   const [error, setError]     = React.useState(null);
 
   const appCategories = liveCats.filter(c => c.type === 'app');
+  const currentBalance = userProfile?.zcoins ?? 0;
+  const canSubmit = currentBalance >= 10;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
+
+    if (currentBalance < 10) {
+      setError(t('insufficient_coins') || 'Insufficient ZCoins! You need 10 ZCoins to upload.');
+      return;
+    }
     
     setLoading(true);
     setError(null);
@@ -69,6 +76,9 @@ function SubmitScreen() {
       var { error: sbErr } = await supabase.from('apps').insert(payload);
       if (sbErr) throw sbErr;
       
+      // Deduct 10 ZCoins
+      await updateZCoins(currentBalance - 10);
+      
       setSuccess(true);
       setTimeout(() => goBack(), 2000);
     } catch (err) {
@@ -120,6 +130,22 @@ function SubmitScreen() {
           <h1 className="text-white text-xl font-black mb-1">Add to Catalog</h1>
           <p className="text-muted text-xs">Contribute a new web app to the community.</p>
         </header>
+
+        {currentBalance < 10 && (
+          <div className="p-5 rounded-[24px] bg-amber-500/10 border border-amber-500/20 text-amber-500 flex flex-col items-center text-center gap-3">
+            <span className="text-3xl">🪙</span>
+            <div className="text-sm font-bold leading-snug">
+              {t('insufficient_coins') || 'Insufficient ZCoins! You need 10 ZCoins to upload.'}
+            </div>
+            <button 
+              type="button" 
+              onClick={() => go('store')} 
+              className="tap px-5 py-2 bg-amber-500 text-white rounded-xl text-xs font-black shadow-lg shadow-amber-500/25"
+            >
+              {t('buy_coins') || 'Buy ZCoins'}
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-medium">
@@ -301,23 +327,37 @@ function SubmitScreen() {
         </div>
 
         <div className="pt-4">
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="tap w-full py-5 bg-accent text-white font-black rounded-3xl shadow-xl glow-purple disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center gap-3"
-          >
-            {loading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>UPLOADING...</span>
-              </>
-            ) : (
-              <>
-                <span>ADD APP TO ZEROAPP</span>
-                <span className="text-xl">🚀</span>
-              </>
-            )}
-          </button>
+          <div className="text-center text-[10px] text-muted font-bold uppercase tracking-wider mb-3">
+            {t('cost_to_upload') || 'Cost to upload: 10 ZCoins'} ({t('your_balance') || 'Your Balance'}: {currentBalance} ZCoins)
+          </div>
+          {canSubmit ? (
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="tap w-full py-5 bg-accent text-white font-black rounded-3xl shadow-xl glow-purple disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center gap-3"
+            >
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>UPLOADING...</span>
+                </>
+              ) : (
+                <>
+                  <span>ADD APP TO ZEROAPP</span>
+                  <span className="text-xl">🚀</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <button 
+              type="button"
+              onClick={() => go('store')}
+              className="tap w-full py-5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-3xl shadow-xl transition-all flex items-center justify-center gap-3"
+            >
+              <span>{t('buy_coins') || 'Buy ZCoins'}</span>
+              <span className="text-xl">🪙</span>
+            </button>
+          )}
         </div>
       </form>
     </div>

@@ -163,6 +163,14 @@ function ProfileScreen() {
                 </div>
               )}
               <p className="text-muted text-sm mt-0.5 truncate max-w-[200px]">{user.email}</p>
+              <div className="mt-1.5 flex items-center gap-2">
+                <button 
+                  onClick={() => go('store')}
+                  className="tap inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 rounded-full text-xs font-black shadow-sm"
+                >
+                  🪙 {userProfile?.zcoins ?? 0} ZCoins
+                </button>
+              </div>
             </div>
             <button onClick={signOut} className="tap px-3 py-1.5 bg-red-500/10 text-red-500 rounded-full text-xs font-bold border border-red-500/20">{t('sign_out')}</button>
           </div>
@@ -171,6 +179,14 @@ function ProfileScreen() {
             <div>
               <h2 className="text-white font-extrabold text-lg">Guest User</h2>
               <p className="text-muted text-sm">Sign in to sync your data</p>
+              <div className="mt-1.5 flex items-center gap-2">
+                <button 
+                  onClick={() => go('store')}
+                  className="tap inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 rounded-full text-xs font-black shadow-sm"
+                >
+                  🪙 {userProfile?.zcoins ?? 0} ZCoins
+                </button>
+              </div>
             </div>
           </div>
         )}

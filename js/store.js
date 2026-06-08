@@ -46,10 +46,31 @@ function AppProvider({ children }) {
     if (user && supabase) {
       supabase.from('profiles').select('*').eq('id', user.id).single()
         .then(({ data, error }) => {
-          if (data) setUserProfile(data);
+          if (data) {
+            setUserProfile(prev => {
+              const dbCoins = data.zcoins;
+              const next = {
+                ...data,
+                zcoins: (dbCoins !== undefined && dbCoins !== null) ? dbCoins : (prev?.zcoins ?? 20)
+              };
+              return next;
+            });
+          }
         });
     } else {
-      setUserProfile(ls('zero_guest_profile', null));
+      setUserProfile(prev => {
+        const local = ls('zero_guest_profile', null);
+        if (local) {
+          if (local.zcoins === undefined || local.zcoins === null) {
+            local.zcoins = 20; // Default 20 ZCoins
+            lsSet('zero_guest_profile', local);
+          }
+          return local;
+        }
+        const defaultGuest = { zcoins: 20 };
+        lsSet('zero_guest_profile', defaultGuest);
+        return defaultGuest;
+      });
     }
   }, [user, supabase]);
 
@@ -63,6 +84,19 @@ function AppProvider({ children }) {
     if (user && supabase) {
       const { error } = await supabase.from('profiles').update({ display_name: newName }).eq('id', user.id);
       if (error) console.error('Error updating name in DB:', error);
+    }
+  };
+
+  const updateZCoins = async (newBalance) => {
+    setUserProfile(prev => {
+      const next = { ...(prev || {}), zcoins: newBalance };
+      lsSet('zero_guest_profile', next);
+      return next;
+    });
+
+    if (user && supabase) {
+      const { error } = await supabase.from('profiles').update({ zcoins: newBalance }).eq('id', user.id);
+      if (error) console.error('Error updating zcoins in DB:', error);
     }
   };
 
@@ -345,7 +379,13 @@ function AppProvider({ children }) {
       games: 'Games',
       region: 'Region',
       load_more: 'Load More',
-      no_results: 'No results found'
+      no_results: 'No results found',
+      zcoin_store: 'ZCoin Store',
+      insufficient_coins: 'Insufficient ZCoins! You need 10 ZCoins to upload.',
+      cost_to_upload: 'Cost to upload: 10 ZCoins',
+      your_balance: 'Your Balance',
+      buy_coins: 'Buy ZCoins',
+      purchase_success: 'Payment successful! Added ZCoins to your account.'
     },
     es: {
       settings: 'Ajustes',
@@ -521,7 +561,13 @@ function AppProvider({ children }) {
       games: 'Juegos',
       region: 'Región',
       load_more: 'Cargar más',
-      no_results: 'No se encontraron resultados'
+      no_results: 'No se encontraron resultados',
+      zcoin_store: 'Tienda ZCoin',
+      insufficient_coins: '¡ZCoins insuficientes! Necesitas 10 ZCoins para subir.',
+      cost_to_upload: 'Costo para subir: 10 ZCoins',
+      your_balance: 'Tu saldo',
+      buy_coins: 'Comprar ZCoins',
+      purchase_success: '¡Pago exitoso! Se agregaron ZCoins a tu cuenta.'
     },
     fr: {
       settings: 'Paramètres',
@@ -680,6 +726,12 @@ function AppProvider({ children }) {
       featured_app: 'App vedette',
       personalize_recommendations: 'Personnaliser les recommandations',
       featured_game: 'Jeu vedette',
+      zcoin_store: 'Boutique ZCoin',
+      insufficient_coins: 'ZCoins insuffisants ! Vous avez besoin de 10 ZCoins pour télécharger.',
+      cost_to_upload: 'Coût de téléchargement : 10 ZCoins',
+      your_balance: 'Votre solde',
+      buy_coins: 'Acheter des ZCoins',
+      purchase_success: 'Paiement réussi ! ZCoins ajoutés à votre compte.',
       recommended_for_you: 'Recommandé pour vous',
       trending: 'Tendances',
       featured_apps: 'Applications vedettes',
@@ -856,6 +908,12 @@ function AppProvider({ children }) {
       featured_app: '精选应用',
       personalize_recommendations: '个性化推荐',
       featured_game: '精选游戏',
+      zcoin_store: 'ZCoin 商店',
+      insufficient_coins: 'ZCoins 不足！您需要 10 个 ZCoins 才能上传。',
+      cost_to_upload: '上传费用：10 ZCoins',
+      your_balance: '您的余额',
+      buy_coins: '购买 ZCoins',
+      purchase_success: '付款成功！已将 ZCoins 添加到您的账户。',
       recommended_for_you: '为您推荐',
       trending: '热门趋势',
       featured_apps: '精选应用',
@@ -1032,6 +1090,12 @@ function AppProvider({ children }) {
       featured_app: 'Vorgestellte App',
       personalize_recommendations: 'Empfehlungen personalisieren',
       featured_game: 'Vorgestelltes Spiel',
+      zcoin_store: 'ZCoin Shop',
+      insufficient_coins: 'Nicht genügend ZCoins! Du benötigst 10 ZCoins zum Hochladen.',
+      cost_to_upload: 'Kosten zum Hochladen: 10 ZCoins',
+      your_balance: 'Dein Guthaben',
+      buy_coins: 'ZCoins kaufen',
+      purchase_success: 'Zahlung erfolgreich! ZCoins wurden deinem Konto gutgeschrieben.',
       recommended_for_you: 'Für dich empfohlen',
       trending: 'Trends',
       featured_apps: 'Vorgestellte Apps',
@@ -1208,6 +1272,12 @@ function AppProvider({ children }) {
       featured_app: 'نمایاں ایپ',
       personalize_recommendations: 'ذاتی نوعیت کی سفارشات',
       featured_game: 'نمایاں گیم',
+      zcoin_store: 'زیرو کوائن اسٹور',
+      insufficient_coins: 'زیرو کوائنز ناکافی ہیں! اپ لوڈ کرنے کے لیے آپ کو 10 زیرو کوائنز کی ضرورت ہے۔',
+      cost_to_upload: 'اپ لوڈ کرنے کی لاگت: 10 زیرو کوائنز',
+      your_balance: 'آپ کا بیلنس',
+      buy_coins: 'زیرو کوائنز خریدیں',
+      purchase_success: 'ادائیگی کامیاب! آپ کے اکاؤنٹ میں زیرو کوائنز شامل کر دیے گئے۔',
       recommended_for_you: 'آپ کے لیے تجویز کردہ',
       trending: 'ٹرینڈنگ',
       featured_apps: 'نمایاں ایپس',
@@ -1384,6 +1454,12 @@ function AppProvider({ children }) {
       featured_app: 'विशेष ऐप',
       personalize_recommendations: 'सिफारिशें व्यक्तिगत करें',
       featured_game: 'विशेष खेल',
+      zcoin_store: 'ज़ेडकॉइन स्टोर',
+      insufficient_coins: 'अपरियाप्त ज़ेडकॉइन! अपलोड करने के लिए आपको 10 ज़ेडकॉइन की आवश्यकता है।',
+      cost_to_upload: 'अपलोड करने की लागत: 10 ज़ेडकॉइन',
+      your_balance: 'आपका बैलेंस',
+      buy_coins: 'ज़ेडकॉइन खरीदें',
+      purchase_success: 'भुगतान सफल! आपके खाते में ज़ेडकॉइन जोड़ दिए गए हैं।',
       recommended_for_you: 'आपके लिए अनुशंसित',
       trending: 'ट्रेडिंग',
       featured_apps: 'विशेष ऐप्स',
@@ -1560,6 +1636,12 @@ function AppProvider({ children }) {
       featured_app: 'ফিচার্ড অ্যাপ',
       personalize_recommendations: 'সুপারিশ ব্যক্তিগতকৃত করুন',
       featured_game: 'ফিচার্ড গেম',
+      zcoin_store: 'জেডকয়েন স্টোর',
+      insufficient_coins: 'পর্যাপ্ত জেডকয়েন নেই! আপলোড করতে আপনার ১০ জেডকয়েন প্রয়োজন।',
+      cost_to_upload: 'আপলোড করার খরচ: ১০ জেডকয়েন',
+      your_balance: 'আপনার ব্যালেন্স',
+      buy_coins: 'জেডকয়েন কিনুন',
+      purchase_success: 'পেমেন্ট সফল! আপনার অ্যাকাউন্টে জেডকয়েন যোগ করা হয়েছে।',
       recommended_for_you: 'আপনার জন্য প্রস্তাবিত',
       trending: 'ট্রেন্ডিং',
       featured_apps: 'ফিচার্ড অ্যাপস',
@@ -1752,7 +1834,13 @@ function AppProvider({ children }) {
       games: 'ألعاب',
       region: 'المنطقة',
       load_more: 'تحميل المزيد',
-      no_results: 'لم يتم العثور على نتائج'
+      no_results: 'لم يتم العثور على نتائج',
+      zcoin_store: 'متجر ZCoin',
+      insufficient_coins: 'عملات ZCoins غير كافية! تحتاج إلى 10 عملات ZCoins للرفع.',
+      cost_to_upload: 'تكلفة الرفع: 10 ZCoins',
+      your_balance: 'رصيدك',
+      buy_coins: 'شراء ZCoins',
+      purchase_success: 'تمت عملية الدفع بنجاح! تم إضافة ZCoins إلى حسابك.'
     },
   };
 
@@ -2361,7 +2449,8 @@ function AppProvider({ children }) {
     toggleLove, fetchLoves,
     getSmartRecommendations,
     recentSearches, updateSearchHistory, clearSearchHistory,
-    logActivity, uploadAvatar
+    logActivity, uploadAvatar,
+    updateZCoins
   };
 
   return React.createElement(Ctx.Provider, { value }, children);

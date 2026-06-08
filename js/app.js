@@ -100,6 +100,7 @@ function AppShell() {
       case 'search':    return <SearchScreen {...props} />;
       case 'recent':    return <RecentScreen {...props} />;
       case 'profile':   return <ProfileScreen {...props} />;
+      case 'store':     return <StoreScreen {...props} />;
       case 'submit':    return <SubmitScreen {...props} />;
       case 'auth':      return <AuthScreen {...props} />;
       case 'developer': return <DeveloperScreen {...props} />;

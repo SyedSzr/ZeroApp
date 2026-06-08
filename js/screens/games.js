@@ -263,7 +263,7 @@ function CommentsOverlay({ game, onClose }) {
 }
 
 function GamesScreen() {
-  const { greeting, openDetail, go, liveGames, launchApp, user, t } = useApp();
+  const { greeting, openDetail, go, liveGames, launchApp, user, t, userProfile } = useApp();
   const [viewMode, setViewMode] = useState('feed');
   const [commentGame, setCommentGame] = useState(null); // game whose comments overlay is open
   const [activeIndex, setActiveIndex] = useState(0);
@@ -352,7 +352,16 @@ function GamesScreen() {
               <span>{t('discover')}</span>
             </button>
           </div>
-          <div className="flex flex-col items-center gap-2 mt-1 pointer-events-auto">
+          <div className="flex items-center gap-2 mt-1.5 flex-shrink-0 pointer-events-auto">
+            <button 
+              onClick={() => go('store')} 
+              className="tap flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/25 rounded-2xl text-xs font-black shadow-lg shadow-amber-500/5 transition-all"
+              title="Open ZCoin Store"
+            >
+              <span>🪙</span>
+              <span>{userProfile?.zcoins ?? 0}</span>
+              <span className="text-[10px] bg-amber-500 text-white w-4 h-4 rounded-md flex items-center justify-center font-black ml-0.5 border border-amber-400/30">+</span>
+            </button>
             <button className="tap w-10 h-10 rounded-xl bg-black/40 backdrop-blur-md border border-[#fff]/10 flex items-center justify-center">
               <span className="text-xl">🔔</span>
             </button>
@@ -383,7 +392,7 @@ function GamesScreen() {
 
 // ── DISCOVERY VIEW (The previous grid layout) ──────────────────────────────────
 function GamesDiscoveryView({ onBack }) {
-  const { openDetail, go, liveGames, liveCats, t, getPromoItems, launchApp, greeting, user } = useApp();
+  const { openDetail, go, liveGames, liveCats, t, getPromoItems, launchApp, greeting, user, userProfile } = useApp();
   const gameCategories = liveCats.filter(c => c.type === 'game');
 
   const [activeCategory, setActiveCategory] = useState('all');
@@ -430,7 +439,7 @@ function GamesDiscoveryView({ onBack }) {
   const HorizontalScroll = ({ apps, size = 'md' }) => (
     <div className="flex gap-5 px-5 overflow-x-auto no-sb pb-2">
       {apps.map(app => (
-        <button key={app.id} onClick={() => launchApp(app)}
+        <button key={app.id} onClick={() => openDetail(app)}
           className="tap flex-shrink-0 flex flex-col items-center" style={{ width: size === 'lg' ? 115 : size === 'md' ? 86 : 64 }}>
           <div className="w-full aspect-square flex items-center justify-center transition-transform active:scale-95 duration-200">
             <AppIcon app={app} size={size} />
@@ -462,7 +471,16 @@ function GamesDiscoveryView({ onBack }) {
             <p className="text-white text-2xl font-bold leading-tight">{greeting} 👋</p>
             <p className="text-muted text-sm mt-0.5">{t('games_header')}</p>
           </div>
-          <div className="flex flex-col items-center gap-2 mt-1 pointer-events-auto">
+          <div className="flex items-center gap-2 mt-1.5 flex-shrink-0 pointer-events-auto">
+            <button 
+              onClick={() => go('store')} 
+              className="tap flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/25 rounded-2xl text-xs font-black shadow-lg shadow-amber-500/5 transition-all"
+              title="Open ZCoin Store"
+            >
+              <span>🪙</span>
+              <span>{userProfile?.zcoins ?? 0}</span>
+              <span className="text-[10px] bg-amber-500 text-white w-4 h-4 rounded-md flex items-center justify-center font-black ml-0.5 border border-amber-400/30">+</span>
+            </button>
             <button onClick={() => go('search')} className="tap w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center text-white">
               <span className="text-xl">🔍</span>
             </button>
@@ -480,7 +498,7 @@ function GamesDiscoveryView({ onBack }) {
             <div className="flex items-center justify-between mb-4">
                <span className="text-white font-black text-xl tracking-tight">{t('featured_game')}</span>
             </div>
-            <button onClick={() => launchApp(featuredGame)}
+            <button onClick={() => openDetail(featuredGame)}
               className="tap w-full group relative flex flex-col">
               <div className="w-full aspect-[16/9] rounded-3xl overflow-hidden relative border border-border bg-surface">
                 {featuredGame.featured_image ? (
@@ -527,7 +545,7 @@ function GamesDiscoveryView({ onBack }) {
         <SectionHeader title="editors_picks" />
         <div className="px-5 grid grid-cols-2 gap-4">
           {editorsPicks.slice(0, 4).map(game => (
-            <button key={game.id} onClick={() => launchApp(game)}
+            <button key={game.id} onClick={() => openDetail(game)}
               className="tap flex items-center gap-3 p-2 bg-surface rounded-2xl border border-border">
               <AppIcon app={game} size="xs" />
               <div className="flex-1 min-w-0 text-left">
@@ -550,7 +568,7 @@ function GamesDiscoveryView({ onBack }) {
         <SectionHeader title="super_games" />
         <div className="px-5 flex flex-col gap-3">
           {superGames.map(game => (
-            <button key={game.id} onClick={() => launchApp(game)}
+            <button key={game.id} onClick={() => openDetail(game)}
               className="tap flex items-center gap-4 p-3 bg-surface rounded-2xl border border-border">
               <AppIcon app={game} size="sm" />
               <div className="flex-1 min-w-0 text-left">
@@ -573,7 +591,7 @@ function GamesDiscoveryView({ onBack }) {
              type="game" 
              data={liveGames} 
              t={t} 
-             openDetail={launchApp} 
+             openDetail={openDetail} 
            />
         </div>
 
@@ -586,7 +604,7 @@ function GamesDiscoveryView({ onBack }) {
         <div className="px-5 pb-10">
           <div className="grid grid-cols-1 gap-4">
             {monthBest.map((game, idx) => (
-              <button key={game.id} onClick={() => launchApp(game)}
+              <button key={game.id} onClick={() => openDetail(game)}
                 className="tap flex items-center gap-4">
                 <span className="text-white/20 font-black text-2xl italic w-8 text-center">{idx + 1}</span>
                 <AppIcon app={game} size="sm" />
@@ -643,7 +661,7 @@ function GamesDiscoveryView({ onBack }) {
             {filteredGames.slice(0, visibleCount).map(game => (
               <button
                 key={game.id}
-                onClick={() => launchApp(game)}
+                onClick={() => openDetail(game)}
                 className="tap group flex flex-col bg-surface border border-border rounded-2xl overflow-hidden transition-all duration-300 hover:border-white/20 hover:-translate-y-0.5"
               >
                 {/* Immersive Splash Banner */}
