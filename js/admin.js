@@ -14,6 +14,7 @@ let selectedUserId = null;
 let filterCategory = null;
 let filterStatus = 'all'; // 'all', 'pending', 'approved', 'rejected'
 let filterRegion = 'all'; 
+let filterSearchQuery = '';
 
 const EMOJI_LIST = [
   '🤖','🎮','👶','🛒','💼','💄','🎨','💰','📚','🎬','🔧','🏃','💬','🧩','⚔️','♟️','🕹️','📝','🎲','⚽','🗺️','🖼️','🧠',
@@ -111,6 +112,7 @@ function showSyncStatus(msg, colorClass) {
 
 function setRoute(route) {
   currentRoute = route;
+  filterSearchQuery = '';
   if (route !== 'apps' && route !== 'games') {
     filterCategory = null; 
     filterStatus = 'all';
@@ -381,30 +383,59 @@ function renderCurrentView() {
     if (filterStatus !== 'all') {
       list = list.filter(item => item.status === filterStatus);
     }
+    if (filterRegion && filterRegion !== 'all') {
+      list = list.filter(item => (item.region || 'Global') === filterRegion);
+    }
+    if (filterSearchQuery.trim()) {
+      const q = filterSearchQuery.toLowerCase().trim();
+      list = list.filter(item => 
+        (item.name || '').toLowerCase().includes(q) || 
+        (item.id || '').toLowerCase().includes(q) ||
+        (item.url || '').toLowerCase().includes(q)
+      );
+    }
 
     const pendingCount = (currentRoute === 'apps' ? data.apps : data.games).filter(i => i.status === 'pending').length;
 
     container.innerHTML = `
       <div class="flex flex-col gap-6 mb-6">
-        <div class="flex items-center gap-4 bg-card border border-border p-2 rounded-2xl w-fit">
-          <button onclick="setStatusFilter('all')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterStatus === 'all' ? 'bg-white/10 text-white' : 'text-muted hover:text-white'}">All Items</button>
-          <button onclick="setStatusFilter('pending')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${filterStatus === 'pending' ? 'bg-amber-500/20 text-amber-500' : 'text-muted hover:text-white'}">
-            Pending Approval
-            ${pendingCount > 0 ? `<span class="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">${pendingCount}</span>` : ''}
-          </button>
-          <button onclick="setStatusFilter('approved')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterStatus === 'approved' ? 'bg-emerald-500/20 text-emerald-500' : 'text-muted hover:text-white'}">Approved</button>
-          <button onclick="setStatusFilter('rejected')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterStatus === 'rejected' ? 'bg-red-500/20 text-red-500' : 'text-muted hover:text-white'}">Rejected</button>
-        </div>
+        <div class="flex flex-wrap items-center gap-4">
+          <!-- Status Filters -->
+          <div class="flex items-center gap-4 bg-card border border-border p-2 rounded-2xl w-fit">
+            <button onclick="setStatusFilter('all')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterStatus === 'all' ? 'bg-white/10 text-white' : 'text-muted hover:text-white'}">All Items</button>
+            <button onclick="setStatusFilter('pending')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${filterStatus === 'pending' ? 'bg-amber-500/20 text-amber-500' : 'text-muted hover:text-white'}">
+              Pending Approval
+              ${pendingCount > 0 ? `<span class="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">${pendingCount}</span>` : ''}
+            </button>
+            <button onclick="setStatusFilter('approved')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterStatus === 'approved' ? 'bg-emerald-500/20 text-emerald-500' : 'text-muted hover:text-white'}">Approved</button>
+            <button onclick="setStatusFilter('rejected')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterStatus === 'rejected' ? 'bg-red-500/20 text-red-500' : 'text-muted hover:text-white'}">Rejected</button>
+          </div>
 
-        <div class="flex items-center gap-4 bg-card border border-border p-2 rounded-2xl w-fit">
-           <span class="text-muted text-[10px] font-black uppercase tracking-widest px-2">Region:</span>
-           <select onchange="setRegionFilter(this.value)" class="bg-transparent text-white text-xs font-bold outline-none pr-4">
-              <option value="all" ${filterRegion === 'all' ? 'selected' : ''}>All Regions</option>
-              <option value="Global" ${filterRegion === 'Global' ? 'selected' : ''}>Global</option>
-              <option value="PK" ${filterRegion === 'PK' ? 'selected' : ''}>Pakistan</option>
-              <option value="US" ${filterRegion === 'US' ? 'selected' : ''}>USA</option>
-              <option value="UK" ${filterRegion === 'UK' ? 'selected' : ''}>UK</option>
-           </select>
+          <!-- Region Filter -->
+          <div class="flex items-center gap-4 bg-card border border-border p-2 rounded-2xl w-fit">
+             <span class="text-muted text-[10px] font-black uppercase tracking-widest px-2">Region:</span>
+             <select onchange="setRegionFilter(this.value)" class="bg-transparent text-white text-xs font-bold outline-none pr-4">
+                <option value="all" ${filterRegion === 'all' ? 'selected' : ''}>All Regions</option>
+                <option value="Global" ${filterRegion === 'Global' ? 'selected' : ''}>Global</option>
+                <option value="PK" ${filterRegion === 'PK' ? 'selected' : ''}>Pakistan</option>
+                <option value="US" ${filterRegion === 'US' ? 'selected' : ''}>USA</option>
+                <option value="UK" ${filterRegion === 'UK' ? 'selected' : ''}>UK</option>
+             </select>
+          </div>
+
+          <!-- Search Bar -->
+          <div class="flex items-center gap-3 bg-card border border-border px-4 py-2 rounded-2xl flex-1 min-w-[240px]">
+            <span class="text-muted text-sm">🔍</span>
+            <input 
+              id="admin-search-input"
+              type="text" 
+              value="${filterSearchQuery}" 
+              oninput="setSearchFilter(this.value)" 
+              placeholder="Search by name, ID or URL..." 
+              class="bg-transparent text-white text-xs font-medium outline-none w-full"
+            />
+            ${filterSearchQuery ? `<button onclick="setSearchFilter('');" class="text-muted hover:text-white font-black text-sm">×</button>` : ''}
+          </div>
         </div>
 
         ${filterCategory ? `
@@ -982,6 +1013,19 @@ function setRegionFilter(region) {
   renderCurrentView();
 }
 
+function setSearchFilter(query) {
+  filterSearchQuery = query;
+  renderCurrentView();
+  
+  // Restore focus to input since innerHTML recreation destroys the original DOM element
+  const input = document.getElementById('admin-search-input');
+  if (input) {
+    input.focus();
+    const len = input.value.length;
+    input.setSelectionRange(len, len);
+  }
+}
+
 function togglePromoSection(sectionKey) {
   const content = document.getElementById(`section-items-${sectionKey}`);
   const arrow = document.getElementById(`arrow-${sectionKey}`);
@@ -1270,6 +1314,7 @@ window.editPromotion = openPromoModal;
 window.deletePromotion = deletePromotion;
 window.closePromoModal = closePromoModal;
 window.setRegionFilter = setRegionFilter;
+window.setSearchFilter = setSearchFilter;
 window.openPromoModal = openPromoModal;
 window.togglePromoSection = togglePromoSection;
 window.filterPromoType = filterPromoType;
