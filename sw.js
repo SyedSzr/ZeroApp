@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zeroapp-v7';
+const CACHE_NAME = 'zeroapp-v8';
 
 const STATIC_ASSETS = [
   './',
@@ -16,7 +16,8 @@ const STATIC_ASSETS = [
   './js/screens/games.js',
   './js/screens/explore.js',
   './js/screens/auth.js',
-  './js/screens/submit.js'
+  './js/screens/submit.js',
+  './js/screens/store.js'
 ];
 
 const EXTERNAL_ASSETS = [
@@ -72,6 +73,24 @@ self.addEventListener('fetch', (event) => {
       });
 
       return cachedResponse || fetchPromise;
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      if (clientList.length > 0) {
+        let client = clientList[0];
+        for (let i = 0; i < clientList.length; i++) {
+          if (clientList[i].focused) {
+            client = clientList[i];
+          }
+        }
+        return client.focus();
+      }
+      return self.clients.openWindow('./');
     })
   );
 });

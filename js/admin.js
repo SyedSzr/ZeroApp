@@ -8,6 +8,7 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
 let currentRoute = 'dashboard';
 let data = { apps: [], games: [], categories: [], settings: {}, profiles: [], promotions: [] };
 let editingId = null;
+let editingType = null;
 let editingPromoId = null;
 let selectedUserId = null;
 let filterCategory = null;
@@ -775,17 +776,43 @@ async function saveSettings(e) {
   else alert('Settings saved!');
 }
 
-async function deleteItem(id, type) { if (confirm('Delete item?')) await sb.from(type).delete().eq('id', id); }
+async function deleteItem(id, type) {
+  const comment = prompt('Please enter the reason for deletion:');
+  if (comment === null) return; // Cancelled
+  if (!comment.trim()) {
+    alert('Deletion reason is required.');
+    return;
+  }
+  
+  // Dynamically resolve type based on data.games to avoid invalid table updates
+  const isGame = data.games && data.games.some(g => g.id === id);
+  const resolvedType = isGame ? 'games' : 'apps';
+
+  try {
+    const { error } = await sb.from(resolvedType).update({
+      status: 'deleted',
+      rejection_comment: comment.trim()
+    }).eq('id', id);
+    
+    if (error) throw error;
+    alert('Item status successfully updated to Deleted!');
+    fetchAllData();
+  } catch (err) {
+    alert('Failed to delete item: ' + err.message);
+  }
+}
 async function deleteCategory(id) { if (confirm('Delete category?')) await sb.from('categories').delete().eq('id', id); }
 
 // ── MODALS ─────────────────────────────────────────────────────────────────────
 function openItemModal(item = null) {
   editingId = item ? item.id : null;
+  editingType = item ? (item.gameCategory ? 'games' : 'apps') : (currentRoute === 'games' ? 'games' : 'apps');
   const form = document.getElementById('item-form');
   const select = document.getElementById('item-category-select');
-  const catType = currentRoute === 'apps' ? 'app' : 'game';
+  const catType = editingType === 'apps' ? 'app' : 'game';
   const filteredCats = data.categories.filter(c => c.type === catType);
   if (select) select.innerHTML = filteredCats.map(c => `<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('');
+  if (form && form.type) form.type.value = editingType;
   
   // Show featured image fields for both apps and games
   const gameFields = document.getElementById('game-only-fields');
@@ -847,6 +874,19 @@ function openItemModal(item = null) {
         box.innerHTML = '❌';
         label.innerText = 'Submission Rejected';
         sub.innerText = item.rejection_comment || 'No comment provided.';
+      } else if (item.status === 'deleted') {
+        approvalHeader.className = 'p-4 rounded-[28px] border mb-6 flex items-center justify-between border-red-500/20 bg-red-500/5';
+        box.className = 'w-10 h-10 rounded-2xl flex items-center justify-center text-xl bg-red-500/20 text-red-500';
+        box.innerHTML = '🗑️';
+        label.innerText = 'Submission Deleted';
+        sub.innerText = item.rejection_comment || 'No comment provided.';
+      }
+
+      const approvalButtons = document.getElementById('approval-buttons');
+      if (item.status === 'deleted') {
+        if (approvalButtons) approvalButtons.classList.add('hidden');
+      } else {
+        if (approvalButtons) approvalButtons.classList.remove('hidden');
       }
     } else {
       approvalHeader.classList.add('hidden');
@@ -1148,6 +1188,7 @@ function renderStatusBadge(status) {
   if (status === 'pending') return `<span class="pill bg-amber-500/10 text-amber-500 text-[9px] px-2 py-0.5 font-black uppercase border border-amber-500/20">Pending Review</span>`;
   if (status === 'approved') return `<span class="pill bg-emerald-500/10 text-emerald-500 text-[9px] px-2 py-0.5 font-black uppercase border border-emerald-500/20">Approved</span>`;
   if (status === 'rejected') return `<span class="pill bg-red-500/10 text-red-500 text-[9px] px-2 py-0.5 font-black uppercase border border-red-500/20">Rejected</span>`;
+  if (status === 'deleted') return `<span class="pill bg-red-500/15 text-red-400 text-[9px] px-2 py-0.5 font-black uppercase border border-red-500/30">Deleted</span>`;
   return `<span class="pill bg-white/5 text-muted text-[9px] px-2 py-0.5 font-black uppercase border border-white/10">Draft</span>`;
 }
 
@@ -1160,7 +1201,7 @@ async function handleQuickApprove() {
   if (!editingId) return;
   if (!confirm('Approve this submission? It will go live immediately.')) return;
   try {
-    const { error } = await sb.from(currentRoute).update({ status: 'approved' }).eq('id', editingId);
+    const { error } = await sb.from(editingType || 'apps').update({ status: 'approved' }).eq('id', editingId);
     if (error) throw error;
     closeModal('item-modal');
     fetchAllData();
@@ -1172,7 +1213,7 @@ async function handleQuickReject() {
   const comment = document.getElementById('rejection-comment').value;
   if (!comment) return alert('Please enter a rejection reason.');
   try {
-    const { error } = await sb.from(currentRoute).update({ 
+    const { error } = await sb.from(editingType || 'apps').update({ 
       status: 'rejected', 
       rejection_comment: comment 
     }).eq('id', editingId);
@@ -1180,6 +1221,26 @@ async function handleQuickReject() {
     closeModal('item-modal');
     fetchAllData();
   } catch (err) { alert(err.message); }
+}
+
+async function handleModalDelete() {
+  if (!editingId) return;
+  const comment = prompt('Please enter the reason for deletion:');
+  if (comment === null) return; // Cancelled
+  if (!comment.trim()) {
+    alert('Deletion reason is required.');
+    return;
+  }
+  try {
+    const { error } = await sb.from(editingType || 'apps').update({ 
+      status: 'deleted', 
+      rejection_comment: comment.trim() 
+    }).eq('id', editingId);
+    if (error) throw error;
+    alert('Item status successfully updated to Deleted!');
+    closeModal('item-modal');
+    fetchAllData();
+  } catch (err) { alert('Failed to delete item: ' + err.message); }
 }
 
 
@@ -1190,6 +1251,7 @@ window.testConnection = testConnection;
 window.editItem = (id, type) => { const list = type === 'apps' ? data.apps : data.games; openItemModal(list.find(it => it.id === id)); };
 window.editCategory = (id) => openCatModal(data.categories.find(c => c.id === id));
 window.deleteItem = deleteItem;
+window.handleModalDelete = handleModalDelete;
 window.deleteCategory = deleteCategory;
 window.seedSupabase = seedSupabase;
 window.saveSettings = saveSettings;

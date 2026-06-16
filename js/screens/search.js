@@ -11,18 +11,17 @@ function SearchScreen() {
 
   const results = useMemo(() => {
     if (!q) return [];
-    // Only search games
-    const all = liveGames || [];
+    const all = [...(liveApps || []), ...(liveGames || [])];
     return all.filter(a => {
       const name = (a.name || '').toLowerCase();
-      const cat  = (a.category || a.gameCategory || '').toLowerCase();
+      const cat  = (a.category || a.homeCategory || a.gameCategory || '').toLowerCase();
       const tags = Array.isArray(a.tags) ? a.tags : [];
       
       return name.includes(q) || 
              cat.includes(q) || 
              tags.some(t_tag => String(t_tag).toLowerCase().includes(q));
     });
-  }, [q, liveGames]);
+  }, [q, liveApps, liveGames]);
 
   const topResults = results.slice(0, 4);
   const moreResults = results.slice(4);
@@ -55,7 +54,7 @@ function SearchScreen() {
       {/* ── Results ── */}
       <div className="flex-1 overflow-y-auto no-sb pb-28">
 
-        {/* Empty state - show recent or all apps */}
+        {/* Empty state - show recent or all apps/games */}
         {!q && (
           <div className="px-5 pt-6">
             {recentSearches.length > 0 && (
@@ -78,15 +77,33 @@ function SearchScreen() {
               </div>
             )}
 
-            <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{t('all_games')} ({liveGames.length})</p>
-            <div className="flex flex-col gap-2">
-              {liveGames.map(app => (
-                <ListAppRow key={app.id} app={app} onPress={(a) => {
-                  updateSearchHistory(a.name);
-                  launchApp(a);
-                }} />
-              ))}
-            </div>
+            {liveApps.length > 0 && (
+              <div className="mb-6">
+                <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{t('all_apps')} ({liveApps.length})</p>
+                <div className="flex flex-col gap-2">
+                  {liveApps.map(app => (
+                    <ListAppRow key={app.id} app={app} onPress={(a) => {
+                      updateSearchHistory(a.name);
+                      openDetail(a);
+                    }} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {liveGames.length > 0 && (
+              <div className="mb-6">
+                <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{t('all_games')} ({liveGames.length})</p>
+                <div className="flex flex-col gap-2">
+                  {liveGames.map(app => (
+                    <ListAppRow key={app.id} app={app} onPress={(a) => {
+                      updateSearchHistory(a.name);
+                      launchApp(a);
+                    }} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

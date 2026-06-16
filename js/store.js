@@ -26,6 +26,129 @@ function AppProvider({ children }) {
   const [session, setSession] = useState(null);
   const [userProfile, setUserProfile] = useState(() => ls('zero_guest_profile', null));
 
+  // ── Notifications State & Scheduler ──
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    const local = ls('zero_notifications_enabled', null);
+    return local !== null ? !!local : true;
+  });
+
+  const scheduleLocalNotifications = useCallback(async (enabled) => {
+    if (!enabled) {
+      if ('serviceWorker' in navigator && 'Notification' in window) {
+        const reg = await navigator.serviceWorker.ready;
+        if (reg.getNotifications) {
+          const notifications = await reg.getNotifications();
+          notifications.forEach(n => {
+            if (n.tag && n.tag.startsWith('scheduled-')) n.close();
+          });
+        }
+      }
+      return;
+    }
+
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+
+    if (Notification.permission !== 'granted') {
+      return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const supportsTriggers = 'showTrigger' in Notification.prototype;
+
+      if (supportsTriggers) {
+        if (reg.getNotifications) {
+          const notifications = await reg.getNotifications();
+          notifications.forEach(n => {
+            if (n.tag && n.tag.startsWith('scheduled-')) n.close();
+          });
+        }
+
+        const now = new Date();
+        for (let i = 0; i < 3; i++) {
+          const morningDate = new Date(now);
+          morningDate.setDate(now.getDate() + i);
+          morningDate.setHours(9, 0, 0, 0);
+          if (morningDate > now) {
+            reg.showNotification('ZeroApp ⚡', {
+              body: 'Good morning! Ready for some fun? Check out today\'s top picks on ZeroApp!',
+              icon: 'icons/icon-192.png',
+              tag: `scheduled-morning-${morningDate.getTime()}`,
+              showTrigger: new window.TimestampTrigger(morningDate.getTime())
+            });
+          }
+
+          const eveningDate = new Date(now);
+          eveningDate.setDate(now.getDate() + i);
+          eveningDate.setHours(18, 0, 0, 0);
+          if (eveningDate > now) {
+            reg.showNotification('ZeroApp 🎮', {
+              body: 'Bored after a long day? Discover new experiences and play trending games on ZeroApp!',
+              icon: 'icons/icon-192.png',
+              tag: `scheduled-evening-${eveningDate.getTime()}`,
+              showTrigger: new window.TimestampTrigger(eveningDate.getTime())
+            });
+          }
+        }
+      } else {
+        const lastShown = localStorage.getItem('zero_last_notification_shown');
+        const nowTime = Date.now();
+        const twelveHours = 12 * 60 * 60 * 1000;
+        
+        if (!lastShown || (nowTime - parseInt(lastShown)) > twelveHours) {
+          const now = new Date();
+          const hour = now.getHours();
+          let title = 'ZeroApp ⚡';
+          let body = 'Ready for some fun? Check out today\'s top picks on ZeroApp!';
+          if (hour >= 6 && hour < 12) {
+            title = 'ZeroApp ⚡';
+            body = 'Good morning! Ready for some fun? Check out today\'s top picks on ZeroApp!';
+          } else if (hour >= 17 && hour < 22) {
+            title = 'ZeroApp 🎮';
+            body = 'Bored after a long day? Discover new experiences and play trending games on ZeroApp!';
+          }
+          
+          reg.showNotification(title, {
+            body: body,
+            icon: 'icons/icon-192.png',
+            tag: 'daily-fallback'
+          });
+          localStorage.setItem('zero_last_notification_shown', nowTime.toString());
+        }
+      }
+    } catch (e) {
+      console.warn('Error scheduling notifications:', e);
+    }
+  }, []);
+
+  const toggleNotifications = useCallback(async () => {
+    const nextState = !notificationsEnabled;
+    lsSet('zero_notifications_enabled', nextState);
+    setNotificationsEnabled(nextState);
+
+    if (nextState) {
+      if ('Notification' in window) {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          scheduleLocalNotifications(true);
+        } else {
+          lsSet('zero_notifications_enabled', false);
+          setNotificationsEnabled(false);
+        }
+      }
+    } else {
+      scheduleLocalNotifications(false);
+    }
+  }, [notificationsEnabled, scheduleLocalNotifications]);
+
+  useEffect(() => {
+    if (notificationsEnabled) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        scheduleLocalNotifications(true);
+      }
+    }
+  }, [notificationsEnabled, scheduleLocalNotifications]);
+
   useEffect(() => {
     if (!supabase) return;
 
@@ -2450,7 +2573,9 @@ function AppProvider({ children }) {
     getSmartRecommendations,
     recentSearches, updateSearchHistory, clearSearchHistory,
     logActivity, uploadAvatar,
-    updateZCoins
+    updateZCoins,
+    notificationsEnabled,
+    toggleNotifications
   };
 
   return React.createElement(Ctx.Provider, { value }, children);

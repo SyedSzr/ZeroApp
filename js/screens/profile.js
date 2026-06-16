@@ -7,6 +7,7 @@ function ProfileScreen() {
   const [isUploading, setIsUploading] = useState(false);
   
   const [mySubmissions, setMySubmissions] = useState([]);
+  const [selectedSub, setSelectedSub] = useState(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
   
@@ -225,7 +226,11 @@ function ProfileScreen() {
                 </div>
               ) : (
                 mySubmissions.map(sub => (
-                  <div key={sub.id} className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4">
+                  <div 
+                    key={sub.id} 
+                    onClick={() => setSelectedSub(sub)}
+                    className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:border-white/10 transition-all active:scale-[0.99] tap"
+                  >
                     <div className="w-12 h-12 rounded-xl bg-surface flex items-center justify-center flex-shrink-0 overflow-hidden">
                       {sub.icon_url || sub.featured_image ? <img src={sub.icon_url || sub.featured_image} className="w-full h-full object-cover" /> : <span className="text-xl">{sub.emoji || '🎮'}</span>}
                     </div>
@@ -234,7 +239,8 @@ function ProfileScreen() {
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-muted text-[10px] uppercase tracking-widest">{sub.region || 'Global'}</span>
                         <button 
-                          onClick={async () => {
+                          onClick={async (e) => {
+                            e.stopPropagation();
                             const newRegion = prompt('Enter Region (Global, PK, US, UK, AE):', sub.region || 'Global');
                             if (newRegion && newRegion !== sub.region) {
                               const { error } = await supabase.from(sub.gameCategory ? 'games' : 'apps').update({ region: newRegion }).eq('id', sub.id);
@@ -245,13 +251,14 @@ function ProfileScreen() {
                           Change
                         </button>
                       </div>
-                      {sub.status === 'rejected' && sub.rejection_comment && (
+                      {(sub.status === 'rejected' || sub.status === 'deleted') && sub.rejection_comment && (
                         <div className="text-red-400 text-[10px] mt-0.5 leading-tight line-clamp-2">{sub.rejection_comment}</div>
                       )}
                     </div>
                     <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
                       sub.status === 'approved' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
                       sub.status === 'rejected' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                      sub.status === 'deleted' ? 'bg-red-500/15 text-red-400 border border-red-500/30' :
                       'bg-amber-500/10 text-amber-500 border border-amber-500/20'
                     }`}>
                       {sub.status || 'pending'}
@@ -434,6 +441,82 @@ function ProfileScreen() {
           </div>
         </div>
       )}
+      {/* ── Submission Details Modal ── */}
+      {selectedSub && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center px-5">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedSub(null)}></div>
+          <div className="bg-surface border border-border rounded-3xl w-full max-w-[340px] p-6 relative z-10 shadow-2xl slide-up flex flex-col">
+            <h3 className="text-white font-bold text-lg mb-2 text-center">Submission Status</h3>
+            
+            <div className="flex flex-col items-center text-center my-4">
+              <div className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center text-3xl mb-3 overflow-hidden">
+                {selectedSub.icon_url || selectedSub.featured_image ? (
+                  <img src={selectedSub.icon_url || selectedSub.featured_image} className="w-full h-full object-cover" />
+                ) : (
+                  <span>{selectedSub.emoji || '🌐'}</span>
+                )}
+              </div>
+              <h4 className="text-white font-extrabold text-base leading-tight">{selectedSub.name}</h4>
+              <p className="text-muted text-xs mt-1 truncate max-w-[200px]">{selectedSub.url}</p>
+            </div>
+
+            <div className="space-y-4 my-2">
+              <div className="flex items-center justify-between text-xs border-b border-border/50 pb-2">
+                <span className="text-muted">Status</span>
+                <span className={`px-2 py-0.5 rounded-md font-bold uppercase text-[9px] ${
+                  selectedSub.status === 'approved' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
+                  selectedSub.status === 'rejected' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                  selectedSub.status === 'deleted' ? 'bg-red-500/15 text-red-400 border border-red-500/30' :
+                  'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                }`}>
+                  {selectedSub.status || 'pending'}
+                </span>
+              </div>
+
+              {(selectedSub.status === 'rejected' || selectedSub.status === 'deleted') && selectedSub.rejection_comment && (
+                <div className="bg-card border border-border rounded-xl p-3.5">
+                  <div className="text-muted text-[9px] font-black uppercase tracking-wider mb-1.5">
+                    {selectedSub.status === 'deleted' ? 'Deletion Reason' : 'Rejection Reason'}
+                  </div>
+                  <p className="text-red-200/90 text-xs leading-relaxed font-medium">
+                    {selectedSub.rejection_comment}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              {selectedSub.status === 'rejected' ? (
+                <>
+                  <button 
+                    onClick={() => setSelectedSub(null)} 
+                    className="flex-1 py-3 rounded-xl bg-card border border-border text-white font-semibold text-sm"
+                  >
+                    Close
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const subToEdit = selectedSub;
+                      setSelectedSub(null);
+                      go('submit', { editItem: subToEdit });
+                    }} 
+                    className="flex-1 py-3 rounded-xl bg-accent text-white font-bold text-sm shadow-[0_0_15px_rgba(107,78,255,0.4)]"
+                  >
+                    Resubmit
+                  </button>
+                </>
+              ) : (
+                <button 
+                  onClick={() => setSelectedSub(null)} 
+                  className="w-full py-3 rounded-xl bg-card border border-border text-white font-semibold text-sm"
+                >
+                  Close
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
@@ -443,7 +526,7 @@ function ProfileScreen() {
 // I will just ensure "Privacy Policy" and "Terms of Service" are localized now.
 
 function SettingsScreen() {
-  var { user, signOut, goBack, userProfile, updateProfileName, t, lang, setLang, theme, setTheme, userRegion, setUserRegion } = useApp();
+  var { user, signOut, goBack, userProfile, updateProfileName, t, lang, setLang, theme, setTheme, userRegion, setUserRegion, notificationsEnabled, toggleNotifications } = useApp();
   const [showNameModal, setShowNameModal] = React.useState(false);
   const [newName, setNewName] = React.useState(userProfile?.display_name || '');
 
@@ -485,9 +568,16 @@ function SettingsScreen() {
           label: t('dark_mode'), 
           value: theme === 'dark' ? 'Dark' : 'Bright', 
           action: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
-          isToggle: true 
+          isToggle: true,
+          toggleState: theme === 'dark'
         },
-        { label: t('notifications'), value: 'Enabled', action: null },
+        { 
+          label: t('notifications'), 
+          value: notificationsEnabled ? 'Enabled' : 'Disabled', 
+          action: toggleNotifications,
+          isToggle: true,
+          toggleState: notificationsEnabled
+        },
         { 
           label: t('language'), 
           value: languages.find(l => l.code === lang)?.label || 'English', 
@@ -538,8 +628,8 @@ function SettingsScreen() {
                       {item.isToggle ? (
                          <button onClick={item.action} className="tap flex items-center gap-2">
                             <span className="text-muted text-xs uppercase font-bold tracking-tighter">{item.value}</span>
-                            <div className={`w-10 h-5 rounded-full relative transition-colors ${theme === 'dark' ? 'bg-accent' : 'bg-border'}`}>
-                               <div className={`absolute top-1 left-1 w-3 h-3 rounded-full bg-white transition-transform ${theme === 'dark' ? 'translate-x-5' : ''}`} />
+                            <div className={`w-10 h-5 rounded-full relative transition-colors ${item.toggleState ? 'bg-accent' : 'bg-border'}`}>
+                               <div className={`absolute top-1 left-1 w-3 h-3 rounded-full bg-white transition-transform ${item.toggleState ? 'translate-x-5' : ''}`} />
                             </div>
                          </button>
                       ) : item.isDropdown ? (

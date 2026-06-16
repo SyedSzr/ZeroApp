@@ -1,22 +1,25 @@
 // ── SUBMIT SCREEN ───────────────────────────────────────────────────────────
-function SubmitScreen() {
+function SubmitScreen(props) {
   const context = useApp();
   if (!context) return null;
   var { supabase, liveCats, goBack, user, userProfile, updateZCoins, go, t } = context;
 
+  const editItem = props?.editItem;
+  const isEdit = !!editItem;
+
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
   const [error, setError]     = React.useState(null);
+  const [itemType, setItemType] = React.useState(editItem ? (editItem.gameCategory ? 'game' : 'app') : 'app'); // 'app' or 'game'
 
-  const appCategories = liveCats.filter(c => c.type === 'app');
   const currentBalance = userProfile?.zcoins ?? 0;
-  const canSubmit = currentBalance >= 10;
+  const canSubmit = isEdit || (currentBalance >= 10);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
 
-    if (currentBalance < 10) {
+    if (!isEdit && currentBalance < 10) {
       setError(t('insufficient_coins') || 'Insufficient ZCoins! You need 10 ZCoins to upload.');
       return;
     }
@@ -28,9 +31,10 @@ function SubmitScreen() {
     const name = fd.get('name');
     
     // Generate a unique ID (slug style) to avoid constraint violations
-    const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.random().toString(36).substring(7);
+    const id = isEdit ? editItem.id : (name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.random().toString(36).substring(7));
 
     try {
+      const selectedCat = liveCats.find(c => c.id === fd.get('category'));
       const payload = {
         id,
         user_id: user?.id,
@@ -39,21 +43,29 @@ function SubmitScreen() {
         description: fd.get('description'),
         long_description: fd.get('long_description'),
         tags: fd.get('tags') ? fd.get('tags').split(',').map(t => t.trim()).filter(Boolean) : [],
-        homeCategory: fd.get('category'),
         region: fd.get('region') || 'Global',
-        rating: 4.5 + (Math.random() * 0.5),
-        emoji: '🌐',
-        reviews: '1',
-        screenshots: [],
-        featured_image: null,
+        rating: isEdit ? editItem.rating : (4.5 + (Math.random() * 0.5)),
+        emoji: selectedCat ? selectedCat.emoji : (itemType === 'game' ? '🎮' : '🌐'),
+        reviews: isEdit ? editItem.reviews : '1',
+        screenshots: isEdit ? (editItem.screenshots || []) : [],
+        featured_image: isEdit ? editItem.featured_image : null,
         status: 'pending',
         rejection_comment: null,
+        category: selectedCat ? selectedCat.label : '',
       };
+
+      if (itemType === 'game') {
+        payload.gameCategory = fd.get('category');
+      } else {
+        payload.homeCategory = fd.get('category');
+      }
 
       // 1. Handle Icon Upload
       const iconFile = document.getElementById('icon-input')?.files[0];
       if (iconFile) {
         payload.icon_url = await uploadToSupabase(iconFile, 'icons');
+      } else if (isEdit) {
+        payload.icon_url = editItem.icon_url;
       }
 
       // 2. Handle Featured Graphic Upload
@@ -73,11 +85,21 @@ function SubmitScreen() {
         payload.screenshots = urls;
       }
 
-      var { error: sbErr } = await supabase.from('apps').insert(payload);
+      if (isEdit) {
+        // If type changed, delete from the old table
+        const oldType = editItem.gameCategory ? 'game' : 'app';
+        if (oldType !== itemType) {
+          await supabase.from(oldType === 'game' ? 'games' : 'apps').delete().eq('id', editItem.id);
+        }
+      }
+
+      var { error: sbErr } = await supabase.from(itemType === 'game' ? 'games' : 'apps').upsert(payload);
       if (sbErr) throw sbErr;
       
-      // Deduct 10 ZCoins
-      await updateZCoins(currentBalance - 10);
+      // Deduct 10 ZCoins only if not editing
+      if (!isEdit) {
+        await updateZCoins(currentBalance - 10);
+      }
       
       setSuccess(true);
       setTimeout(() => goBack(), 2000);
@@ -114,7 +136,7 @@ function SubmitScreen() {
         </div>
         <h2 className="text-white text-2xl font-black mb-3">Submission Received!</h2>
         <p className="text-muted text-sm leading-relaxed">
-          Your app has been submitted for review. <br/>
+          Your {itemType === 'game' ? 'game' : 'app'} has been submitted for review. <br/>
           It will appear live once approved by the admin.
         </p>
       </div>
@@ -123,15 +145,50 @@ function SubmitScreen() {
 
   return (
     <div className="flex flex-col h-full bg-bg slide-right-fast">
-      <BackHeader title="Submit Web App" />
+      <BackHeader title={isEdit ? (itemType === 'game' ? 'Resubmit Game' : 'Resubmit Web App') : (itemType === 'game' ? 'Submit Game' : 'Submit Web App')} />
       
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-8 pb-32 no-sb">
         <header className="mb-2">
-          <h1 className="text-white text-xl font-black mb-1">Add to Catalog</h1>
-          <p className="text-muted text-xs">Contribute a new web app to the community.</p>
+          <h1 className="text-white text-xl font-black mb-1">
+            {isEdit ? 'Edit & Resubmit' : (itemType === 'game' ? 'Add Game to Catalog' : 'Add App to Catalog')}
+          </h1>
+          <p className="text-muted text-xs">
+            {itemType === 'game' ? 'Contribute a new web game to the community.' : 'Contribute a new web app to the community.'}
+          </p>
         </header>
 
-        {currentBalance < 10 && (
+        {/* Submission Type Selector */}
+        <div className="space-y-2">
+          <label className="block text-muted text-[10px] font-black uppercase tracking-widest px-1">Submission Type</label>
+          <div className="flex p-1 bg-card border border-border rounded-2xl">
+            <button
+              type="button"
+              onClick={() => setItemType('app')}
+              className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 ${
+                itemType === 'app' 
+                  ? 'bg-accent text-white shadow-lg shadow-accent/25' 
+                  : 'text-muted hover:text-white'
+              }`}
+            >
+              <span>📱</span>
+              <span>Web App</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setItemType('game')}
+              className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 ${
+                itemType === 'game' 
+                  ? 'bg-accent text-white shadow-lg shadow-accent/25' 
+                  : 'text-muted hover:text-white'
+              }`}
+            >
+              <span>🎮</span>
+              <span>Game</span>
+            </button>
+          </div>
+        </div>
+
+        {!isEdit && currentBalance < 10 && (
           <div className="p-5 rounded-[24px] bg-amber-500/10 border border-amber-500/20 text-amber-500 flex flex-col items-center text-center gap-3">
             <span className="text-3xl">🪙</span>
             <div className="text-sm font-bold leading-snug">
@@ -154,15 +211,18 @@ function SubmitScreen() {
         )}
 
         <div className="space-y-6">
-          {/* App Identity */}
+          {/* Identity */}
           <div className="space-y-4">
             <div>
-              <label className="block text-muted text-[10px] font-black uppercase tracking-widest mb-2 px-1">App Name</label>
+              <label className="block text-muted text-[10px] font-black uppercase tracking-widest mb-2 px-1">
+                {itemType === 'game' ? 'Game Name' : 'App Name'}
+              </label>
               <input 
                 required
                 name="name" 
                 type="text" 
-                placeholder="e.g. My Awesome App"
+                defaultValue={editItem?.name || ''}
+                placeholder={itemType === 'game' ? 'e.g. Space Invaders' : 'e.g. My Awesome App'}
                 className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none transition-all"
               />
             </div>
@@ -173,6 +233,7 @@ function SubmitScreen() {
                 required
                 name="url" 
                 type="url" 
+                defaultValue={editItem?.url || ''}
                 placeholder="https://example.com"
                 className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none transition-all"
               />
@@ -182,6 +243,7 @@ function SubmitScreen() {
               <label className="block text-muted text-[10px] font-black uppercase tracking-widest mb-2 px-1">Region</label>
               <select 
                 name="region"
+                defaultValue={editItem?.region || 'Global'}
                 className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none transition-all"
               >
                 <option value="Global">All Over the World</option>
@@ -197,7 +259,8 @@ function SubmitScreen() {
               <input 
                 name="tags" 
                 type="text" 
-                placeholder="e.g. productivity, ai, tools"
+                defaultValue={editItem?.tags ? editItem.tags.join(', ') : ''}
+                placeholder={itemType === 'game' ? 'e.g. arcade, puzzle, adventure' : 'e.g. productivity, ai, tools'}
                 className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none transition-all"
               />
             </div>
@@ -206,7 +269,9 @@ function SubmitScreen() {
           {/* Media Selection */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-muted text-[10px] font-black uppercase tracking-widest mb-2 px-1">App Icon</label>
+              <label className="block text-muted text-[10px] font-black uppercase tracking-widest mb-2 px-1">
+                {itemType === 'game' ? 'Game Icon' : 'App Icon'}
+              </label>
               <div className="relative">
                 <input 
                   type="file" 
@@ -227,8 +292,8 @@ function SubmitScreen() {
                   }}
                 />
                 <label htmlFor="icon-input" className="flex flex-col items-center justify-center w-full h-32 rounded-2xl bg-card border-2 border-dashed border-border hover:border-accent transition-all cursor-pointer overflow-hidden">
-                   <img id="icon-preview" className="w-full h-full object-cover hidden" />
-                   <div id="icon-placeholder" className="flex flex-col items-center">
+                   <img id="icon-preview" src={editItem?.icon_url || ''} className={`w-full h-full object-cover ${editItem?.icon_url ? '' : 'hidden'}`} />
+                   <div id="icon-placeholder" className={`flex flex-col items-center ${editItem?.icon_url ? 'hidden' : ''}`}>
                      <span className="text-2xl mb-1">🖼️</span>
                      <span className="text-[10px] text-muted font-bold">UPLOAD ICON</span>
                    </div>
@@ -251,7 +316,11 @@ function SubmitScreen() {
                 />
                 <label htmlFor="screens-input" className="flex flex-col items-center justify-center w-full h-32 rounded-2xl bg-card border-2 border-dashed border-border hover:border-accent transition-all cursor-pointer">
                    <span className="text-2xl mb-1">📸</span>
-                   <span id="screens-count" className="text-[10px] text-muted font-bold text-center px-2">UPLOAD SCREENS</span>
+                   <span id="screens-count" className="text-[10px] text-muted font-bold text-center px-2">
+                     {editItem?.screenshots && editItem.screenshots.length > 0 
+                       ? `${editItem.screenshots.length} files selected` 
+                       : 'UPLOAD SCREENS'}
+                   </span>
                 </label>
               </div>
             </div>
@@ -280,8 +349,8 @@ function SubmitScreen() {
                 }}
               />
               <label htmlFor="feat-input" className="flex flex-col items-center justify-center w-full h-40 rounded-3xl bg-card border-2 border-dashed border-border hover:border-accent transition-all cursor-pointer overflow-hidden">
-                 <img id="feat-preview" className="w-full h-full object-cover hidden" />
-                 <div id="feat-placeholder" className="flex flex-col items-center">
+                 <img id="feat-preview" src={editItem?.featured_image || ''} className={`w-full h-full object-cover ${editItem?.featured_image ? '' : 'hidden'}`} />
+                 <div id="feat-placeholder" className={`flex flex-col items-center ${editItem?.featured_image ? 'hidden' : ''}`}>
                    <span className="text-3xl mb-1">🎭</span>
                    <span className="text-[10px] text-muted font-bold">UPLOAD FEATURED GRAPHIC (1024x500)</span>
                  </div>
@@ -295,10 +364,12 @@ function SubmitScreen() {
             <select 
               required
               name="category"
-              className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none appearance-none transition-all"
+              key={itemType}
+              defaultValue={editItem ? (editItem.gameCategory || editItem.homeCategory) : ''}
+              className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none appearance-none transition-all cursor-pointer"
             >
               <option value="">Select a category</option>
-              {appCategories.map(cat => (
+              {liveCats.filter(c => c.type === itemType).map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.emoji} {cat.label}</option>
               ))}
             </select>
@@ -310,7 +381,8 @@ function SubmitScreen() {
             <textarea 
               name="description" 
               rows="3"
-              placeholder="A quick one-liner about the app..."
+              defaultValue={editItem?.description || ''}
+              placeholder={itemType === 'game' ? 'A quick one-liner about the game...' : 'A quick one-liner about the app...'}
               className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none transition-all resize-none"
             ></textarea>
           </div>
@@ -320,16 +392,19 @@ function SubmitScreen() {
             <textarea 
               name="long_description" 
               rows="6"
-              placeholder="Detailed app info, features, and how to use it..."
+              defaultValue={editItem?.long_description || ''}
+              placeholder={itemType === 'game' ? 'Detailed game info, controls, and how to play it...' : 'Detailed app info, features, and how to use it...'}
               className="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm focus:border-accent outline-none transition-all resize-none"
             ></textarea>
           </div>
         </div>
 
         <div className="pt-4">
-          <div className="text-center text-[10px] text-muted font-bold uppercase tracking-wider mb-3">
-            {t('cost_to_upload') || 'Cost to upload: 10 ZCoins'} ({t('your_balance') || 'Your Balance'}: {currentBalance} ZCoins)
-          </div>
+          {!isEdit && (
+            <div className="text-center text-[10px] text-muted font-bold uppercase tracking-wider mb-3">
+              {t('cost_to_upload') || 'Cost to upload: 10 ZCoins'} ({t('your_balance') || 'Your Balance'}: {currentBalance} ZCoins)
+            </div>
+          )}
           {canSubmit ? (
             <button 
               type="submit" 
@@ -343,7 +418,7 @@ function SubmitScreen() {
                 </>
               ) : (
                 <>
-                  <span>ADD APP TO ZEROAPP</span>
+                  <span>{isEdit ? 'RESUBMIT ITEM' : (itemType === 'game' ? 'ADD GAME TO ZEROAPP' : 'ADD APP TO ZEROAPP')}</span>
                   <span className="text-xl">🚀</span>
                 </>
               )}
