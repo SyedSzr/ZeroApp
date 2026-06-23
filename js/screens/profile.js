@@ -169,7 +169,13 @@ function ProfileScreen() {
                   onClick={() => go('store')}
                   className="tap inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 rounded-full text-xs font-black shadow-sm"
                 >
-                  🪙 {userProfile?.zcoins ?? 0} ZCoins
+                  <ZCoinIcon size={14} /> {userProfile?.zcoins ?? 0} ZCoins
+                </button>
+                <button 
+                  onClick={() => go('gamer-profile')}
+                  className="tap inline-flex items-center gap-1.5 px-3 py-1 bg-accent/15 hover:bg-accent/25 text-accent border border-accent/20 rounded-full text-xs font-black shadow-sm"
+                >
+                  🎮 Gamer Profile
                 </button>
               </div>
             </div>
@@ -185,7 +191,13 @@ function ProfileScreen() {
                   onClick={() => go('store')}
                   className="tap inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 rounded-full text-xs font-black shadow-sm"
                 >
-                  🪙 {userProfile?.zcoins ?? 0} ZCoins
+                  <ZCoinIcon size={14} /> {userProfile?.zcoins ?? 0} ZCoins
+                </button>
+                <button 
+                  onClick={() => go('gamer-profile')}
+                  className="tap inline-flex items-center gap-1.5 px-3 py-1 bg-accent/15 hover:bg-accent/25 text-accent border border-accent/20 rounded-full text-xs font-black shadow-sm"
+                >
+                  🎮 Gamer Profile
                 </button>
               </div>
             </div>
@@ -336,16 +348,25 @@ function ProfileScreen() {
             <div className="grid grid-cols-4 gap-x-3 gap-y-5">
               {unassignedApps.map(app => (
                 <div key={app.id} className="relative group flex flex-col items-center">
-                  <button 
+                  <div 
                     onClick={() => onAppTap(app)} 
                     draggable={isEditing ? "false" : "true"}
                     onDragStart={(e) => handleDragStart(e, app.id)}
-                    className={`tap w-full aspect-square rounded-2xl bg-surface border flex items-center justify-center mb-2 overflow-hidden transition-all ${
+                    className={`tap w-full aspect-square rounded-2xl bg-surface border flex items-center justify-center mb-2 overflow-hidden transition-all cursor-pointer relative ${
                       movingAppId === app.id ? 'border-accent glow-purple scale-110' : 'border-border'
                     } ${isEditing && movingAppId !== app.id ? 'jiggle' : ''}`}
                   >
                     <AppLogo app={app} size="md" />
-                  </button>
+                    {!isEditing && app.gameCategory && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); openDetail(app); }}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-white text-[11px] font-bold hover:bg-black transition-all tap z-10"
+                        title="View Details"
+                      >
+                        ›
+                      </button>
+                    )}
+                  </div>
                   <div className="w-full text-center px-0.5">
                     <div className="text-white text-[10px] font-bold truncate leading-tight">{app.name}</div>
                   </div>
@@ -378,11 +399,23 @@ function ProfileScreen() {
               <div className="grid grid-cols-4 gap-x-3 gap-y-5">
                 {activeFolderApps.map(app => (
                   <div key={app.id} className="relative group flex flex-col items-center">
-                    <button onClick={() => onAppTap(app)} className={`tap w-full aspect-square rounded-2xl bg-surface border flex items-center justify-center mb-2 overflow-hidden transition-all ${
-                      movingAppId === app.id ? 'border-accent glow-purple scale-110' : 'border-border'
-                    } ${isEditing && movingAppId !== app.id ? 'jiggle' : ''}`}>
+                    <div 
+                      onClick={() => onAppTap(app)} 
+                      className={`tap w-full aspect-square rounded-2xl bg-surface border flex items-center justify-center mb-2 overflow-hidden transition-all cursor-pointer relative ${
+                        movingAppId === app.id ? 'border-accent glow-purple scale-110' : 'border-border'
+                      } ${isEditing && movingAppId !== app.id ? 'jiggle' : ''}`}
+                    >
                       <AppLogo app={app} size="md" />
-                    </button>
+                      {!isEditing && app.gameCategory && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); openDetail(app); }}
+                          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-white text-[11px] font-bold hover:bg-black transition-all tap z-10"
+                          title="View Details"
+                        >
+                          ›
+                        </button>
+                      )}
+                    </div>
                     <div className="w-full text-center px-0.5">
                       <div className="text-white text-[10px] font-bold truncate leading-tight">{app.name}</div>
                     </div>

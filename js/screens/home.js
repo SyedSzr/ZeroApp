@@ -2,7 +2,7 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function AppsScreen() {
-  const { greeting, recents, openDetail, go, liveApps, liveCats, t, getPromoItems, getSmartRecommendations, userProfile } = useApp();
+  const { greeting, recents, openDetail, go, liveApps, liveCats, t, getPromoItems, getSmartRecommendations, userProfile, launchApp } = useApp();
   
   const featuredApp = getPromoItems('featured_app', 'app')?.[0] || liveApps.find(a => a.is_featured) || liveApps[0];
   const recommended = getSmartRecommendations('app');
@@ -32,18 +32,36 @@ function AppsScreen() {
 
   const HorizontalScroll = ({ apps, size = 'md' }) => (
     <div className="flex gap-5 px-5 overflow-x-auto no-sb pb-2">
-      {apps.map(app => (
-        <button key={app.id} onClick={() => openDetail(app)}
-          className="tap flex-shrink-0 flex flex-col items-center" style={{ width: size === 'lg' ? 115 : size === 'md' ? 86 : 64 }}>
-          <div className="w-full aspect-square flex items-center justify-center transition-transform active:scale-95 duration-200">
-            <AppIcon app={app} size={size} />
+      {apps.map(app => {
+        const isGame = !!app.gameCategory;
+        return (
+          <div key={app.id} onClick={() => {
+            if (isGame) {
+              launchApp(app);
+            } else {
+              openDetail(app);
+            }
+          }}
+            className="tap flex-shrink-0 flex flex-col items-center cursor-pointer" style={{ width: size === 'lg' ? 115 : size === 'md' ? 86 : 64 }}>
+            <div className="w-full aspect-square relative flex items-center justify-center transition-transform active:scale-95 duration-200">
+              <AppIcon app={app} size={size} />
+              {isGame && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); openDetail(app); }}
+                  className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-black/75 border border-white/20 flex items-center justify-center text-white text-xs font-bold hover:bg-black transition-all tap z-10"
+                  title="View Details"
+                >
+                  ›
+                </button>
+              )}
+            </div>
+            <div className="mt-2 w-full text-center px-0.5">
+              <div className="text-white text-[11px] font-bold leading-tight truncate">{app.name}</div>
+              <div className="text-muted text-[9px] mt-0.5 uppercase tracking-widest truncate">{app.category}</div>
+            </div>
           </div>
-          <div className="mt-2 w-full text-center px-0.5">
-            <div className="text-white text-[11px] font-bold leading-tight truncate">{app.name}</div>
-            <div className="text-muted text-[9px] mt-0.5 uppercase tracking-widest truncate">{app.category}</div>
-          </div>
-        </button>
-      ))}
+        );
+      })}
     </div>
   );
 
@@ -67,7 +85,7 @@ function AppsScreen() {
               className="tap flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/25 rounded-2xl text-xs font-black shadow-lg shadow-amber-500/5 transition-all"
               title="Open ZCoin Store"
             >
-              <span>🪙</span>
+              <ZCoinIcon size={16} />
               <span>{userProfile?.zcoins ?? 0}</span>
               <span className="text-[10px] bg-amber-500 text-white w-4 h-4 rounded-md flex items-center justify-center font-black ml-0.5 border border-amber-400/30">+</span>
             </button>
@@ -92,9 +110,24 @@ function AppsScreen() {
             <div className="flex items-center justify-between mb-4">
                <span className="text-white font-black text-xl tracking-tight">{t('featured_app')}</span>
             </div>
-            <button onClick={() => openDetail(featuredApp)}
-              className="tap w-full group relative flex flex-col">
+            <div onClick={() => {
+              if (featuredApp.gameCategory) {
+                launchApp(featuredApp);
+              } else {
+                openDetail(featuredApp);
+              }
+            }}
+              className="tap w-full group relative flex flex-col cursor-pointer">
               <div className="w-full aspect-[16/9] rounded-3xl overflow-hidden relative border border-border bg-surface">
+                {featuredApp.gameCategory && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); openDetail(featuredApp); }}
+                    className="absolute top-4 right-4 w-9 h-9 rounded-xl bg-black/60 border border-white/20 flex items-center justify-center text-white text-lg font-bold hover:bg-black transition-all tap z-10"
+                    title="View Details"
+                  >
+                    ›
+                  </button>
+                )}
                 {featuredApp.featured_image ? (
                   <img src={featuredApp.featured_image} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 ) : (
@@ -106,12 +139,12 @@ function AppsScreen() {
                 <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
                    <AppIcon app={featuredApp} size="sm" />
                    <div className="flex-1 text-left">
-                      <div className="text-white font-bold text-lg leading-tight">{featuredApp.name}</div>
-                      <div className="text-white/60 text-xs">{featuredApp.category} · ★ {featuredApp.rating}</div>
+                      <div className="font-bold text-lg leading-tight" style={{color:'#fff'}}>{featuredApp.name}</div>
+                      <div className="text-xs" style={{color:'rgba(255,255,255,0.7)'}}>{featuredApp.category} · ★ {featuredApp.rating}</div>
                    </div>
                 </div>
               </div>
-            </button>
+            </div>
           </div>
         )}
 
@@ -138,16 +171,33 @@ function AppsScreen() {
         {/* ── 7. Editors Picks ── */}
         <SectionHeader title="editors_picks" />
         <div className="px-5 grid grid-cols-2 gap-4">
-          {editorsPicks.slice(0, 4).map(app => (
-            <button key={app.id} onClick={() => openDetail(app)}
-              className="tap flex items-center gap-3 p-2 bg-surface rounded-2xl border border-border">
-              <AppIcon app={app} size="xs" />
-              <div className="flex-1 min-w-0 text-left">
-                <div className="text-white text-xs font-bold truncate">{app.name}</div>
-                <div className="text-muted text-[9px] truncate uppercase">{app.category}</div>
+          {editorsPicks.slice(0, 4).map(app => {
+            const isGame = !!app.gameCategory;
+            return (
+              <div key={app.id} onClick={() => {
+                if (isGame) {
+                  launchApp(app);
+                } else {
+                  openDetail(app);
+                }
+              }}
+                className="tap flex items-center gap-3 p-2 bg-surface rounded-2xl border border-border cursor-pointer relative">
+                <AppIcon app={app} size="xs" />
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-white text-xs font-bold truncate">{app.name}</div>
+                  <div className="text-muted text-[9px] truncate uppercase">{app.category}</div>
+                </div>
+                {isGame && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); openDetail(app); }}
+                    className="w-7 h-7 rounded-xl bg-card border border-border flex items-center justify-center text-muted hover:text-white transition-all tap flex-shrink-0"
+                  >
+                    ›
+                  </button>
+                )}
               </div>
-            </button>
-          ))}
+            );
+          })}
         </div>
 
         {/* ── 8. Popular Apps ── */}
@@ -161,17 +211,36 @@ function AppsScreen() {
         {/* ── 10. Super Apps ── */}
         <SectionHeader title="super_apps" />
         <div className="px-5 flex flex-col gap-3">
-          {superApps.map(app => (
-            <button key={app.id} onClick={() => openDetail(app)}
-              className="tap flex items-center gap-4 p-3 bg-surface rounded-2xl border border-border">
-              <AppIcon app={app} size="sm" />
-              <div className="flex-1 min-w-0 text-left">
-                <div className="text-white text-base font-bold truncate">{app.name}</div>
-                <div className="text-muted text-xs truncate">{app.desc || app.category}</div>
+          {superApps.map(app => {
+            const isGame = !!app.gameCategory;
+            return (
+              <div key={app.id} onClick={() => {
+                if (isGame) {
+                  launchApp(app);
+                } else {
+                  openDetail(app);
+                }
+              }}
+                className="tap flex items-center gap-4 p-3 bg-surface rounded-2xl border border-border cursor-pointer">
+                <AppIcon app={app} size="sm" />
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-white text-base font-bold truncate">{app.name}</div>
+                  <div className="text-muted text-xs truncate">{app.desc || app.category}</div>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  {isGame && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); openDetail(app); }}
+                      className="w-8 h-8 rounded-xl bg-card border border-border flex items-center justify-center text-muted hover:text-white transition-all tap"
+                    >
+                      ›
+                    </button>
+                  )}
+                  <div className="text-accent font-bold text-xs uppercase tracking-widest">{t('launch_app')}</div>
+                </div>
               </div>
-              <div className="text-accent font-bold text-xs uppercase tracking-widest">{t('launch_app')}</div>
-            </button>
-          ))}
+            );
+          })}
         </div>
 
         {/* ── 11. Apps You might Like ── */}
@@ -197,20 +266,39 @@ function AppsScreen() {
         <SectionHeader title="this_month_best" />
         <div className="px-5 pb-10">
           <div className="grid grid-cols-1 gap-4">
-            {monthBest.map((app, idx) => (
-              <button key={app.id} onClick={() => openDetail(app)}
-                className="tap flex items-center gap-4">
-                <span className="text-white/20 font-black text-2xl italic w-8 text-center">{idx + 1}</span>
-                <AppIcon app={app} size="sm" />
-                <div className="flex-1 min-w-0 text-left">
-                  <div className="text-white text-base font-bold truncate">{app.name}</div>
-                  <div className="text-muted text-xs truncate uppercase tracking-widest">{app.category}</div>
+            {monthBest.map((app, idx) => {
+              const isGame = !!app.gameCategory;
+              return (
+                <div key={app.id} onClick={() => {
+                  if (isGame) {
+                    launchApp(app);
+                  } else {
+                    openDetail(app);
+                  }
+                }}
+                  className="tap flex items-center gap-4 cursor-pointer">
+                  <span className="text-white/20 font-black text-2xl italic w-8 text-center">{idx + 1}</span>
+                  <AppIcon app={app} size="sm" />
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="text-white text-base font-bold truncate">{app.name}</div>
+                    <div className="text-muted text-xs truncate uppercase tracking-widest">{app.category}</div>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-1 text-amber-400 font-bold text-sm">
+                       <span>★</span> {app.rating}
+                    </div>
+                    {isGame && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); openDetail(app); }}
+                        className="w-7 h-7 rounded-xl bg-surface border border-border flex items-center justify-center text-muted hover:text-white transition-all tap"
+                      >
+                        ›
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-amber-400 font-bold text-sm">
-                   <span>★</span> {app.rating}
-                </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         </div>
 

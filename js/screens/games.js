@@ -358,7 +358,7 @@ function GamesScreen() {
               className="tap flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/25 rounded-2xl text-xs font-black shadow-lg shadow-amber-500/5 transition-all"
               title="Open ZCoin Store"
             >
-              <span>🪙</span>
+              <ZCoinIcon size={16} />
               <span>{userProfile?.zcoins ?? 0}</span>
               <span className="text-[10px] bg-amber-500 text-white w-4 h-4 rounded-md flex items-center justify-center font-black ml-0.5 border border-amber-400/30">+</span>
             </button>
@@ -439,16 +439,23 @@ function GamesDiscoveryView({ onBack }) {
   const HorizontalScroll = ({ apps, size = 'md' }) => (
     <div className="flex gap-5 px-5 overflow-x-auto no-sb pb-2">
       {apps.map(app => (
-        <button key={app.id} onClick={() => openDetail(app)}
-          className="tap flex-shrink-0 flex flex-col items-center" style={{ width: size === 'lg' ? 115 : size === 'md' ? 86 : 64 }}>
-          <div className="w-full aspect-square flex items-center justify-center transition-transform active:scale-95 duration-200">
+        <div key={app.id} onClick={() => launchApp(app)}
+          className="tap flex-shrink-0 flex flex-col items-center cursor-pointer" style={{ width: size === 'lg' ? 115 : size === 'md' ? 86 : 64 }}>
+          <div className="w-full aspect-square relative flex items-center justify-center transition-transform active:scale-95 duration-200">
             <AppIcon app={app} size={size} />
+            <button 
+              onClick={(e) => { e.stopPropagation(); openDetail(app); }}
+              className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-black/75 border border-white/20 flex items-center justify-center text-white text-xs font-bold hover:bg-black transition-all tap z-10"
+              title="View Details"
+            >
+              ›
+            </button>
           </div>
           <div className="mt-2 w-full text-center px-0.5">
             <div className="text-white text-[11px] font-bold leading-tight truncate">{app.name}</div>
             <div className="text-muted text-[9px] mt-0.5 uppercase tracking-widest truncate">{t('cat_' + app.gameCategory)}</div>
           </div>
-        </button>
+        </div>
       ))}
     </div>
   );
@@ -477,11 +484,11 @@ function GamesDiscoveryView({ onBack }) {
               className="tap flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/25 rounded-2xl text-xs font-black shadow-lg shadow-amber-500/5 transition-all"
               title="Open ZCoin Store"
             >
-              <span>🪙</span>
+              <ZCoinIcon size={16} />
               <span>{userProfile?.zcoins ?? 0}</span>
               <span className="text-[10px] bg-amber-500 text-white w-4 h-4 rounded-md flex items-center justify-center font-black ml-0.5 border border-amber-400/30">+</span>
             </button>
-            <button onClick={() => go('search')} className="tap w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center text-white">
+            <button onClick={() => go('search', { searchMode: 'games' })} className="tap w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center text-white">
               <span className="text-xl">🔍</span>
             </button>
             {!user && (
@@ -498,9 +505,16 @@ function GamesDiscoveryView({ onBack }) {
             <div className="flex items-center justify-between mb-4">
                <span className="text-white font-black text-xl tracking-tight">{t('featured_game')}</span>
             </div>
-            <button onClick={() => openDetail(featuredGame)}
-              className="tap w-full group relative flex flex-col">
+            <div onClick={() => launchApp(featuredGame)}
+              className="tap w-full group relative flex flex-col cursor-pointer">
               <div className="w-full aspect-[16/9] rounded-3xl overflow-hidden relative border border-border bg-surface">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); openDetail(featuredGame); }}
+                  className="absolute top-4 right-4 w-9 h-9 rounded-xl bg-black/60 border border-white/20 flex items-center justify-center text-white text-lg font-bold hover:bg-black transition-all tap z-10"
+                  title="View Details"
+                >
+                  ›
+                </button>
                 {featuredGame.featured_image ? (
                   <img src={featuredGame.featured_image} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 ) : (
@@ -512,12 +526,12 @@ function GamesDiscoveryView({ onBack }) {
                 <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
                    <AppIcon app={featuredGame} size="sm" />
                    <div className="flex-1 text-left">
-                      <div className="text-white font-bold text-lg leading-tight">{featuredGame.name}</div>
-                      <div className="text-white/60 text-xs">{t('cat_' + featuredGame.gameCategory)} · ★ {featuredGame.rating}</div>
+                      <div className="font-bold text-lg leading-tight" style={{color:'#fff'}}>{featuredGame.name}</div>
+                      <div className="text-xs" style={{color:'rgba(255,255,255,0.7)'}}>{t('cat_' + featuredGame.gameCategory)} · ★ {featuredGame.rating}</div>
                    </div>
                 </div>
               </div>
-            </button>
+            </div>
           </div>
         )}
 
@@ -545,14 +559,20 @@ function GamesDiscoveryView({ onBack }) {
         <SectionHeader title="editors_picks" />
         <div className="px-5 grid grid-cols-2 gap-4">
           {editorsPicks.slice(0, 4).map(game => (
-            <button key={game.id} onClick={() => openDetail(game)}
-              className="tap flex items-center gap-3 p-2 bg-surface rounded-2xl border border-border">
+            <div key={game.id} onClick={() => launchApp(game)}
+              className="tap flex items-center gap-3 p-2 bg-surface rounded-2xl border border-border cursor-pointer relative">
               <AppIcon app={game} size="xs" />
               <div className="flex-1 min-w-0 text-left">
                 <div className="text-white text-xs font-bold truncate">{game.name}</div>
                 <div className="text-muted text-[9px] truncate uppercase">{t('cat_' + game.gameCategory)}</div>
               </div>
-            </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); openDetail(game); }}
+                className="w-7 h-7 rounded-xl bg-card border border-border flex items-center justify-center text-muted hover:text-white transition-all tap flex-shrink-0"
+              >
+                ›
+              </button>
+            </div>
           ))}
         </div>
 
@@ -568,15 +588,23 @@ function GamesDiscoveryView({ onBack }) {
         <SectionHeader title="super_games" />
         <div className="px-5 flex flex-col gap-3">
           {superGames.map(game => (
-            <button key={game.id} onClick={() => openDetail(game)}
-              className="tap flex items-center gap-4 p-3 bg-surface rounded-2xl border border-border">
+            <div key={game.id} onClick={() => launchApp(game)}
+              className="tap flex items-center gap-4 p-3 bg-surface rounded-2xl border border-border cursor-pointer">
               <AppIcon app={game} size="sm" />
               <div className="flex-1 min-w-0 text-left">
                 <div className="text-white text-base font-bold truncate">{game.name}</div>
                 <div className="text-muted text-xs truncate">{game.desc || t('cat_' + game.gameCategory)}</div>
               </div>
-              <div className="text-accent font-bold text-xs uppercase tracking-widest">{t('play_now')}</div>
-            </button>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); openDetail(game); }}
+                  className="w-8 h-8 rounded-xl bg-card border border-border flex items-center justify-center text-muted hover:text-white transition-all tap"
+                >
+                  ›
+                </button>
+                <div className="text-accent font-bold text-xs uppercase tracking-widest">{t('play_now')}</div>
+              </div>
+            </div>
           ))}
         </div>
 
@@ -604,18 +632,26 @@ function GamesDiscoveryView({ onBack }) {
         <div className="px-5 pb-10">
           <div className="grid grid-cols-1 gap-4">
             {monthBest.map((game, idx) => (
-              <button key={game.id} onClick={() => openDetail(game)}
-                className="tap flex items-center gap-4">
+              <div key={game.id} onClick={() => launchApp(game)}
+                className="tap flex items-center gap-4 cursor-pointer">
                 <span className="text-white/20 font-black text-2xl italic w-8 text-center">{idx + 1}</span>
                 <AppIcon app={game} size="sm" />
                 <div className="flex-1 min-w-0 text-left">
                   <div className="text-white text-base font-bold truncate">{game.name}</div>
                   <div className="text-muted text-xs truncate uppercase tracking-widest">{t('cat_' + game.gameCategory)}</div>
                 </div>
-                <div className="flex items-center gap-1 text-amber-400 font-bold text-sm">
-                   <span>★</span> {game.rating}
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="flex items-center gap-1 text-amber-400 font-bold text-sm">
+                     <span>★</span> {game.rating}
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); openDetail(game); }}
+                    className="w-7 h-7 rounded-xl bg-surface border border-border flex items-center justify-center text-muted hover:text-white transition-all tap"
+                  >
+                    ›
+                  </button>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         </div>
@@ -659,13 +695,20 @@ function GamesDiscoveryView({ onBack }) {
           {/* Games Grid */}
           <div className="px-5 grid grid-cols-2 gap-4">
             {filteredGames.slice(0, visibleCount).map(game => (
-              <button
+              <div
                 key={game.id}
-                onClick={() => openDetail(game)}
-                className="tap group flex flex-col bg-surface border border-border rounded-2xl overflow-hidden transition-all duration-300 hover:border-white/20 hover:-translate-y-0.5"
+                onClick={() => launchApp(game)}
+                className="tap group flex flex-col bg-surface border border-border rounded-2xl overflow-hidden transition-all duration-300 hover:border-white/20 hover:-translate-y-0.5 cursor-pointer relative"
               >
                 {/* Immersive Splash Banner */}
                 <div className="w-full aspect-[16/10] relative bg-black/40 overflow-hidden flex-shrink-0">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); openDetail(game); }}
+                    className="absolute top-2 left-2 w-7 h-7 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white text-sm font-bold hover:bg-black transition-all tap z-10"
+                    title="View Details"
+                  >
+                    ›
+                  </button>
                   {game.featured_image ? (
                     <img
                       src={game.featured_image}
@@ -696,7 +739,7 @@ function GamesDiscoveryView({ onBack }) {
                     </div>
                   </div>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
 

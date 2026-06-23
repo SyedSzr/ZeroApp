@@ -26,6 +26,46 @@ function AppProvider({ children }) {
   const [session, setSession] = useState(null);
   const [userProfile, setUserProfile] = useState(() => ls('zero_guest_profile', null));
 
+  // ── Gamer Profile Stats State ──
+  const [gamerStats, setGamerStats] = useState(() => {
+    return ls('zero_gamer_stats', {
+      totalPlayTime: 0,
+      gamesPlayedCount: 0,
+      longestStreak: 0,
+      longestSession: 0,
+      mostPlayTimeInOneDay: 0,
+      categoryStats: {},
+      timeOfDayStats: { Morning: 0, Afternoon: 0, Evening: 0, LateNight: 0 },
+      gameStats: {},
+      playStreak: { currentStreak: 0, longestStreak: 0, lastPlayedDate: null },
+      dailyPlayTime: {},
+      lastPlayedGameId: null,
+      lastPlayedTime: null
+    });
+  });
+
+  // Sync database profile game_stats into local gamerStats state when user profile changes
+  useEffect(() => {
+    if (userProfile && userProfile.game_stats) {
+      setGamerStats(userProfile.game_stats);
+    }
+  }, [userProfile]);
+
+  // Guest to Auth merge sync
+  useEffect(() => {
+    if (user && supabase && userProfile) {
+      const localStats = ls('zero_gamer_stats', null);
+      if (localStats && (!userProfile.game_stats || Object.keys(userProfile.game_stats).length === 0)) {
+        supabase.from('profiles').update({ game_stats: localStats }).eq('id', user.id)
+          .then(({ error }) => {
+            if (!error) {
+              setUserProfile(prev => ({ ...prev, game_stats: localStats }));
+            }
+          });
+      }
+    }
+  }, [user, supabase, userProfile]);
+
   // ── Notifications State & Scheduler ──
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     const local = ls('zero_notifications_enabled', null);
@@ -255,7 +295,7 @@ function AppProvider({ children }) {
   const [savedApps, setSavedApps] = useState(() => ls('zero_saved_apps', []));
   const [folders, setFolders] = useState(() => ls('zero_folders', []));
   const [lang, setLangState] = useState(() => ls('zero_lang', 'en'));
-  const [theme, setThemeState] = useState(() => ls('zero_theme', 'dark'));
+  const [theme, setThemeState] = useState(() => ls('zero_theme', 'light'));
   const [userRegion, setUserRegionState] = useState(() => ls('zero_region', 'Global'));
   const [promotions, setPromotions] = useState([]);
   const [recentSearches, setRecentSearchesState] = useState(() => ls('zero_recent_searches', []));
@@ -2442,7 +2482,167 @@ function AppProvider({ children }) {
     setActiveTaskId(id);
   }, []);
 
+  // ── Game Playtime Tracking Logic ──
+  const sessionRef = useRef({ activeId: null, startTime: null });
 
+  const recordGamePlaySessionSync = useCallback((gameId, durationSeconds) => {
+    if (!gameId || durationSeconds <= 0) return;
+
+    const local = ls('zero_gamer_stats', {
+      totalPlayTime: 0,
+      gamesPlayedCount: 0,
+      longestStreak: 0,
+      longestSession: 0,
+      mostPlayTimeInOneDay: 0,
+      categoryStats: {},
+      timeOfDayStats: { Morning: 0, Afternoon: 0, Evening: 0, LateNight: 0 },
+      gameStats: {},
+      playStreak: { currentStreak: 0, longestStreak: 0, lastPlayedDate: null },
+      dailyPlayTime: {},
+      lastPlayedGameId: null,
+      lastPlayedTime: null
+    });
+
+    const next = { ...local };
+    next.totalPlayTime = (next.totalPlayTime || 0) + durationSeconds;
+    
+    const allGames = (rawGames.length > 0 ? rawGames : (typeof GAMES !== 'undefined' ? GAMES : []));
+    const game = allGames.find(g => String(g.id) === String(gameId));
+    const category = game ? (game.category || game.gameCategory || 'Other') : 'Other';
+    
+    next.categoryStats = { ...next.categoryStats };
+    next.categoryStats[category] = (next.categoryStats[category] || 0) + durationSeconds;
+
+    const hour = new Date().getHours();
+    let period = 'LateNight';
+    if (hour >= 6 && hour < 12) period = 'Morning';
+    else if (hour >= 12 && hour < 17) period = 'Afternoon';
+    else if (hour >= 17 && hour < 22) period = 'Evening';
+
+    next.timeOfDayStats = { ...next.timeOfDayStats };
+    next.timeOfDayStats[period] = (next.timeOfDayStats[period] || 0) + durationSeconds;
+
+    next.gameStats = { ...next.gameStats };
+    if (!next.gameStats[gameId]) {
+      next.gameStats[gameId] = { playTime: 0, opens: 0, longestSession: 0 };
+    }
+    next.gameStats[gameId] = {
+      ...next.gameStats[gameId],
+      playTime: (next.gameStats[gameId].playTime || 0) + durationSeconds,
+      longestSession: Math.max(next.gameStats[gameId].longestSession || 0, durationSeconds)
+    };
+
+    next.longestSession = Math.max(next.longestSession || 0, durationSeconds);
+
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    next.dailyPlayTime = { ...next.dailyPlayTime };
+    next.dailyPlayTime[todayStr] = (next.dailyPlayTime[todayStr] || 0) + durationSeconds;
+    next.mostPlayTimeInOneDay = Math.max(next.mostPlayTimeInOneDay || 0, next.dailyPlayTime[todayStr]);
+
+    next.playStreak = { ...next.playStreak };
+    const lastDate = next.playStreak.lastPlayedDate;
+    if (lastDate !== todayStr) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+      
+      if (lastDate === yesterdayStr) {
+        next.playStreak.currentStreak = (next.playStreak.currentStreak || 0) + 1;
+      } else {
+        next.playStreak.currentStreak = 1;
+      }
+      next.playStreak.longestStreak = Math.max(next.playStreak.longestStreak || 0, next.playStreak.currentStreak);
+      next.playStreak.lastPlayedDate = todayStr;
+      next.longestStreak = next.playStreak.longestStreak;
+    }
+
+    next.lastPlayedGameId = gameId;
+    next.lastPlayedTime = Date.now();
+    next.gamesPlayedCount = Object.keys(next.gameStats).length;
+
+    lsSet('zero_gamer_stats', next);
+    return next;
+  }, [rawGames]);
+
+  const recordGamePlaySession = useCallback(async (gameId, durationSeconds) => {
+    const updated = recordGamePlaySessionSync(gameId, durationSeconds);
+    if (!updated) return;
+
+    setGamerStats(updated);
+
+    if (user && supabase) {
+      const { error: profileError } = await supabase.from('profiles').update({ game_stats: updated }).eq('id', user.id);
+      if (profileError) console.warn('Database profiles game_stats update failed (expected if column missing):', profileError);
+
+      const allGames = (rawGames.length > 0 ? rawGames : (typeof GAMES !== 'undefined' ? GAMES : []));
+      const game = allGames.find(g => String(g.id) === String(gameId));
+      if (game) {
+        const { data: dbGame } = await supabase.from('games').select('total_play_time').eq('id', gameId).single();
+        const prevTotal = dbGame?.total_play_time || game.total_play_time || 0;
+        const newTotal = prevTotal + durationSeconds;
+        const { error: gameError } = await supabase.from('games').update({ total_play_time: newTotal }).eq('id', gameId);
+        if (gameError) console.warn('Database games total_play_time update failed (expected if column missing):', gameError);
+      }
+    }
+  }, [recordGamePlaySessionSync, user, supabase, rawGames]);
+
+  // Effect to handle state change and session logging
+  useEffect(() => {
+    const prevActiveId = sessionRef.current.activeId;
+    const now = Date.now();
+
+    if (prevActiveId) {
+      const startTime = sessionRef.current.startTime;
+      const durationSeconds = Math.floor((now - startTime) / 1000);
+      if (durationSeconds > 0) {
+        recordGamePlaySession(prevActiveId, durationSeconds);
+      }
+    }
+
+    const allGames = (rawGames.length > 0 ? rawGames : (typeof GAMES !== 'undefined' ? GAMES : []));
+    const isGame = activeTaskId && allGames.some(g => String(g.id) === String(activeTaskId));
+    if (activeTaskId && isGame) {
+      setGamerStats(prev => {
+        const next = { ...prev };
+        next.gameStats = { ...next.gameStats };
+        if (!next.gameStats[activeTaskId]) {
+          next.gameStats[activeTaskId] = { playTime: 0, opens: 0, longestSession: 0 };
+        }
+        next.gameStats[activeTaskId] = {
+          ...next.gameStats[activeTaskId],
+          opens: (next.gameStats[activeTaskId].opens || 0) + 1
+        };
+        next.gamesPlayedCount = Object.keys(next.gameStats).length;
+        lsSet('zero_gamer_stats', next);
+        
+        if (user && supabase) {
+          supabase.from('profiles').update({ game_stats: next }).eq('id', user.id)
+            .catch(err => console.warn('Profiles game_stats open increment sync failed:', err));
+        }
+        return next;
+      });
+
+      sessionRef.current = { activeId: activeTaskId, startTime: now };
+    } else {
+      sessionRef.current = { activeId: null, startTime: null };
+    }
+  }, [activeTaskId, rawGames, recordGamePlaySession]);
+
+  // Effect to handle browser close/unload
+  useEffect(() => {
+    const handleUnload = () => {
+      const activeId = sessionRef.current.activeId;
+      if (activeId) {
+        const startTime = sessionRef.current.startTime;
+        const durationSeconds = Math.floor((Date.now() - startTime) / 1000);
+        if (durationSeconds > 0) {
+          recordGamePlaySessionSync(activeId, durationSeconds);
+        }
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, [recordGamePlaySessionSync]);
 
   // ── Saved Apps ──
   const toggleSaveApp = useCallback((app) => {
@@ -2565,6 +2765,7 @@ function AppProvider({ children }) {
     liveApps, liveGames, liveCats, settings,
     greeting,
     userProfile,
+    gamerStats,
     updateProfileName,
     t, lang, setLang, theme, setTheme,
     userRegion, setUserRegion, promotions, getPromoItems,

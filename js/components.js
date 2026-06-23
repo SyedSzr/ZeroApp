@@ -532,6 +532,29 @@ function AppLogo({ app, size = 'md' }) {
 // keep AppIcon as alias
 const AppIcon = AppLogo;
 
+// ── ZCoinIcon: unified coin icon used everywhere ──────────────────────────────
+function ZCoinIcon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
+      <defs>
+        <linearGradient id="zcoin-g" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fbbf24" />
+          <stop offset="50%" stopColor="#f59e0b" />
+          <stop offset="100%" stopColor="#d97706" />
+        </linearGradient>
+        <linearGradient id="zcoin-shine" x1="6" y1="4" x2="18" y2="20" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <circle cx="12" cy="12" r="10.5" fill="url(#zcoin-g)" stroke="#b45309" strokeWidth="1" />
+      <circle cx="12" cy="12" r="8.5" fill="none" stroke="#fbbf24" strokeWidth="0.8" opacity="0.5" />
+      <circle cx="12" cy="12" r="10.5" fill="url(#zcoin-shine)" />
+      <text x="12" y="16.5" textAnchor="middle" fill="#78350f" fontFamily="Inter,sans-serif" fontWeight="900" fontSize="11" style={{letterSpacing:'-0.5px'}}>Z</text>
+    </svg>
+  );
+}
+
 // ── AppCard: 2-column card used in Explore ────────────────────────────────────
 function AppCard({ app, onPress }) {
   return (
@@ -548,16 +571,28 @@ function AppCard({ app, onPress }) {
 
 // ── ListAppRow: used in Search, Recent ───────────────────────────────────────
 function ListAppRow({ app, onPress, rightSlot, subtitle }) {
+  const { openDetail } = useApp();
   return (
-    <button onClick={() => onPress(app)}
-      className="tap w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-card border border-border hover:border-white/20 transition-colors">
+    <div onClick={() => onPress(app)}
+      className="tap w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-card border border-border hover:border-white/20 transition-colors cursor-pointer">
       <AppIcon app={app} size="sm" />
       <div className="flex-1 min-w-0 text-left">
         <div className="text-white text-sm font-semibold truncate">{app.name}</div>
         <div className="text-muted text-xs mt-0.5 truncate">{subtitle || app.category}</div>
       </div>
-      {rightSlot || <span className="text-muted text-sm">›</span>}
-    </button>
+      {rightSlot !== undefined ? (
+        <div onClick={(e) => { e.stopPropagation(); openDetail(app); }} className="cursor-pointer flex items-center justify-center flex-shrink-0">
+          {rightSlot}
+        </div>
+      ) : (
+        <button 
+          onClick={(e) => { e.stopPropagation(); openDetail(app); }}
+          className="w-7 h-7 rounded-xl bg-surface border border-border flex items-center justify-center text-muted hover:text-white transition-all tap flex-shrink-0"
+        >
+          ›
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -858,6 +893,7 @@ function StarRating({ rating }) {
   );
 }
 function PersonalizedCard({ type, data, t, openDetail }) {
+  const { launchApp } = useApp();
   const [query, setQuery] = React.useState('');
   const [filter, setFilter] = React.useState('all'); // 'all', 'top_rated', 'new'
   
@@ -930,16 +966,35 @@ function PersonalizedCard({ type, data, t, openDetail }) {
 
         {results.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 pt-2">
-            {results.map(item => (
-              <button key={item.id} onClick={() => openDetail(item)}
-                className="tap flex items-center gap-3 p-2.5 bg-black/20 rounded-2xl border border-white/5 hover:border-accent/30 transition-all">
-                <AppIcon app={item} size="xs" />
-                <div className="flex-1 min-w-0 text-left">
-                  <div className="text-white text-[11px] font-bold truncate">{item.name}</div>
-                  <div className="text-amber-400 text-[9px] font-bold">★ {item.rating}</div>
+            {results.map(item => {
+              const isGame = !!item.gameCategory;
+              return (
+                <div key={item.id} 
+                  onClick={() => {
+                    if (isGame) {
+                      launchApp(item);
+                    } else {
+                      openDetail(item);
+                    }
+                  }}
+                  className="tap flex items-center gap-3 p-2.5 bg-black/20 rounded-2xl border border-white/5 hover:border-accent/30 transition-all cursor-pointer relative"
+                >
+                  <AppIcon app={item} size="xs" />
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="text-white text-[11px] font-bold truncate">{item.name}</div>
+                    <div className="text-amber-400 text-[9px] font-bold">★ {item.rating}</div>
+                  </div>
+                  {isGame && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); openDetail(item); }}
+                      className="w-6 h-6 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-muted hover:text-white transition-all tap flex-shrink-0 animate-fade-in"
+                    >
+                      ›
+                    </button>
+                  )}
                 </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="py-8 text-center">

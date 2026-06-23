@@ -62,14 +62,14 @@ function RecentScreen() {
               <p className="px-5 text-muted text-xs font-bold uppercase tracking-widest mb-3">{label}</p>
               <div className="flex flex-col gap-2 px-4">
                 {apps.map(app => (
-                  <button key={app.id + app.openedAt} onClick={() => {
+                  <div key={app.id + app.openedAt} onClick={() => {
                     if (app.gameCategory) {
                       launchApp(app);
                     } else {
                       openDetail(app);
                     }
                   }}
-                    className="tap flex items-center gap-3 px-4 py-3 rounded-2xl bg-card border border-border hover:border-white/20 transition-colors">
+                    className="tap flex items-center gap-3 px-4 py-3 rounded-2xl bg-card border border-border hover:border-white/20 transition-colors cursor-pointer">
                     <AppIcon app={app} size="sm" />
                     <div className="flex-1 min-w-0 text-left">
                       <div className="text-white text-sm font-semibold truncate">{app.name}</div>
@@ -77,6 +77,13 @@ function RecentScreen() {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-muted text-xs">{fmtTime(app.openedAt)}</span>
+                      <button onClick={e => {
+                        e.stopPropagation();
+                        openDetail(app);
+                      }}
+                        className="w-7 h-7 rounded-xl bg-surface border border-border flex items-center justify-center text-muted hover:text-white transition-all tap flex-shrink-0">
+                        ›
+                      </button>
                       <button onClick={e => {
                         e.stopPropagation();
                         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|UniWebView/i.test(navigator.userAgent) || window.UniWebView;
@@ -88,7 +95,7 @@ function RecentScreen() {
                       }}
                         className="tap text-muted text-sm">↗</button>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>

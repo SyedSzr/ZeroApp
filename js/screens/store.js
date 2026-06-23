@@ -15,7 +15,7 @@ function StoreScreen() {
       coins: 10, 
       price: '$1.00', 
       badge: '1 Upload',
-      icon: '🪙'
+      icon: 'zcoin-1'
     },
     { 
       id: 'dev', 
@@ -23,7 +23,7 @@ function StoreScreen() {
       coins: 20, 
       price: '$2.00', 
       badge: '2 Uploads',
-      icon: '🪙🪙',
+      icon: 'zcoin-2',
       popular: true
     },
     { 
@@ -64,7 +64,7 @@ function StoreScreen() {
         {/* Balance Card */}
         <div className="bg-card border border-border rounded-[28px] p-6 mb-8 text-center relative overflow-hidden group shadow-lg">
           <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent pointer-events-none" />
-          <div className="text-4xl mb-2 animate-bounce">🪙</div>
+          <div className="text-4xl mb-2 animate-bounce"><ZCoinIcon size={48} /></div>
           <p className="text-muted text-[10px] font-black uppercase tracking-[0.2em] mb-1">
             {t('your_balance') || 'Your Balance'}
           </p>
@@ -95,7 +95,7 @@ function StoreScreen() {
                 </span>
               )}
 
-              <div className="text-3xl my-2">{bundle.icon}</div>
+              <div className="text-3xl my-2">{bundle.icon === 'zcoin-1' ? <ZCoinIcon size={36} /> : bundle.icon === 'zcoin-2' ? <div className="flex gap-1 justify-center"><ZCoinIcon size={28} /><ZCoinIcon size={28} /></div> : bundle.icon}</div>
               <h4 className="text-white text-sm font-bold truncate max-w-full leading-tight">{bundle.name}</h4>
               <p className="text-accent text-lg font-black mt-1.5">{bundle.coins} ZCoins</p>
               

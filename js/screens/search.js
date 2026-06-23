@@ -1,9 +1,11 @@
 // ── SEARCH SCREEN ─────────────────────────────────────────────────────────────
 var { useState, useEffect, useMemo, useRef } = React;
 
-function SearchScreen() {
+function SearchScreen({ searchMode }) {
   const { goBack, searchQ, setSearchQ, openDetail, liveApps, liveGames, t, recentSearches, updateSearchHistory, clearSearchHistory, launchApp } = useApp();
   const inputRef = useRef(null);
+
+  const isGamesMode = searchMode === 'games';
 
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 150); }, []);
 
@@ -11,7 +13,9 @@ function SearchScreen() {
 
   const results = useMemo(() => {
     if (!q) return [];
-    const all = [...(liveApps || []), ...(liveGames || [])];
+    const all = isGamesMode
+      ? [...(liveGames || []), ...(liveApps || [])]
+      : [...(liveApps || []), ...(liveGames || [])];
     return all.filter(a => {
       const name = (a.name || '').toLowerCase();
       const cat  = (a.category || a.homeCategory || a.gameCategory || '').toLowerCase();
@@ -21,10 +25,16 @@ function SearchScreen() {
              cat.includes(q) || 
              tags.some(t_tag => String(t_tag).toLowerCase().includes(q));
     });
-  }, [q, liveApps, liveGames]);
+  }, [q, liveApps, liveGames, isGamesMode]);
 
   const topResults = results.slice(0, 4);
   const moreResults = results.slice(4);
+
+  // Determine which list to show first in empty state
+  const primaryList = isGamesMode ? liveGames : liveApps;
+  const secondaryList = isGamesMode ? liveApps : liveGames;
+  const primaryLabel = isGamesMode ? t('all_games') : t('all_apps');
+  const secondaryLabel = isGamesMode ? t('all_apps') : t('all_games');
 
   return (
     <div className="slide-up flex flex-col h-full bg-bg">
@@ -39,7 +49,7 @@ function SearchScreen() {
               type="search"
               value={searchQ}
               onChange={e => setSearchQ(e.target.value)}
-              placeholder={t('search_anything')}
+              placeholder={isGamesMode ? (t('search_games') || 'Search games...') : t('search_anything')}
               autoComplete="off"
               className="flex-1 bg-transparent text-white text-sm placeholder-muted outline-none"
             />
@@ -54,7 +64,7 @@ function SearchScreen() {
       {/* ── Results ── */}
       <div className="flex-1 overflow-y-auto no-sb pb-28">
 
-        {/* Empty state - show recent or all apps/games */}
+        {/* Empty state - show recent searches + primary list first */}
         {!q && (
           <div className="px-5 pt-6">
             {recentSearches.length > 0 && (
@@ -77,28 +87,36 @@ function SearchScreen() {
               </div>
             )}
 
-            {liveApps.length > 0 && (
+            {primaryList.length > 0 && (
               <div className="mb-6">
-                <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{t('all_apps')} ({liveApps.length})</p>
+                <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{primaryLabel} ({primaryList.length})</p>
                 <div className="flex flex-col gap-2">
-                  {liveApps.map(app => (
+                  {primaryList.map(app => (
                     <ListAppRow key={app.id} app={app} onPress={(a) => {
                       updateSearchHistory(a.name);
-                      openDetail(a);
+                      if (a.gameCategory) {
+                        launchApp(a);
+                      } else {
+                        openDetail(a);
+                      }
                     }} />
                   ))}
                 </div>
               </div>
             )}
 
-            {liveGames.length > 0 && (
+            {secondaryList.length > 0 && (
               <div className="mb-6">
-                <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{t('all_games')} ({liveGames.length})</p>
+                <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{secondaryLabel} ({secondaryList.length})</p>
                 <div className="flex flex-col gap-2">
-                  {liveGames.map(app => (
+                  {secondaryList.map(app => (
                     <ListAppRow key={app.id} app={app} onPress={(a) => {
                       updateSearchHistory(a.name);
-                      launchApp(a);
+                      if (a.gameCategory) {
+                        launchApp(a);
+                      } else {
+                        openDetail(a);
+                      }
                     }} />
                   ))}
                 </div>

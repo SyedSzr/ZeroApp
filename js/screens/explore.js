@@ -1,7 +1,7 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function ExploreScreen({ exploreCategory }) {
-  const { openDetail, go, liveGames, liveCats, t } = useApp();
+  const { openDetail, go, liveGames, liveCats, t, launchApp } = useApp();
   const gameCategories = liveCats.filter(c => c.type === 'game');
 
   // We'll use cat.id for state, 'all' for the special All tab
@@ -89,11 +89,18 @@ function ExploreScreen({ exploreCategory }) {
               <div className="mt-4 mb-6">
                 <div className="flex gap-4 px-4 overflow-x-auto no-sb snap-x snap-mandatory">
                   {heroBanners.map((game, idx) => (
-                    <button key={game.id} onClick={() => openDetail(game)}
-                      className="tap flex-shrink-0 snap-start flex flex-col w-[280px] group">
+                    <div key={game.id} onClick={() => launchApp(game)}
+                      className="tap flex-shrink-0 snap-start flex flex-col w-[280px] group cursor-pointer">
                       
                       {/* Top Graphic */}
                       <div className="w-full aspect-[16/9] rounded-2xl overflow-hidden relative border border-border bg-surface">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); openDetail(game); }}
+                          className="absolute top-2.5 right-2.5 w-7 h-7 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white text-sm font-bold hover:bg-black transition-all tap z-10"
+                          title="View Details"
+                        >
+                          ›
+                        </button>
                         {game.featured_image ? (
                           <img src={game.featured_image} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                         ) : (
@@ -122,7 +129,7 @@ function ExploreScreen({ exploreCategory }) {
                           </div>
                         </div>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -140,10 +147,17 @@ function ExploreScreen({ exploreCategory }) {
                 </div>
                 <div className="flex gap-6 px-4 overflow-x-auto no-sb">
                   {suggestedGames.map((game, idx) => (
-                    <button key={game.id} onClick={() => openDetail(game)}
-                      className="tap flex-shrink-0 flex flex-col items-center" style={{width:115}}>
-                      <div className="w-full aspect-square flex items-center justify-center transition-transform active:scale-95 duration-200">
+                    <div key={game.id} onClick={() => launchApp(game)}
+                      className="tap flex-shrink-0 flex flex-col items-center cursor-pointer" style={{width:115}}>
+                      <div className="w-full aspect-square relative flex items-center justify-center transition-transform active:scale-95 duration-200">
                         <AppIcon app={game} size="lg" />
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); openDetail(game); }}
+                          className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-black/75 border border-white/20 flex items-center justify-center text-white text-xs font-bold hover:bg-black transition-all tap z-10"
+                          title="View Details"
+                        >
+                          ›
+                        </button>
                       </div>
                       <div className="mt-3 w-full text-center px-0.5">
                         <div className="text-white text-xs font-bold leading-tight truncate">{game.name}</div>
@@ -151,7 +165,7 @@ function ExploreScreen({ exploreCategory }) {
                           <span className="text-amber-400 text-[10px] font-bold">★ {game.rating}</span>
                         </div>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -168,16 +182,23 @@ function ExploreScreen({ exploreCategory }) {
                 </div>
                 <div className="flex gap-5 px-4 overflow-x-auto no-sb">
                   {recommended.map(game => (
-                    <button key={game.id} onClick={() => openDetail(game)}
-                      className="tap flex-shrink-0 flex flex-col items-center" style={{width:86}}>
-                      <div className="w-full aspect-square flex items-center justify-center transition-transform active:scale-95 duration-200">
+                    <div key={game.id} onClick={() => launchApp(game)}
+                      className="tap flex-shrink-0 flex flex-col items-center cursor-pointer" style={{width:86}}>
+                      <div className="w-full aspect-square relative flex items-center justify-center transition-transform active:scale-95 duration-200">
                         <AppIcon app={game} size="md" />
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); openDetail(game); }}
+                          className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-black/75 border border-white/20 flex items-center justify-center text-white text-xs font-bold hover:bg-black transition-all tap z-10"
+                          title="View Details"
+                        >
+                          ›
+                        </button>
                       </div>
                       <div className="mt-2.5 w-full text-center px-0.5">
                         <div className="text-white text-[11px] font-bold leading-tight truncate">{game.name}</div>
                         <div className="text-muted text-[9px] mt-0.5 uppercase tracking-widest truncate">{t('cat_' + game.gameCategory) || game.category}</div>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -193,8 +214,8 @@ function ExploreScreen({ exploreCategory }) {
               </div>
               <div className="flex flex-col">
                 {listGames.map(game => (
-                  <button key={game.id} onClick={() => openDetail(game)}
-                    className="tap flex items-center gap-5 px-4 py-4 active:bg-surface transition-colors border-b border-border">
+                  <div key={game.id} onClick={() => launchApp(game)}
+                    className="tap flex items-center gap-5 px-4 py-4 active:bg-surface transition-colors border-b border-border cursor-pointer">
                     <div className="w-20 h-20 flex items-center justify-center flex-shrink-0">
                       <AppIcon app={game} size="md" />
                     </div>
@@ -211,8 +232,13 @@ function ExploreScreen({ exploreCategory }) {
                         <span className="text-muted text-xs font-medium uppercase tracking-tighter">{t('cat_' + game.gameCategory) || game.category}</span>
                       </div>
                     </div>
-                    <div className="text-muted text-xl opacity-30 pr-1">›</div>
-                  </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); openDetail(game); }}
+                      className="w-8 h-8 rounded-xl bg-surface border border-border flex items-center justify-center text-muted hover:text-white transition-all tap flex-shrink-0"
+                    >
+                      ›
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>

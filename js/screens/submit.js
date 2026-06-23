@@ -190,7 +190,7 @@ function SubmitScreen(props) {
 
         {!isEdit && currentBalance < 10 && (
           <div className="p-5 rounded-[24px] bg-amber-500/10 border border-amber-500/20 text-amber-500 flex flex-col items-center text-center gap-3">
-            <span className="text-3xl">🪙</span>
+            <ZCoinIcon size={32} />
             <div className="text-sm font-bold leading-snug">
               {t('insufficient_coins') || 'Insufficient ZCoins! You need 10 ZCoins to upload.'}
             </div>
@@ -430,7 +430,7 @@ function SubmitScreen(props) {
               className="tap w-full py-5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-3xl shadow-xl transition-all flex items-center justify-center gap-3"
             >
               <span>{t('buy_coins') || 'Buy ZCoins'}</span>
-              <span className="text-xl">🪙</span>
+              <ZCoinIcon size={22} />
             </button>
           )}
         </div>

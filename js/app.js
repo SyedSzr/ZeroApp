@@ -100,6 +100,7 @@ function AppShell() {
       case 'search':    return <SearchScreen {...props} />;
       case 'recent':    return <RecentScreen {...props} />;
       case 'profile':   return <ProfileScreen {...props} />;
+      case 'gamer-profile': return <GamerProfileScreen {...props} />;
       case 'store':     return <StoreScreen {...props} />;
       case 'submit':    return <SubmitScreen {...props} />;
       case 'auth':      return <AuthScreen {...props} />;
@@ -136,6 +137,13 @@ function AppShell() {
 
 function App() {
   const [error, setError] = React.useState(null);
+  const [showOnboarding, setShowOnboarding] = React.useState(() => {
+    try {
+      return !localStorage.getItem('zero_onboarded');
+    } catch {
+      return false;
+    }
+  });
 
   React.useEffect(() => {
     const handleError = (e) => setError(e.error || e.reason || e.message);
@@ -160,6 +168,9 @@ function App() {
 
   return (
     <AppProvider>
+      {showOnboarding && (
+        <OnboardingScreen onComplete={() => setShowOnboarding(false)} />
+      )}
       <AppShell />
     </AppProvider>
   );
@@ -167,3 +178,4 @@ function App() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
+
