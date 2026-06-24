@@ -171,12 +171,6 @@ function ProfileScreen() {
                 >
                   <ZCoinIcon size={14} /> {userProfile?.zcoins ?? 0} ZCoins
                 </button>
-                <button 
-                  onClick={() => go('gamer-profile')}
-                  className="tap inline-flex items-center gap-1.5 px-3 py-1 bg-accent/15 hover:bg-accent/25 text-accent border border-accent/20 rounded-full text-xs font-black shadow-sm"
-                >
-                  🎮 Gamer Profile
-                </button>
               </div>
             </div>
             <button onClick={signOut} className="tap px-3 py-1.5 bg-red-500/10 text-red-500 rounded-full text-xs font-bold border border-red-500/20">{t('sign_out')}</button>
@@ -193,16 +187,27 @@ function ProfileScreen() {
                 >
                   <ZCoinIcon size={14} /> {userProfile?.zcoins ?? 0} ZCoins
                 </button>
-                <button 
-                  onClick={() => go('gamer-profile')}
-                  className="tap inline-flex items-center gap-1.5 px-3 py-1 bg-accent/15 hover:bg-accent/25 text-accent border border-accent/20 rounded-full text-xs font-black shadow-sm"
-                >
-                  🎮 Gamer Profile
-                </button>
               </div>
             </div>
           </div>
         )}
+
+        {/* ── Gamer Profile Banner ── */}
+        <div className="px-5 mb-6">
+          <button 
+            onClick={() => go('gamer-profile')}
+            className="tap w-full py-4 bg-gradient-to-r from-accent to-purple-600 rounded-2xl flex items-center justify-between px-6 shadow-lg shadow-accent/20 border border-white/10 active:scale-95 transition-transform"
+          >
+            <div className="flex items-center gap-4">
+              <span className="text-3xl filter drop-shadow-md">🎮</span>
+              <div className="text-left">
+                <div className="text-white font-black text-lg tracking-wide">Gamer Profile</div>
+                <div className="text-white/70 text-xs font-bold mt-0.5">View your stats & leaderboards</div>
+              </div>
+            </div>
+            <div className="text-white/50 text-xl font-bold">→</div>
+          </button>
+        </div>
 
         {/* ── Quick Stats ── */}
         <div className="px-5 grid grid-cols-3 gap-3 mb-6">
