@@ -14,10 +14,14 @@ function GamerProfileScreen() {
     setUserProfile,
     logActivity,
     launchApp,
-    openDetail
+    openDetail,
+    updateProfileName
   } = useApp();
 
   const [isUploading, setIsUploading] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState('');
+  const [statsDetailView, setStatsDetailView] = useState(null); // 'playtime' | 'opens' | 'session' | null
 
   // 1. Fetch everyone's stats from Supabase to compute global averages ("Everyone" comparison)
   const [everyoneStats, setEveryoneStats] = useState({
@@ -191,18 +195,26 @@ function GamerProfileScreen() {
   }, [gamerStats]);
 
   // Handle name formatting
-  const displayHandle = useMemo(() => {
+  const displayName = useMemo(() => {
     if (userProfile?.display_name) {
-      return userProfile.display_name.toLowerCase().replace(/\s+/g, '') + '.ufp';
+      return userProfile.display_name;
     }
     if (user?.email) {
-      return user.email.split('@')[0] + '.ufp';
+      return user.email.split('@')[0];
     }
-    return 'guest.ufp';
+    return 'Guest';
   }, [userProfile, user]);
 
+  const handleSaveName = () => {
+    const trimmed = editNameValue.trim();
+    if (trimmed) {
+      updateProfileName(trimmed);
+    }
+    setIsEditingName(false);
+  };
+
   // Computed data lists
-  const sortedByPlaytime = useMemo(() => {
+  const allSortedByPlaytime = useMemo(() => {
     return Object.keys(gamerStats?.gameStats || {})
       .map(id => {
         const game = liveGames.find(g => String(g.id) === String(id));
@@ -214,10 +226,11 @@ function GamerProfileScreen() {
       })
       .filter(item => item.game && item.playTime > 0)
       .sort((a, b) => b.playTime - a.playTime)
-      .slice(0, 3);
+      .slice(0, 10);
   }, [gamerStats, liveGames]);
+  const sortedByPlaytime = allSortedByPlaytime.slice(0, 3);
 
-  const sortedByOpens = useMemo(() => {
+  const allSortedByOpens = useMemo(() => {
     return Object.keys(gamerStats?.gameStats || {})
       .map(id => {
         const game = liveGames.find(g => String(g.id) === String(id));
@@ -229,10 +242,11 @@ function GamerProfileScreen() {
       })
       .filter(item => item.game && item.opens > 0)
       .sort((a, b) => b.opens - a.opens)
-      .slice(0, 3);
+      .slice(0, 10);
   }, [gamerStats, liveGames]);
+  const sortedByOpens = allSortedByOpens.slice(0, 3);
 
-  const sortedByLongestSession = useMemo(() => {
+  const allSortedByLongestSession = useMemo(() => {
     return Object.keys(gamerStats?.gameStats || {})
       .map(id => {
         const game = liveGames.find(g => String(g.id) === String(id));
@@ -244,8 +258,9 @@ function GamerProfileScreen() {
       })
       .filter(item => item.game && item.longestSession > 0)
       .sort((a, b) => b.longestSession - a.longestSession)
-      .slice(0, 3);
+      .slice(0, 10);
   }, [gamerStats, liveGames]);
+  const sortedByLongestSession = allSortedByLongestSession.slice(0, 3);
 
   // Ratios for Me vs Everyone progress bars
   const playTimePct = useMemo(() => {
@@ -314,16 +329,49 @@ function GamerProfileScreen() {
           </div>
           <input type="file" id="gamer-avatar-input" className="hidden" accept="image/*" onChange={onAvatarChange} />
           
-          <div className="text-white font-black text-lg mt-3.5 tracking-tight">{displayHandle}</div>
+          <div className="text-white font-black text-lg mt-3.5 tracking-tight">{displayName}</div>
           
           <button 
-            onClick={() => go('settings')} 
+            onClick={() => { setEditNameValue(userProfile?.display_name || (user?.email ? user.email.split('@')[0] : '')); setIsEditingName(true); }} 
             className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/5 hover:bg-white/10 text-white font-bold text-xs px-4 py-2 rounded-xl border border-white/5 tap"
             style={{ color: '#fff' }}
           >
             Edit
           </button>
         </div>
+
+        {/* ── Edit Name Modal ── */}
+        {isEditingName && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center px-5">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsEditingName(false)}></div>
+            <div className="bg-surface border border-border rounded-3xl w-full max-w-[340px] p-6 relative z-10 shadow-2xl slide-up">
+              <h3 className="text-white font-bold text-lg mb-4 text-center">Edit Username</h3>
+              <input 
+                type="text" 
+                value={editNameValue} 
+                onChange={(e) => setEditNameValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                placeholder="Enter your name"
+                autoFocus
+                className="w-full px-4 py-3 rounded-2xl bg-card border border-border text-white text-sm outline-none focus:border-accent transition-colors"
+              />
+              <div className="flex gap-3 mt-5">
+                <button 
+                  onClick={() => setIsEditingName(false)} 
+                  className="flex-1 py-3 rounded-xl bg-card border border-border text-white font-semibold text-sm tap"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleSaveName} 
+                  className="flex-1 py-3 rounded-xl bg-accent text-white font-bold text-sm shadow-lg shadow-accent/20 tap"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Recently Played Card ── */}
         {recentlyPlayedGame && (
@@ -586,7 +634,7 @@ function GamerProfileScreen() {
 
           {/* Leaderboard 1: Most play time */}
           <div className="bg-card border border-border rounded-[28px] p-5 shadow-sm">
-            <div className="flex items-center justify-between text-white font-extrabold text-sm border-b border-border/50 pb-3 mb-3">
+            <div onClick={() => setStatsDetailView('playtime')} className="flex items-center justify-between text-white font-extrabold text-sm border-b border-border/50 pb-3 mb-3 cursor-pointer hover:text-accent transition-colors tap">
               <span>Most play time</span>
               <span className="text-muted text-base">›</span>
             </div>
@@ -624,7 +672,7 @@ function GamerProfileScreen() {
 
           {/* Leaderboard 2: Most opens */}
           <div className="bg-card border border-border rounded-[28px] p-5 shadow-sm">
-            <div className="flex items-center justify-between text-white font-extrabold text-sm border-b border-border/50 pb-3 mb-3">
+            <div onClick={() => setStatsDetailView('opens')} className="flex items-center justify-between text-white font-extrabold text-sm border-b border-border/50 pb-3 mb-3 cursor-pointer hover:text-accent transition-colors tap">
               <span>Most opens</span>
               <span className="text-muted text-base">›</span>
             </div>
@@ -662,7 +710,7 @@ function GamerProfileScreen() {
 
           {/* Leaderboard 3: Longest single session per game */}
           <div className="bg-card border border-border rounded-[28px] p-5 shadow-sm">
-            <div className="flex items-center justify-between text-white font-extrabold text-sm border-b border-border/50 pb-3 mb-3">
+            <div onClick={() => setStatsDetailView('session')} className="flex items-center justify-between text-white font-extrabold text-sm border-b border-border/50 pb-3 mb-3 cursor-pointer hover:text-accent transition-colors tap">
               <span>Longest single session per game</span>
               <span className="text-muted text-base">›</span>
             </div>
@@ -701,6 +749,113 @@ function GamerProfileScreen() {
         </div>
 
       </div>
+
+      {/* ── Stats Detail Overlay ── */}
+      {statsDetailView && (() => {
+        const detailConfig = {
+          playtime: {
+            title: 'Most play time',
+            icon: '⏱️',
+            data: allSortedByPlaytime,
+            emptyText: 'No playtime logged yet',
+            renderValue: (item) => formatTimeHM(item.playTime),
+          },
+          opens: {
+            title: 'Most opens',
+            icon: '🚀',
+            data: allSortedByOpens,
+            emptyText: 'No game launches logged yet',
+            renderValue: (item) => <>{item.opens} <span className="text-[10px] text-muted font-bold">times</span></>,
+          },
+          session: {
+            title: 'Longest single session',
+            icon: '🏆',
+            data: allSortedByLongestSession,
+            emptyText: 'No sessions logged yet',
+            renderValue: (item) => formatTimeHM(item.longestSession),
+          },
+        };
+        const config = detailConfig[statsDetailView];
+        if (!config) return null;
+
+        return (
+          <div className="absolute inset-0 z-50 flex flex-col bg-bg slide-up">
+            {/* Header */}
+            <div className="pt-safe px-5 flex items-center justify-between py-4 border-b border-border bg-surface flex-shrink-0">
+              <button onClick={() => setStatsDetailView(null)} className="tap text-white font-bold text-base flex items-center gap-2">
+                <span style={{ fontSize: 13, fontWeight: 'bold' }}>❮</span> Back
+              </button>
+              <h2 className="text-white font-extrabold text-lg">{config.title}</h2>
+              <div className="w-9"></div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto no-sb p-5 space-y-4">
+              {/* Summary card */}
+              <div className="bg-card border border-border rounded-[28px] p-6 text-center shadow-sm">
+                <div className="text-4xl mb-2">{config.icon}</div>
+                <div className="text-white font-black text-lg">{config.title}</div>
+                <div className="text-muted text-xs mt-1 font-semibold">
+                  {config.data.length > 0 
+                    ? `Top ${config.data.length} game${config.data.length !== 1 ? 's' : ''}`
+                    : 'No data yet'
+                  }
+                </div>
+              </div>
+
+              {/* Game list */}
+              {config.data.length === 0 ? (
+                <div className="bg-card border border-border rounded-[28px] p-8 flex flex-col items-center text-center">
+                  <span className="text-3xl mb-3">🎮</span>
+                  <div className="text-white font-bold text-sm">{config.emptyText}</div>
+                  <div className="text-muted text-xs mt-1">Start playing games to see your stats here</div>
+                </div>
+              ) : (
+                <div className="bg-card border border-border rounded-[28px] overflow-hidden shadow-sm">
+                  {config.data.map((item, idx) => (
+                    <div 
+                      key={item.id}
+                      onClick={() => launchApp(item.game)}
+                      className={`flex items-center gap-3.5 px-5 py-4 cursor-pointer hover:bg-white/5 active:scale-[0.99] transition-all tap ${
+                        idx !== config.data.length - 1 ? 'border-b border-border/30' : ''
+                      }`}
+                    >
+                      {/* Rank number */}
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-black ${
+                        idx === 0 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20' :
+                        idx === 1 ? 'bg-slate-400/10 text-slate-300 border border-slate-400/20' :
+                        idx === 2 ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
+                        'bg-white/5 text-muted border border-border'
+                      }`}>
+                        {idx + 1}
+                      </div>
+                      {/* Game icon */}
+                      <div className="w-11 h-11 rounded-xl bg-surface overflow-hidden flex items-center justify-center flex-shrink-0 border border-border">
+                        {item.game.icon_url ? <img src={item.game.icon_url} className="w-full h-full object-cover" /> : <span className="text-xl">🎮</span>}
+                      </div>
+                      {/* Game info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-bold text-sm truncate">{item.game.name}</div>
+                        <div className="text-muted text-[10px] mt-0.5 truncate">{item.game.description}</div>
+                      </div>
+                      {/* Stat value + detail button */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-cyan-400 text-sm font-black whitespace-nowrap">{config.renderValue(item)}</span>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); openDetail(item.game); }}
+                          className="w-7 h-7 rounded-xl bg-surface border border-border flex items-center justify-center text-muted hover:text-white transition-all tap"
+                        >
+                          ›
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );

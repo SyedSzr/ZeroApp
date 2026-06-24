@@ -1,6 +1,6 @@
 // ── APP DETAIL SCREEN ─────────────────────────────────────────────────────────
 function AppDetailScreen({ detailApp: initialApp }) {
-  const { liveApps, liveGames, launchApp, toggleSaveApp, isSaved, goBack, t, fetchComments, postComment, submitRating, user } = useApp();
+  const { liveApps, liveGames, launchApp, toggleSaveApp, isSaved, goBack, t, fetchComments, postComment, submitRating, user, supabase, gamerStats } = useApp();
   
   const app = React.useMemo(() => {
     if (typeof initialApp === 'object' && initialApp !== null) return initialApp;
@@ -29,6 +29,16 @@ function AppDetailScreen({ detailApp: initialApp }) {
       if (isGame) fetchScores(app.id).then(setScores);
     }
   }, [app?.id, fetchComments, fetchScores, isGame]);
+
+  const formatTimeHM = (seconds) => {
+    if (!seconds || seconds <= 0) return '0h 0m';
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hrs > 0) return `${hrs}h ${mins}m`;
+    return `${mins}m`;
+  };
+  const myPlayTimeSecs = gamerStats?.gameStats?.[app?.id]?.playTime || 0;
+  const displayPlayTime = formatTimeHM(myPlayTimeSecs);
   
   if (!app) return (
     <div className="flex h-full items-center justify-center bg-bg">
@@ -72,8 +82,8 @@ function AppDetailScreen({ detailApp: initialApp }) {
               </div>
               <div className="w-px h-6 bg-border"></div>
               <div className="flex flex-col items-center">
-                <span className="text-white font-bold">100K+</span>
-                <span className="text-muted text-[10px]">{t('downloads')}</span>
+                <span className="text-white font-bold">{displayPlayTime}</span>
+                <span className="text-muted text-[10px]">Played time</span>
               </div>
               <div className="w-px h-6 bg-border"></div>
               <div className="flex flex-col items-center">
@@ -365,8 +375,8 @@ function AppDetailScreen({ detailApp: initialApp }) {
                 <div className="text-muted text-xs mt-0.5">May 2026</div>
               </div>
               <div>
-                <div className="text-white/90 text-sm font-semibold">Downloads</div>
-                <div className="text-muted text-xs mt-0.5">100,000+ downloads</div>
+                <div className="text-white/90 text-sm font-semibold">Played Time</div>
+                <div className="text-muted text-xs mt-0.5">{displayPlayTime}</div>
               </div>
               <div>
                 <div className="text-white/90 text-sm font-semibold">Offered by</div>

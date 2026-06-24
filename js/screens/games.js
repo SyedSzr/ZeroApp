@@ -443,13 +443,6 @@ function GamesDiscoveryView({ onBack }) {
           className="tap flex-shrink-0 flex flex-col items-center cursor-pointer" style={{ width: size === 'lg' ? 115 : size === 'md' ? 86 : 64 }}>
           <div className="w-full aspect-square relative flex items-center justify-center transition-transform active:scale-95 duration-200">
             <AppIcon app={app} size={size} />
-            <button 
-              onClick={(e) => { e.stopPropagation(); openDetail(app); }}
-              className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-black/75 border border-white/20 flex items-center justify-center text-white text-xs font-bold hover:bg-black transition-all tap z-10"
-              title="View Details"
-            >
-              ›
-            </button>
           </div>
           <div className="mt-2 w-full text-center px-0.5">
             <div className="text-white text-[11px] font-bold leading-tight truncate">{app.name}</div>

@@ -349,7 +349,7 @@ function OnboardingScreen({ onComplete }) {
       {page < pages.length - 1 && (
         <button
           onClick={finish}
-          className="absolute top-0 right-0 z-10 text-white/40 hover:text-white/70 text-sm font-semibold transition-colors"
+          className="absolute top-0 right-0 z-10 ob-text-white-40 text-sm font-semibold transition-colors"
           style={{ paddingTop: 'calc(env(safe-area-inset-top, 16px) + 16px)', paddingRight: 20 }}
         >
           Skip
@@ -399,18 +399,15 @@ function OnboardingScreen({ onComplete }) {
           <h1
             className="text-3xl font-black tracking-tight mb-2"
             style={{
-              background: currentPage.gradient.replace('135deg', '90deg').replace(/,\s*#[0-9a-f]{6}\s*100%/, ', transparent 100%'),
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              color: '#ffffff',
             }}
           >
             {currentPage.title}
           </h1>
-          <p className="text-white/70 text-sm font-semibold mb-3 tracking-wide uppercase" style={{letterSpacing:'0.08em'}}>
+          <p className="text-sm font-semibold mb-3 tracking-wide uppercase" style={{letterSpacing:'0.08em', color: '#ffffff'}}>
             {currentPage.subtitle}
           </p>
-          <p className="text-white/40 text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed" style={{color: 'rgba(255,255,255,0.8)'}}>
             {currentPage.description}
           </p>
         </div>
@@ -440,7 +437,7 @@ function OnboardingScreen({ onComplete }) {
         {/* Action button */}
         <button
           onClick={next}
-          className="w-full max-w-xs py-4 rounded-2xl text-white font-bold text-base tracking-wide transition-all duration-300 active:scale-95"
+          className="w-full max-w-xs py-4 rounded-2xl ob-text-white font-bold text-base tracking-wide transition-all duration-300 active:scale-95"
           style={{
             background: currentPage.gradient,
             boxShadow: `0 8px 32px ${currentPage.accentGlow}, 0 2px 8px rgba(0,0,0,0.3)`,
@@ -456,6 +453,9 @@ function OnboardingScreen({ onComplete }) {
           0% { transform: translateY(0px) scale(1); }
           100% { transform: translateY(-20px) scale(1.2); }
         }
+        .ob-text-white { color: #ffffff !important; }
+        .ob-text-white-40 { color: rgba(255,255,255,0.4) !important; }
+        .ob-text-white-40:hover { color: rgba(255,255,255,0.7) !important; }
       `}</style>
     </div>
   );

@@ -2617,7 +2617,7 @@ function AppProvider({ children }) {
         
         if (user && supabase) {
           supabase.from('profiles').update({ game_stats: next }).eq('id', user.id)
-            .catch(err => console.warn('Profiles game_stats open increment sync failed:', err));
+            .then(({ error }) => { if (error) console.warn('Profiles game_stats open increment sync failed:', error); });
         }
         return next;
       });
