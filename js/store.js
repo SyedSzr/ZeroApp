@@ -2730,10 +2730,13 @@ function AppProvider({ children }) {
     return timeGreeting;
   }, [userProfile, t]);
 
-  const getPromoItems = useCallback((categoryKey, type = 'app') => {
+  const getPromoItems = useCallback((categoryKey, type = 'app', fallback = null, maxCount = 20) => {
     const now = new Date();
-    const sectionPromos = promotions.filter(p => 
-      p.category_key === categoryKey && 
+    const dataSet = type === 'app' ? liveApps : liveGames;
+
+    // Collect active spotlight promos for this section
+    const sectionPromos = promotions.filter(p =>
+      p.category_key === categoryKey &&
       p.item_type === type &&
       p.is_active !== false &&
       (p.region === userRegion || p.region === 'Global') &&
@@ -2741,13 +2744,21 @@ function AppProvider({ children }) {
       (!p.end_date || new Date(p.end_date) >= now)
     );
 
-    if (sectionPromos.length > 0) {
-      const dataSet = type === 'app' ? liveApps : liveGames;
-      return sectionPromos
-        .map(p => dataSet.find(it => it.id === p.item_id))
-        .filter(Boolean);
-    }
-    return null;
+    const spotlightItems = sectionPromos
+      .map(p => dataSet.find(it => it.id === p.item_id))
+      .filter(Boolean);
+
+    const spotlightIds = new Set(spotlightItems.map(it => it.id));
+
+    // Fill remaining slots with fallback items (not already spotlighted)
+    const fallbackPool = fallback
+      ? fallback.filter(it => !spotlightIds.has(it.id))
+      : dataSet.filter(it => !spotlightIds.has(it.id));
+
+    const combined = [...spotlightItems, ...fallbackPool].slice(0, maxCount);
+
+    // Return null only if completely empty (no data at all)
+    return combined.length > 0 ? combined : null;
   }, [promotions, userRegion, liveApps, liveGames]);
 
   const value = {

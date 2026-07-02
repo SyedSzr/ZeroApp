@@ -402,20 +402,21 @@ function GamesDiscoveryView({ onBack }) {
     ? liveGames
     : liveGames.filter(g => g.gameCategory === activeCategory);
 
-  const featuredGame = getPromoItems('featured_game', 'game')?.[0] || liveGames.find(g => g.is_featured) || liveGames[0];
-  const recommended = getPromoItems('recommended_games', 'game') || liveGames.slice(0, 6);
-  const trending = getPromoItems('trending_games', 'game') || liveGames.slice(6, 12);
-  const featuredGames = getPromoItems('featured_games', 'game') || liveGames.filter(g => g.is_featured).slice(0, 8);
-  const hotRightNow = getPromoItems('hot_right_now', 'game') || liveGames.slice(3, 9);
-  const topPicks = getPromoItems('top_pick_for_you', 'game') || liveGames.slice(12, 18);
-  const editorsPicks = getPromoItems('editors_picks', 'game') || liveGames.slice(1, 7);
-  const popular = getPromoItems('popular_games', 'game') || liveGames.slice(8, 14);
-  const newExp = getPromoItems('new_experience', 'game') || liveGames.slice(15, 21);
-  const superGames = getPromoItems('super_games', 'game') || liveGames.slice(0, 4);
-  const mightLike = getPromoItems('games_might_like', 'game') || liveGames.slice(10, 16);
-  const personalized = getPromoItems('personalize_recommendations', 'game') || liveGames.slice(5, 11);
-  const crowdFavs = getPromoItems('crowd_favorites', 'game') || liveGames.slice(2, 8);
-  const monthBest = getPromoItems('this_month_best', 'game') || liveGames.slice(4, 10);
+  // Spotlighted items come FIRST; remaining slots filled with fallback pool (up to 20)
+  const featuredGame  = getPromoItems('featured_game',               'game', liveGames.filter(g => g.is_featured))?.[0] || liveGames[0];
+  const recommended   = getPromoItems('recommended_games',           'game', liveGames.slice(0, 20));
+  const trending      = getPromoItems('trending_games',              'game', [...liveGames].sort((a,b) => (b.rating||0)-(a.rating||0)));
+  const featuredGames = getPromoItems('featured_games',              'game', liveGames.filter(g => g.is_featured).length >= 8 ? liveGames.filter(g => g.is_featured) : liveGames);
+  const hotRightNow   = getPromoItems('hot_right_now',               'game', liveGames.slice(3, 23));
+  const topPicks      = getPromoItems('top_pick_for_you',            'game', liveGames.slice(12, 32));
+  const editorsPicks  = getPromoItems('editors_picks',               'game', liveGames.slice(1, 21));
+  const popular       = getPromoItems('popular_games',               'game', [...liveGames].sort((a,b) => parseInt(b.reviews||0)-parseInt(a.reviews||0)));
+  const newExp        = getPromoItems('new_experience',              'game', liveGames.slice(15, 35));
+  const superGames    = getPromoItems('super_games',                 'game', liveGames.slice(0, 20));
+  const mightLike     = getPromoItems('games_might_like',            'game', liveGames.slice(10, 30));
+  const personalized  = getPromoItems('personalize_recommendations', 'game', liveGames.slice(5, 25));
+  const crowdFavs     = getPromoItems('crowd_favorites',             'game', liveGames.slice(2, 22));
+  const monthBest     = getPromoItems('this_month_best',             'game', liveGames.slice(4, 24));
 
   const heroBgs = [
     'linear-gradient(135deg,#1a1a3e 0%,#2d1b69 40%,#11071f 100%)',

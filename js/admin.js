@@ -256,9 +256,12 @@ function renderCurrentView() {
         return (p.region || 'Global') === activeRegion;
       });
       if (promos.length === 0) {
-        return `<div class="text-muted text-sm text-center py-8 opacity-50">No items spotlighted in this section yet.</div>`;
+        return `<div class="text-muted text-sm text-center py-8 opacity-50">
+          No items pinned here yet — section shows default catalog order.<br/>
+          <span class="text-[10px]">Add items above to pin them at the top of this section.</span>
+        </div>`;
       }
-      return promos.map(promo => {
+      return promos.map((promo, idx) => {
         const item = promo.item_type === 'app'
           ? data.apps.find(a => a.id === promo.item_id)
           : data.games.find(g => g.id === promo.item_id);
@@ -267,17 +270,22 @@ function renderCurrentView() {
         const isActive = promo.is_active !== false && !isExpired;
         const startVal = promo.start_date ? promo.start_date.split('T')[0] : '';
         const endVal   = promo.end_date   ? promo.end_date.split('T')[0]   : '';
+        const isFeaturedGame = promo.item_type === 'game' && item.is_featured;
         return `
           <div class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 ${isExpired ? 'opacity-40' : ''}">
+            <div class="flex-shrink-0 flex flex-col items-center gap-1">
+              <div class="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-black text-muted">${idx + 1}</div>
+            </div>
             <div class="w-12 h-12 rounded-2xl bg-bg flex items-center justify-center text-xl flex-shrink-0 overflow-hidden">
               ${item.icon_url ? `<img src="${item.icon_url}" class="w-full h-full object-cover rounded-2xl"/>` : item.emoji || '📱'}
             </div>
             <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-1">
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
                 <span class="text-white font-bold text-sm">${item.name}</span>
                 <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${promo.item_type === 'app' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}">${promo.item_type}</span>
                 <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">${isExpired ? 'Expired' : (isActive ? 'Live' : 'Inactive')}</span>
                 <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/20 text-accent">${promo.region || 'Global'}</span>
+                ${isFeaturedGame ? `<span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">⭐ Featured</span>` : ''}
               </div>
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-muted text-[10px]">Start:</span>
@@ -679,6 +687,46 @@ function renderStatCard(label, val, emoji, sub) {
 }
 
 // ── ACTIONS ────────────────────────────────────────────────────────────────────
+// ── SYNC: is_featured <-> Spotlight 'featured_game' promotion ─────────────────
+async function syncFeaturedGamePromotion(gameId, isFeatured) {
+  try {
+    // Find any existing 'featured_game' promotion for this game
+    const existing = data.promotions.find(p =>
+      p.item_id === gameId &&
+      p.item_type === 'game' &&
+      p.category_key === 'featured_game'
+    );
+
+    if (isFeatured) {
+      if (existing) {
+        // Reactivate if it was deactivated
+        if (existing.is_active === false) {
+          await sb.from('promotions').update({ is_active: true }).eq('id', existing.id);
+        }
+        // else already active — no change needed
+      } else {
+        // Create a new promotion entry
+        await sb.from('promotions').insert({
+          item_id: gameId,
+          item_type: 'game',
+          category_key: 'featured_game',
+          region: 'Global',
+          is_active: true,
+          start_date: null,
+          end_date: null
+        });
+      }
+    } else {
+      // is_featured = false → deactivate the promotion if it exists
+      if (existing && existing.is_active !== false) {
+        await sb.from('promotions').update({ is_active: false }).eq('id', existing.id);
+      }
+    }
+  } catch (err) {
+    console.warn('Spotlight sync error (non-critical):', err.message);
+  }
+}
+
 async function handleItemSubmit(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -747,7 +795,12 @@ async function handleItemSubmit(e) {
     updateUploadProgress('Finalizing...', 90);
     const { error } = await sb.from(type).upsert(payload);
     if (error) throw error;
-    
+
+    // ── SPOTLIGHT SYNC: is_featured checkbox → featured_game promotion ──
+    if (type === 'games') {
+      await syncFeaturedGamePromotion(payload.id, payload.is_featured);
+    }
+
     updateUploadProgress('Success!', 100);
     setTimeout(() => closeModal('item-modal'), 500);
   } catch (err) {
@@ -1094,8 +1147,8 @@ function openPromoModal(promoId = null, presetSection = null) {
   modal.className = 'fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md';
   modal.id = 'promo-modal';
   
-  const appOptions = data.apps.map(a => `<option value="${a.id}" ${promo && promo.item_id === a.id ? 'selected' : ''}>App: ${a.name}</option>`).join('');
-  const gameOptions = data.games.map(g => `<option value="${g.id}" ${promo && promo.item_id === g.id ? 'selected' : ''}>Game: ${g.name}</option>`).join('');
+  const appOptions = data.apps.map(a => `<option value="${a.id}" ${promo && promo.item_id === a.id ? 'selected' : ''}>${a.name}</option>`).join('');
+  const gameOptions = data.games.map(g => `<option value="${g.id}" ${promo && promo.item_id === g.id ? 'selected' : ''}>${g.name}</option>`).join('');
   
   const sectionKeys = [
     'featured_app', 'recommended_for_you', 'trending', 'featured_apps', 
@@ -1112,20 +1165,32 @@ function openPromoModal(promoId = null, presetSection = null) {
       <button onclick="closePromoModal()" class="absolute top-6 right-6 text-muted hover:text-white transition-colors">×</button>
       <h3 class="text-white text-2xl font-black mb-6">${typeof promoId === 'string' ? 'Edit Promotion' : 'Create Promotion'}</h3>
       <form id="promo-form" class="space-y-6">
-        <div class="grid grid-cols-2 gap-6">
-          <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Target Item</label>
-            <select name="item_id" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
-              <optgroup label="Applications">${appOptions}</optgroup>
-              <optgroup label="Games">${gameOptions}</optgroup>
-            </select>
+
+        <div>
+          <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Display Section</label>
+          <select name="category_key" id="promo-section-select" onchange="onPromoSectionChange(this.value)"
+            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
+            ${sectionOptions}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Target Item</label>
+          <div class="flex gap-2 mb-2" id="promo-type-tabs">
+            <button type="button" onclick="switchPromoItemType('app')" id="ptab-app"
+              class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-blue-500/20 text-blue-400">
+              📱 Apps
+            </button>
+            <button type="button" onclick="switchPromoItemType('game')" id="ptab-game"
+              class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-muted hover:text-white">
+              🎮 Games
+            </button>
           </div>
-          <div>
-            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Display Section</label>
-            <select name="category_key" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
-              ${sectionOptions}
-            </select>
-          </div>
+          <select name="item_id" id="promo-item-select"
+            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none">
+            <optgroup label="Applications" id="promo-optgroup-apps">${appOptions}</optgroup>
+            <optgroup label="Games" id="promo-optgroup-games" style="display:none">${gameOptions}</optgroup>
+          </select>
         </div>
 
         <div class="grid grid-cols-2 gap-6">
@@ -1171,10 +1236,69 @@ function openPromoModal(promoId = null, presetSection = null) {
   const form = document.getElementById('promo-form');
   form.onsubmit = handlePromoSubmit;
 
-  // Pre-select section if provided via + Add button
-  if (presetSection) {
-    const sel = form.querySelector('[name="category_key"]');
-    if (sel) sel.value = presetSection;
+  // Determine the section to use: presetSection, or section from existing promo, or default first section
+  const activeSection = presetSection || (promo && promo.category_key) || sectionKeys[0];
+  const sectionSel = form.querySelector('[name="category_key"]');
+  if (sectionSel) sectionSel.value = activeSection;
+
+  // Determine item type from promo or from section key
+  let activeItemType = 'app';
+  if (promo) {
+    activeItemType = promo.item_type || 'app';
+  } else {
+    const gameSections = ['featured_game','recommended_games','trending_games','featured_games','popular_games','super_games','games_might_like'];
+    if (gameSections.includes(activeSection)) activeItemType = 'game';
+  }
+
+  // Apply the correct item-type tab
+  switchPromoItemType(activeItemType);
+
+  // If editing an existing promo, re-select the correct item
+  if (promo) {
+    const itemSel = document.getElementById('promo-item-select');
+    if (itemSel) itemSel.value = promo.item_id;
+  }
+}
+
+// ── PROMO MODAL HELPERS ───────────────────────────────────────────────────────
+const GAME_SECTION_KEYS = ['featured_game','recommended_games','trending_games','featured_games','popular_games','super_games','games_might_like'];
+
+function switchPromoItemType(type) {
+  const appsGroup  = document.getElementById('promo-optgroup-apps');
+  const gamesGroup = document.getElementById('promo-optgroup-games');
+  const tabApp     = document.getElementById('ptab-app');
+  const tabGame    = document.getElementById('ptab-game');
+  const sel        = document.getElementById('promo-item-select');
+  if (!sel) return;
+
+  if (type === 'game') {
+    if (appsGroup)  appsGroup.style.display  = 'none';
+    if (gamesGroup) gamesGroup.style.display = '';
+    if (tabApp)  { tabApp.classList.remove('bg-blue-500/20','text-blue-400');    tabApp.classList.add('text-muted'); }
+    if (tabGame) { tabGame.classList.add('bg-orange-500/20','text-orange-400'); tabGame.classList.remove('text-muted'); }
+    // Select first game option
+    if (gamesGroup && gamesGroup.options && gamesGroup.options.length > 0) {
+      sel.value = gamesGroup.options[0].value;
+    }
+  } else {
+    if (appsGroup)  appsGroup.style.display  = '';
+    if (gamesGroup) gamesGroup.style.display = 'none';
+    if (tabGame) { tabGame.classList.remove('bg-orange-500/20','text-orange-400'); tabGame.classList.add('text-muted'); }
+    if (tabApp)  { tabApp.classList.add('bg-blue-500/20','text-blue-400');        tabApp.classList.remove('text-muted'); }
+    // Select first app option
+    if (appsGroup && appsGroup.options && appsGroup.options.length > 0) {
+      sel.value = appsGroup.options[0].value;
+    }
+  }
+}
+
+function onPromoSectionChange(sectionKey) {
+  // Automatically switch item type tab based on selected section
+  if (GAME_SECTION_KEYS.includes(sectionKey)) {
+    switchPromoItemType('game');
+  } else if (sectionKey !== 'personalize_recommendations') {
+    // personalize_recommendations supports both — leave current tab alone
+    switchPromoItemType('app');
   }
 }
 
@@ -1188,16 +1312,18 @@ async function handlePromoSubmit(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
   const itemId = fd.get('item_id');
+  const categoryKey = fd.get('category_key');
   const isGame = data.games.some(g => g.id === itemId);
-  
+  const isActive = fd.get('is_active') === 'true';
+
   const payload = {
     item_id: itemId,
     item_type: isGame ? 'game' : 'app',
-    category_key: fd.get('category_key'),
+    category_key: categoryKey,
     region: fd.get('region'),
     start_date: fd.get('start_date') || null,
     end_date: fd.get('end_date') || null,
-    is_active: fd.get('is_active') === 'true'
+    is_active: isActive
   };
 
   try {
@@ -1206,6 +1332,12 @@ async function handlePromoSubmit(e) {
     } else {
       await sb.from('promotions').insert(payload);
     }
+
+    // ── SPOTLIGHT SYNC: adding a game to ANY spotlight section → set is_featured = true ──
+    if (isGame && isActive) {
+      await sb.from('games').update({ is_featured: true }).eq('id', itemId);
+    }
+
     closePromoModal();
     fetchAllData();
   } catch (err) {
@@ -1216,7 +1348,21 @@ async function handlePromoSubmit(e) {
 async function deletePromotion(id) {
   if (!confirm('Are you sure you want to remove this promotion?')) return;
   try {
+    // Grab the promo before deleting so we can sync is_featured if needed
+    const promo = data.promotions.find(p => p.id === id);
     await sb.from('promotions').delete().eq('id', id);
+
+    // If it was a game promo, check if the game still has ANY other active promos;
+    // if not, clear is_featured
+    if (promo && promo.item_type === 'game') {
+      const stillHasPromos = data.promotions.some(p =>
+        p.id !== id && p.item_id === promo.item_id && p.item_type === 'game' && p.is_active !== false
+      );
+      if (!stillHasPromos) {
+        await sb.from('games').update({ is_featured: false }).eq('id', promo.item_id);
+      }
+    }
+
     fetchAllData();
   } catch (err) {
     alert('Error deleting promotion');
@@ -1321,3 +1467,6 @@ window.filterPromoType = filterPromoType;
 window.updatePromoDate = updatePromoDate;
 window.togglePromoActive = togglePromoActive;
 window.setPromoRegion = setPromoRegion;
+window.switchPromoItemType = switchPromoItemType;
+window.onPromoSectionChange = onPromoSectionChange;
+
