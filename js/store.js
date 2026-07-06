@@ -282,8 +282,8 @@ function AppProvider({ children }) {
   }, []);
 
   // ── Navigation state (Native Stack) ──
-  const [history, setHistory] = useState([{ key: 'root-apps', id: 'apps', params: {} }]);
-  const [mainTab, setMainTab] = useState('apps'); // 'apps' | 'games'
+  const [history, setHistory] = useState([{ key: 'root-games', id: 'games', params: {} }]);
+  const [mainTab, setMainTab] = useState('games'); // 'apps' | 'games'
 
   const screen = history[history.length - 1].id;
 
@@ -2409,7 +2409,7 @@ function AppProvider({ children }) {
 
     // Boot with Home + the Deep Link screen so "back" works
     setHistory([
-      { key: 'root-apps', id: 'apps', params: {} },
+      { key: 'root-games', id: 'games', params: {} },
       { key: 'deep-link-' + Date.now(), id: frameId, params: extra }
     ]);
 
@@ -2418,8 +2418,8 @@ function AppProvider({ children }) {
   }, []);
 
   const goHome = useCallback(() => {
-    setHistory([{ key: 'root-apps', id: 'apps', params: {} }]);
-    setMainTab('apps');
+    setHistory([{ key: 'root-games', id: 'games', params: {} }]);
+    setMainTab('games');
     setSearchQ('');
   }, []);
 
