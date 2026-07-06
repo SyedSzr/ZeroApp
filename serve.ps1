@@ -27,39 +27,47 @@ $mimeTypes = @{
 
 try {
     while ($listener.IsListening) {
-        $context = $listener.GetContext()
-        $request = $context.Request
-        $response = $context.Response
+        try {
+            $context = $listener.GetContext()
+            $request = $context.Request
+            $response = $context.Response
 
-        $urlPath = $request.Url.LocalPath
-        if ($urlPath -eq '/') { $urlPath = '/index.html' }
+            $urlPath = $request.Url.LocalPath
+            if ($urlPath -eq '/') { $urlPath = '/index.html' }
 
-        $filePath = Join-Path $root ($urlPath -replace '/', '\')
+            $filePath = Join-Path $root ($urlPath -replace '/', '\')
 
-        if (Test-Path $filePath -PathType Leaf) {
-            $ext = [System.IO.Path]::GetExtension($filePath).ToLower()
-            $contentType = if ($mimeTypes.ContainsKey($ext)) { $mimeTypes[$ext] } else { 'application/octet-stream' }
-            
-            $response.ContentType = $contentType
-            $response.StatusCode = 200
-            
-            # Add CORS headers
-            $response.Headers.Add("Access-Control-Allow-Origin", "*")
-            
-            $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
-            $response.ContentLength64 = $fileBytes.Length
-            $response.OutputStream.Write($fileBytes, 0, $fileBytes.Length)
-            
-            Write-Host "$($request.HttpMethod) $urlPath -> 200 ($contentType)"
-        } else {
-            $response.StatusCode = 404
-            $msg = [System.Text.Encoding]::UTF8.GetBytes("404 Not Found: $urlPath")
-            $response.ContentLength64 = $msg.Length
-            $response.OutputStream.Write($msg, 0, $msg.Length)
-            Write-Host "$($request.HttpMethod) $urlPath -> 404"
+            if (Test-Path $filePath -PathType Leaf) {
+                $ext = [System.IO.Path]::GetExtension($filePath).ToLower()
+                $contentType = if ($mimeTypes.ContainsKey($ext)) { $mimeTypes[$ext] } else { 'application/octet-stream' }
+                
+                $response.ContentType = $contentType
+                $response.StatusCode = 200
+                
+                # Add CORS headers
+                $response.Headers.Add("Access-Control-Allow-Origin", "*")
+                
+                $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
+                $response.ContentLength64 = $fileBytes.Length
+                if ($request.HttpMethod -ne "HEAD") {
+                    $response.OutputStream.Write($fileBytes, 0, $fileBytes.Length)
+                }
+                
+                Write-Host "$($request.HttpMethod) $urlPath -> 200 ($contentType)"
+            } else {
+                $response.StatusCode = 404
+                $msg = [System.Text.Encoding]::UTF8.GetBytes("404 Not Found: $urlPath")
+                $response.ContentLength64 = $msg.Length
+                if ($request.HttpMethod -ne "HEAD") {
+                    $response.OutputStream.Write($msg, 0, $msg.Length)
+                }
+                Write-Host "$($request.HttpMethod) $urlPath -> 404"
+            }
+
+            $response.OutputStream.Close()
+        } catch {
+            Write-Host "Request Error: $_"
         }
-
-        $response.OutputStream.Close()
     }
 } finally {
     $listener.Stop()

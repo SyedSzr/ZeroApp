@@ -362,15 +362,6 @@ function ProfileScreen() {
                     } ${isEditing && movingAppId !== app.id ? 'jiggle' : ''}`}
                   >
                     <AppLogo app={app} size="md" />
-                    {!isEditing && app.gameCategory && (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); openDetail(app); }}
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-white text-[11px] font-bold hover:bg-black transition-all tap z-10"
-                        title="View Details"
-                      >
-                        ›
-                      </button>
-                    )}
                   </div>
                   <div className="w-full text-center px-0.5">
                     <div className="text-white text-[10px] font-bold truncate leading-tight">{app.name}</div>
@@ -411,15 +402,6 @@ function ProfileScreen() {
                       } ${isEditing && movingAppId !== app.id ? 'jiggle' : ''}`}
                     >
                       <AppLogo app={app} size="md" />
-                      {!isEditing && app.gameCategory && (
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); openDetail(app); }}
-                          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-white text-[11px] font-bold hover:bg-black transition-all tap z-10"
-                          title="View Details"
-                        >
-                          ›
-                        </button>
-                      )}
                     </div>
                     <div className="w-full text-center px-0.5">
                       <div className="text-white text-[10px] font-bold truncate leading-tight">{app.name}</div>
