@@ -71,15 +71,6 @@ function AppsScreen() {
             <p className="text-muted text-sm mt-0.5">{t('home_header')}</p>
           </div>
           <div className="flex items-center gap-2 mt-1.5 flex-shrink-0">
-            <button 
-              onClick={() => go('store')} 
-              className="tap flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/25 rounded-2xl text-xs font-black shadow-lg shadow-amber-500/5 transition-all"
-              title="Open ZCoin Store"
-            >
-              <ZCoinIcon size={16} />
-              <span>{userProfile?.zcoins ?? 0}</span>
-              <span className="text-[10px] bg-amber-500 text-white w-4 h-4 rounded-md flex items-center justify-center font-black ml-0.5 border border-amber-400/30">+</span>
-            </button>
             <button className="tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-white">
               <span className="text-xl">🔔</span>
             </button>

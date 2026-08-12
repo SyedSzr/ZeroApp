@@ -353,15 +353,6 @@ function GamesScreen() {
             </button>
           </div>
           <div className="flex items-center gap-2 mt-1.5 flex-shrink-0 pointer-events-auto">
-            <button 
-              onClick={() => go('store')} 
-              className="tap flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/25 rounded-2xl text-xs font-black shadow-lg shadow-amber-500/5 transition-all"
-              title="Open ZCoin Store"
-            >
-              <ZCoinIcon size={16} />
-              <span>{userProfile?.zcoins ?? 0}</span>
-              <span className="text-[10px] bg-amber-500 text-white w-4 h-4 rounded-md flex items-center justify-center font-black ml-0.5 border border-amber-400/30">+</span>
-            </button>
             <button className="tap w-10 h-10 rounded-xl bg-black/40 backdrop-blur-md border border-[#fff]/10 flex items-center justify-center">
               <span className="text-xl">🔔</span>
             </button>
@@ -473,15 +464,6 @@ function GamesDiscoveryView({ onBack }) {
             <p className="text-muted text-sm mt-0.5">{t('games_header')}</p>
           </div>
           <div className="flex items-center gap-2 mt-1.5 flex-shrink-0 pointer-events-auto">
-            <button 
-              onClick={() => go('store')} 
-              className="tap flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/25 rounded-2xl text-xs font-black shadow-lg shadow-amber-500/5 transition-all"
-              title="Open ZCoin Store"
-            >
-              <ZCoinIcon size={16} />
-              <span>{userProfile?.zcoins ?? 0}</span>
-              <span className="text-[10px] bg-amber-500 text-white w-4 h-4 rounded-md flex items-center justify-center font-black ml-0.5 border border-amber-400/30">+</span>
-            </button>
             <button onClick={() => go('search', { searchMode: 'games' })} className="tap w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center text-white">
               <span className="text-xl">🔍</span>
             </button>

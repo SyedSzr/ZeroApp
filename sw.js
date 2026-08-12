@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zeroapp-v8';
+const CACHE_NAME = 'zeroapp-v9';
 
 const STATIC_ASSETS = [
   './',
@@ -16,8 +16,7 @@ const STATIC_ASSETS = [
   './js/screens/games.js',
   './js/screens/explore.js',
   './js/screens/auth.js',
-  './js/screens/submit.js',
-  './js/screens/store.js'
+  './js/screens/submit.js'
 ];
 
 const EXTERNAL_ASSETS = [
@@ -25,6 +24,7 @@ const EXTERNAL_ASSETS = [
   'https://unpkg.com/react@18/umd/react.production.min.js',
   'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
   'https://unpkg.com/@supabase/supabase-js@2',
+  'https://js.stripe.com/v3/',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap'
 ];
 
