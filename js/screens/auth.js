@@ -2,7 +2,8 @@
 var { useState } = React;
 
 function AuthScreen() {
-  var { signIn, signUp, signInWithGoogle, goBack } = useApp();
+  var { signIn, signUp, signInWithGoogle, goBack, theme } = useApp();
+  const isDark = theme !== 'light';
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,15 +35,15 @@ function AuthScreen() {
   };
 
   return (
-    <div className="slide-up flex flex-col h-full bg-bg relative" style={{ zIndex: 100 }}>
+    <div className={`slide-up flex flex-col h-full relative ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`} style={{ zIndex: 100 }}>
       <div className="pt-safe px-5 flex items-center py-4 flex-shrink-0">
-        <button onClick={goBack} className="tap text-white font-bold text-base">← Back</button>
+        <button onClick={goBack} className={`tap font-bold text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>← Back</button>
       </div>
       
       <div className="flex-1 px-8 flex flex-col justify-center pb-20">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-accent to-violet-500 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-[0_0_30px_rgba(124,106,247,0.5)]">⚡</div>
-          <h1 className="text-white font-extrabold text-2xl tracking-tight mb-1">{isLogin ? 'Welcome Back' : 'Create Account'}</h1>
+          <h1 className={`font-extrabold text-2xl tracking-tight mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{isLogin ? 'Welcome Back' : 'Create Account'}</h1>
           <p className="text-muted text-sm">{isLogin ? 'Sign in to sync your apps and games' : 'Join ZeroApp to submit and sync apps'}</p>
         </div>
 

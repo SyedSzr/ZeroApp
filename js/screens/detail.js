@@ -1,6 +1,7 @@
 // ── APP DETAIL SCREEN ─────────────────────────────────────────────────────────
 function AppDetailScreen({ detailApp: initialApp }) {
-  const { liveApps, liveGames, launchApp, toggleSaveApp, isSaved, goBack, t, fetchComments, postComment, submitRating, user, supabase, gamerStats } = useApp();
+  const { liveApps, liveGames, launchApp, toggleSaveApp, isSaved, goBack, t, fetchComments, postComment, submitRating, user, supabase, gamerStats, theme } = useApp();
+  const isDark = theme !== 'light';
   
   const app = React.useMemo(() => {
     if (typeof initialApp === 'object' && initialApp !== null) return initialApp;
@@ -41,7 +42,7 @@ function AppDetailScreen({ detailApp: initialApp }) {
   const displayPlayTime = formatTimeHM(myPlayTimeSecs);
   
   if (!app) return (
-    <div className="flex h-full items-center justify-center bg-bg">
+    <div className={`flex h-full items-center justify-center ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
       <div className="spin" />
     </div>
   );
@@ -50,13 +51,21 @@ function AppDetailScreen({ detailApp: initialApp }) {
 
   return (
     <>
-      <div className="slide-right flex flex-col h-full bg-bg">
+      <div className={`slide-right flex flex-col h-full ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
 
         {/* ── Top Bar ── */}
-        <div className="pt-safe flex items-center gap-2 px-4 py-3 border-b border-border bg-surface/80 backdrop-blur-xl flex-shrink-0">
-          <button onClick={goBack} className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-white text-lg">←</button>
+        <div className={`pt-safe flex items-center gap-2 px-4 py-3 border-b border-border flex-shrink-0 ${
+          isDark 
+            ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
+            : 'bg-surface/80 backdrop-blur-xl'
+        }`}>
+          <button onClick={goBack} className={`tap w-9 h-9 rounded-xl border flex items-center justify-center text-lg ${
+            isDark ? 'bg-[#171c2d] border-[#2a3043] text-white' : 'bg-card border-border text-gray-900'
+          }`}>←</button>
           <div className="flex-1" />
-          <button className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-xl">⋮</button>
+          <button className={`tap w-9 h-9 rounded-xl border flex items-center justify-center text-xl ${
+            isDark ? 'bg-[#171c2d] border-[#2a3043] text-white' : 'bg-card border-border text-gray-900'
+          }`}>⋮</button>
         </div>
 
         <div className="flex-1 overflow-y-auto no-sb pb-28">

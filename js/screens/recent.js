@@ -2,7 +2,8 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function RecentScreen() {
-  const { recents, clearRecents, openDetail, goBack, t, launchApp, liveGames } = useApp();
+  const { recents, clearRecents, openDetail, goBack, t, launchApp, liveGames, theme } = useApp();
+  const isDark = theme !== 'light';
 
   const gamesOnlyRecents = useMemo(() => {
     return recents.filter(r => r.gameCategory || (liveGames || []).some(g => String(g.id) === String(r.id)));
@@ -35,13 +36,17 @@ function RecentScreen() {
   }
 
   return (
-    <div className="slide-up flex flex-col h-full bg-bg">
+    <div className={`slide-up flex flex-col h-full ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
 
       {/* ── Header ── */}
-      <div className="pt-safe px-5 flex items-center justify-between py-4 border-b border-border bg-surface flex-shrink-0">
+      <div className={`pt-safe px-5 flex items-center justify-between py-4 border-b border-border flex-shrink-0 ${
+        isDark 
+          ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
+          : 'bg-surface'
+      }`}>
         <div className="flex items-center gap-3">
-          <button onClick={goBack} className="tap text-white text-xl">←</button>
-          <h1 className="text-white font-extrabold text-xl">{t('recent')}</h1>
+          <button onClick={goBack} className={`tap text-xl ${isDark ? 'text-white' : 'text-gray-900'}`}>←</button>
+          <h1 className={`font-extrabold text-xl ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('recent')}</h1>
         </div>
         {recents.length > 0 && (
           <button onClick={clearRecents} className="tap text-accent text-sm font-semibold">{t('clear_all')}</button>

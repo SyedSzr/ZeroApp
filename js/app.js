@@ -1,5 +1,7 @@
 // ── SCREEN WRAPPER WITH SWIPE GESTURE ──────────────────────────────────────────
 function ScreenWrapper({ children, isTop, canGoBack, goBack }) {
+  const { theme } = useApp();
+  const isDark = theme !== 'light';
   const wrapperRef = React.useRef(null);
   const startX = React.useRef(0);
   const startY = React.useRef(0);
@@ -73,7 +75,7 @@ function ScreenWrapper({ children, isTop, canGoBack, goBack }) {
   return (
     <div 
       ref={wrapperRef}
-      className={`absolute inset-0 w-full h-full bg-bg shadow-2xl slide-right-fast ${!isTop ? 'pointer-events-none' : ''}`}
+      className={`absolute inset-0 w-full h-full ${isDark ? 'bg-[#050b19]' : 'bg-bg'} shadow-2xl slide-right-fast ${!isTop ? 'pointer-events-none' : ''}`}
       style={{ zIndex: isTop ? 10 : 0 }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}

@@ -1,7 +1,8 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function ExploreScreen({ exploreCategory }) {
-  const { openDetail, go, liveGames, liveCats, t, launchApp } = useApp();
+  const { openDetail, go, liveGames, liveCats, t, launchApp, theme } = useApp();
+  const isDark = theme !== 'light';
   const gameCategories = liveCats.filter(c => c.type === 'game');
 
   // We'll use cat.id for state, 'all' for the special All tab
@@ -43,21 +44,25 @@ function ExploreScreen({ exploreCategory }) {
   const recommended   = listGames.slice(5, 13);
 
   return (
-    <div className="slide-right flex flex-col h-full bg-bg">
+    <div className={`slide-right flex flex-col h-full ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
 
       {/* ── Header ── */}
-      <div className="pt-safe flex-shrink-0 bg-bg border-b border-border">
+      <div className={`pt-safe flex-shrink-0 border-b border-border ${
+        isDark 
+          ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
+          : 'bg-bg'
+      }`}>
         <div className="flex items-center justify-between px-4 pt-3 pb-2">
-          <button onClick={() => go('apps')} className="tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-white text-lg">←</button>
-          <span className="text-white font-extrabold text-base tracking-tight">{headerLabel}</span>
-          <button onClick={() => go('search')} className="tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-muted text-lg">🔍</button>
+          <button onClick={() => go('apps')} className={`tap w-9 h-9 rounded-xl border border-border flex items-center justify-center text-lg ${isDark ? 'bg-surface text-white' : 'bg-card text-gray-900'}`}>←</button>
+          <span className={`font-extrabold text-base tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{headerLabel}</span>
+          <button onClick={() => go('search')} className={`tap w-9 h-9 rounded-xl border border-border flex items-center justify-center text-lg ${isDark ? 'bg-surface text-white' : 'bg-card text-gray-900'}`}>🔍</button>
         </div>
 
         {/* ── Tab Strip: All + categories ── */}
         <div className="flex overflow-x-auto no-sb px-2 pt-1 pb-1">
           <button onClick={() => setActiveTabId('all')}
             className={`tap flex-shrink-0 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
-              activeTabId === 'all' ? 'text-white border-accent' : 'text-muted border-transparent'
+              activeTabId === 'all' ? (isDark ? 'text-white border-accent' : 'text-gray-900 border-accent') : (isDark ? 'text-muted border-transparent' : 'text-gray-600 border-transparent')
             }`}>
             {t('all')}
           </button>
@@ -66,7 +71,7 @@ function ExploreScreen({ exploreCategory }) {
           {gameCategories.map(cat => (
             <button key={cat.id} onClick={() => setActiveTabId(cat.id)}
               className={`tap flex-shrink-0 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
-                activeTabId === cat.id ? 'text-white border-accent' : 'text-muted border-transparent'
+                activeTabId === cat.id ? (isDark ? 'text-white border-accent' : 'text-gray-900 border-accent') : (isDark ? 'text-muted border-transparent' : 'text-gray-600 border-transparent')
               }`}>
               {cat.emoji} {t('cat_' + cat.id)}
             </button>
@@ -75,7 +80,7 @@ function ExploreScreen({ exploreCategory }) {
       </div>
 
       {/* ── Scrollable Body ── */}
-      <div className="flex-1 overflow-y-auto no-sb pb-24 bg-bg">
+      <div className={`flex-1 overflow-y-auto no-sb pb-24 ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
 
         {listGames.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3 text-muted">

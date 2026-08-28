@@ -13,13 +13,21 @@ const SB_KEY = 'sb_publishable_3h4-HTzlMANQA-T2FMaavQ_uso2rIGj';
 const supabase = (typeof window.supabase !== 'undefined') ? window.supabase.createClient(SB_URL, SB_KEY) : null;
 
 function AppProvider({ children }) {
-  // ── Catalog State (Live from Supabase) ──
-  const [liveApps, setLiveApps] = useState(typeof APPS !== 'undefined' ? APPS : []);
-  const [liveGames, setLiveGames] = useState(typeof GAMES !== 'undefined' ? GAMES : []);
-  const [rawApps, setRawApps] = useState([]);
-  const [rawGames, setRawGames] = useState([]);
+  // ── Catalog State (Live from Supabase + instant localStorage cache) ──
+  const [rawApps, setRawApps] = useState(() => ls('zero_raw_apps', []));
+  const [rawGames, setRawGames] = useState(() => ls('zero_raw_games', []));
+  const [liveApps, setLiveApps] = useState(() => {
+    const cached = ls('zero_raw_apps', []);
+    if (cached && cached.length > 0) return cached;
+    return typeof APPS !== 'undefined' ? APPS : [];
+  });
+  const [liveGames, setLiveGames] = useState(() => {
+    const cached = ls('zero_raw_games', []);
+    if (cached && cached.length > 0) return cached;
+    return typeof GAMES !== 'undefined' ? GAMES : [];
+  });
   const [liveCats, setLiveCats] = useState(typeof HOME_CATEGORIES !== 'undefined' ? [...HOME_CATEGORIES.map(c => ({ ...c, type: 'app' })), ...GAME_CATEGORIES.map(c => ({ ...c, type: 'game' }))] : []);
-  const [settings, setSettings] = useState({ app_name: 'ZeroApp' });
+  const [settings, setSettings] = useState(() => ls('zero_settings', { app_name: 'ZeroApp' }));
 
   // ── Auth State ──
   const [user, setUser] = useState(null);
@@ -295,7 +303,7 @@ function AppProvider({ children }) {
   const [savedApps, setSavedApps] = useState(() => ls('zero_saved_apps', []));
   const [folders, setFolders] = useState(() => ls('zero_folders', []));
   const [lang, setLangState] = useState(() => ls('zero_lang', 'en'));
-  const [theme, setThemeState] = useState(() => ls('zero_theme', 'light'));
+  const [theme, setThemeState] = useState(() => ls('zero_theme', 'dark'));
   const [userRegion, setUserRegionState] = useState(() => ls('zero_region', 'Global'));
   const [promotions, setPromotions] = useState([]);
   const [recentSearches, setRecentSearchesState] = useState(() => ls('zero_recent_searches', []));
@@ -2031,15 +2039,16 @@ function AppProvider({ children }) {
         supabase.from('promotions').select('*')
       ]);
 
-      if (a.data) setRawApps(a.data);
-      if (g.data) setRawGames(g.data);
+      if (a.data) { setRawApps(a.data); lsSet('zero_raw_apps', a.data); }
+      if (g.data) { setRawGames(g.data); lsSet('zero_raw_games', g.data); }
       if (c.data && c.data.length > 0) { setLiveCats(c.data); window.liveCats = c.data; }
-      if (p.data) setPromotions(p.data);
+      if (p.data) { setPromotions(p.data); lsSet('zero_promotions', p.data); }
 
       if (s.data && s.data.length > 0) {
         const sMap = {};
         s.data.forEach(item => sMap[item.key] = item.value);
         setSettings(sMap);
+        lsSet('zero_settings', sMap);
         window.appSettings = sMap;
       }
     };

@@ -15,8 +15,10 @@ function GamerProfileScreen() {
     logActivity,
     launchApp,
     openDetail,
-    updateProfileName
+    updateProfileName,
+    theme
   } = useApp();
+  const isDark = theme !== 'light';
 
   const [isUploading, setIsUploading] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -294,15 +296,23 @@ function GamerProfileScreen() {
   }, [gamerStats, everyoneStats]);
 
   return (
-    <div className="slide-right flex flex-col h-full bg-bg relative select-none">
+    <div className={`slide-right flex flex-col h-full relative select-none ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
       
       {/* ── Custom Premium Header ── */}
-      <div className="pt-safe px-5 flex items-center justify-between py-4 border-b border-border bg-surface flex-shrink-0">
-        <button onClick={goBack} className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-white">
+      <div className={`pt-safe px-5 flex items-center justify-between py-4 border-b border-border flex-shrink-0 ${
+        isDark 
+          ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
+          : 'bg-surface'
+      }`}>
+        <button onClick={goBack} className={`tap w-9 h-9 rounded-xl border flex items-center justify-center ${
+          isDark ? 'bg-[#171c2d] border-[#2a3043] text-white' : 'bg-card border-border text-gray-900'
+        }`}>
           <span style={{ fontSize: 13, fontWeight: 'bold' }}>❮</span>
         </button>
-        <h1 className="text-white font-extrabold text-lg">Gamer profile</h1>
-        <button onClick={() => go('settings')} className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-lg">
+        <h1 className={`font-extrabold text-lg ${isDark ? 'text-white' : 'text-gray-900'}`}>Gamer profile</h1>
+        <button onClick={() => go('settings')} className={`tap w-9 h-9 rounded-xl border flex items-center justify-center text-lg ${
+          isDark ? 'bg-[#171c2d] border-[#2a3043] text-white' : 'bg-card border-border text-gray-900'
+        }`}>
           ⚙️
         </button>
       </div>

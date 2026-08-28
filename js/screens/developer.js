@@ -1,6 +1,7 @@
 // ── DEVELOPER GAMES SCREEN ─────────────────────────────────────────────────────
 function DeveloperScreen({ developer }) {
-  const { goBack, liveGames, launchApp, t } = useApp();
+  const { goBack, liveGames, launchApp, t, theme } = useApp();
+  const isDark = theme !== 'light';
 
   const developerGames = React.useMemo(() => {
     if (!developer) return [];
@@ -11,20 +12,26 @@ function DeveloperScreen({ developer }) {
   }, [developer, liveGames]);
 
   return (
-    <div className="slide-right flex flex-col h-full bg-bg">
+    <div className={`slide-right flex flex-col h-full ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
       {/* ── Top Bar ── */}
-      <div className="pt-safe flex items-center justify-between px-4 pt-3 pb-3 border-b border-border bg-surface flex-shrink-0">
+      <div className={`pt-safe flex items-center justify-between px-4 pt-3 pb-3 border-b border-border flex-shrink-0 ${
+        isDark 
+          ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
+          : 'bg-surface'
+      }`}>
         <div className="flex items-center gap-3">
-          <button onClick={goBack} className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-white text-lg">←</button>
+          <button onClick={goBack} className={`tap w-9 h-9 rounded-xl border flex items-center justify-center text-lg ${
+            isDark ? 'bg-[#171c2d] border-[#2a3043] text-white' : 'bg-card border-border text-gray-900'
+          }`}>←</button>
           <div className="text-left">
-            <h1 className="text-white font-extrabold text-base tracking-tight truncate max-w-[220px]">{developer}</h1>
-            <p className="text-muted text-[10px] font-bold uppercase tracking-wider mt-0.5">{developerGames.length} {t('games') || 'Games'}</p>
+            <h1 className={`font-extrabold text-base tracking-tight truncate max-w-[220px] ${isDark ? 'text-white' : 'text-gray-900'}`}>{developer}</h1>
+            <p className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${isDark ? 'text-muted' : 'text-gray-600'}`}>{developerGames.length} {t('games') || 'Games'}</p>
           </div>
         </div>
       </div>
 
       {/* ── Content Grid ── */}
-      <div className="flex-1 overflow-y-auto no-sb pb-28 px-5 pt-6 bg-bg">
+      <div className={`flex-1 overflow-y-auto no-sb pb-28 px-5 pt-6 ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
         {developerGames.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted">
             <span className="text-5xl">🎮</span>

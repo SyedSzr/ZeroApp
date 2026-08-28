@@ -2,7 +2,8 @@
 var { useState } = React;
 
 function ProfileScreen() {
-  var { savedApps, folders, createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder, toggleSaveApp, go, openDetail, user, supabase, signOut, userProfile, updateProfileName, t, uploadAvatar, logActivity, launchApp } = useApp();
+  var { savedApps, folders, createFolder, moveAppToFolder, removeAppFromFolder, deleteFolder, toggleSaveApp, go, openDetail, user, supabase, signOut, userProfile, updateProfileName, t, uploadAvatar, logActivity, launchApp, theme } = useApp();
+  const isDark = theme !== 'light';
   
   const [isUploading, setIsUploading] = useState(false);
   
@@ -113,13 +114,19 @@ function ProfileScreen() {
   const activeFolderApps = activeFolder ? savedApps.filter(app => activeFolder.appIds.includes(app.id)) : [];
 
   return (
-    <div className="slide-up flex flex-col h-full bg-bg relative">
+    <div className={`slide-up flex flex-col h-full relative ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
 
       {/* ── Header ── */}
-      <div className="pt-safe px-5 flex items-start justify-between py-4 border-b border-border bg-surface flex-shrink-0">
-        <h1 className="text-white font-extrabold text-xl mt-1">{t('profile')}</h1>
+      <div className={`pt-safe px-5 flex items-start justify-between py-4 border-b border-border flex-shrink-0 ${
+        isDark 
+          ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
+          : 'bg-surface'
+      }`}>
+        <h1 className={`font-extrabold text-xl mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('profile')}</h1>
         <div className="flex flex-col items-center gap-2">
-          <button onClick={() => go('settings')} className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-xl">⚙️</button>
+          <button onClick={() => go('settings')} className={`tap w-9 h-9 rounded-xl border flex items-center justify-center text-xl ${
+            isDark ? 'bg-[#171c2d] border-[#2a3043] text-white' : 'bg-card border-border text-gray-900'
+          }`}>⚙️</button>
           {!user && (
             <button onClick={() => go('auth')} className="tap bg-accent text-white text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(124,106,247,0.4)] whitespace-nowrap">
               {t('sign_in')}
@@ -527,10 +534,9 @@ function ProfileScreen() {
 }
 
 // ── SETTINGS SCREEN (Already largely localized) ──────────────────────────────────
-// I will just ensure "Privacy Policy" and "Terms of Service" are localized now.
-
 function SettingsScreen() {
-  var { user, signOut, goBack, userProfile, updateProfileName, t, lang, setLang, theme, setTheme, userRegion, setUserRegion, notificationsEnabled, toggleNotifications } = useApp();
+  var { user, signOut, goBack, userProfile, updateProfileName, t, lang, setLang, theme, setTheme, userRegion, setUserRegion, notificationsEnabled, toggleNotifications, clearCache } = useApp();
+  const isDark = theme !== 'light';
   const [showNameModal, setShowNameModal] = React.useState(false);
   const [newName, setNewName] = React.useState(userProfile?.display_name || '');
 
@@ -561,49 +567,48 @@ function SettingsScreen() {
     {
       title: t('profile_settings'),
       items: [
-        { label: t('display_name'), value: userProfile?.display_name || 'Not set', action: handleEditName },
-        { label: t('email'), value: user?.email || 'Guest', action: null },
+        { label: t('display_name'), value: userProfile?.display_name || (user?.user_metadata?.full_name || 'Guest User'), action: user ? handleEditName : null },
+        { label: t('email'), value: user?.email || t('not_signed_in'), action: null },
       ]
     },
     {
-      title: t('app_preferences'),
+      title: t('app_settings'),
       items: [
         { 
-          label: t('dark_mode'), 
-          value: theme === 'dark' ? 'Dark' : 'Bright', 
-          action: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
-          isToggle: true,
-          toggleState: theme === 'dark'
-        },
-        { 
-          label: t('notifications'), 
-          value: notificationsEnabled ? 'Enabled' : 'Disabled', 
-          action: toggleNotifications,
-          isToggle: true,
-          toggleState: notificationsEnabled
+          label: t('theme'), 
+          value: theme === 'dark' ? t('dark') : t('light'), 
+          isToggle: true, 
+          toggleState: theme === 'dark',
+          action: () => setTheme(theme === 'dark' ? 'light' : 'dark') 
         },
         { 
           label: t('language'), 
-          value: languages.find(l => l.code === lang)?.label || 'English', 
-          isDropdown: true,
+          isDropdown: true, 
+          currentValue: lang, 
           dropdownOptions: languages,
-          currentValue: lang,
-          action: (e) => setLang(e.target.value)
+          action: (e) => setLang(e.target.value) 
         },
         { 
-          label: t('region'), 
-          value: 'Global', 
-          isDropdown: true,
-          dropdownOptions: [
-            { code: 'Global', label: 'Global' },
-            { code: 'PK', label: 'Pakistan' },
-            { code: 'US', label: 'USA' },
-            { code: 'UK', label: 'UK' },
-            { code: 'AE', label: 'UAE' }
-          ],
-          currentValue: userRegion,
-          action: (e) => setUserRegion(e.target.value)
+          label: t('notifications'), 
+          value: notificationsEnabled ? t('enabled') : t('disabled'), 
+          isToggle: true, 
+          toggleState: notificationsEnabled,
+          action: toggleNotifications 
         },
+        { 
+          label: t('country_region'), 
+          value: userRegion, 
+          action: () => {
+            const r = prompt(t('enter_region') || 'Enter Region Code (e.g. US, UK, PK):', userRegion);
+            if (r) setUserRegion(r.toUpperCase());
+          } 
+        },
+      ]
+    },
+    {
+      title: t('data_storage'),
+      items: [
+        { label: t('clear_cache'), value: t('clear'), action: clearCache },
       ]
     },
     {
@@ -616,7 +621,7 @@ function SettingsScreen() {
   ];
 
   return (
-    <div className="slide-right flex flex-col h-full bg-bg relative">
+    <div className={`slide-right flex flex-col h-full relative ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
       <BackHeader title={t('settings')} />
       
       <div className="flex-1 overflow-y-auto no-sb p-5">
@@ -627,7 +632,7 @@ function SettingsScreen() {
               <div className="bg-card border border-border rounded-[24px] overflow-hidden">
                 {section.items.map((item, i) => (
                   <div key={item.label} className={`w-full flex items-center justify-between px-5 py-4 text-left ${i !== section.items.length - 1 ? 'border-b border-border' : ''}`}>
-                    <span className="text-white text-sm font-semibold">{item.label}</span>
+                    <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.label}</span>
                     <div className="flex items-center gap-2">
                       {item.isToggle ? (
                          <button onClick={item.action} className="tap flex items-center gap-2">
@@ -698,7 +703,8 @@ function SettingsScreen() {
 
 // ── HELP & SUPPORT SCREEN ───────────────────────────────────────────────────
 function HelpSupportScreen() {
-  var { goBack, t } = useApp();
+  var { goBack, t, theme } = useApp();
+  const isDark = theme !== 'light';
 
   const faqs = [
     { q: t('faq_1_q'), a: t('faq_1_a') },
@@ -708,14 +714,14 @@ function HelpSupportScreen() {
   ];
 
   return (
-    <div className="slide-right flex flex-col h-full bg-bg">
+    <div className={`slide-right flex flex-col h-full ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
       <BackHeader title={t('help')} />
       
       <div className="flex-1 overflow-y-auto no-sb p-5">
         <div className="text-center py-8">
           <div className="w-20 h-20 bg-accent/10 rounded-[40px] flex items-center justify-center text-4xl mx-auto mb-4 border border-accent/20 shadow-2xl">🤝</div>
-          <h2 className="text-white text-xl font-black">{t('faq_title')}</h2>
-          <p className="text-muted text-sm mt-1">{t('faq_sub')}</p>
+          <h2 className={`text-xl font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('faq_title')}</h2>
+          <p className={`text-sm mt-1 ${isDark ? 'text-muted' : 'text-gray-600'}`}>{t('faq_sub')}</p>
         </div>
 
         <div className="space-y-6">
@@ -724,8 +730,8 @@ function HelpSupportScreen() {
             <div className="space-y-3">
               {faqs.map(faq => (
                 <div key={faq.q} className="bg-card border border-border rounded-2xl p-4">
-                  <h4 className="text-white text-sm font-bold mb-2">{faq.q}</h4>
-                  <p className="text-muted text-xs leading-relaxed">{faq.a}</p>
+                  <h4 className={`text-sm font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>{faq.q}</h4>
+                  <p className={`text-xs leading-relaxed ${isDark ? 'text-muted' : 'text-gray-600'}`}>{faq.a}</p>
                 </div>
               ))}
             </div>
@@ -737,14 +743,14 @@ function HelpSupportScreen() {
               <button className="w-full flex items-center justify-between px-5 py-4 text-left border-b border-border tap">
                 <div className="flex items-center gap-3">
                   <span className="text-lg">📧</span>
-                  <span className="text-white text-sm font-semibold">{t('email_support')}</span>
+                  <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('email_support')}</span>
                 </div>
                 <span className="text-muted text-lg">›</span>
               </button>
               <button className="w-full flex items-center justify-between px-5 py-4 text-left tap">
                 <div className="flex items-center gap-3">
                   <span className="text-lg">💬</span>
-                  <span className="text-white text-sm font-semibold">{t('live_chat')}</span>
+                  <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('live_chat')}</span>
                 </div>
                 <span className="text-muted text-lg">›</span>
               </button>
@@ -758,56 +764,57 @@ function HelpSupportScreen() {
 
 // ── ABOUT SCREEN ────────────────────────────────────────────────────────────
 function AboutScreen() {
-  var { goBack, t } = useApp();
+  var { goBack, t, theme } = useApp();
+  const isDark = theme !== 'light';
 
   return (
-    <div className="slide-right flex flex-col h-full bg-bg">
+    <div className={`slide-right flex flex-col h-full ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
       <BackHeader title={t('about')} />
       
       <div className="flex-1 overflow-y-auto no-sb p-5">
         <div className="text-center py-12">
           <div className="w-24 h-24 bg-gradient-to-br from-accent to-violet-500 rounded-[40px] flex items-center justify-center text-5xl mx-auto mb-6 shadow-2xl glow-purple border border-white/20">⚡</div>
-          <h1 className="text-white text-3xl font-black tracking-tighter">ZeroApp</h1>
+          <h1 className={`text-3xl font-black tracking-tighter ${isDark ? 'text-white' : 'text-gray-900'}`}>ZeroApp</h1>
           <p className="text-muted text-sm mt-1 font-bold uppercase tracking-widest opacity-60">Version 1.0.0 (Stable)</p>
         </div>
 
         <div className="space-y-8 px-2">
           <div>
-            <h3 className="text-white text-lg font-bold mb-3">{t('vision')}</h3>
-            <p className="text-muted text-sm leading-relaxed">
+            <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('vision')}</h3>
+            <p className={`text-sm leading-relaxed ${isDark ? 'text-muted' : 'text-gray-600'}`}>
               {t('vision_desc')}
             </p>
           </div>
 
           <div>
-            <h3 className="text-white text-lg font-bold mb-3">{t('key_features')}</h3>
+            <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('key_features')}</h3>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <span className="text-accent text-xl">🚀</span>
                 <div>
-                  <div className="text-white text-sm font-bold">{t('zero_install')}</div>
-                  <div className="text-muted text-xs mt-0.5">{t('zero_install_desc')}</div>
+                  <div className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('zero_install')}</div>
+                  <div className={`text-xs mt-0.5 ${isDark ? 'text-muted' : 'text-gray-600'}`}>{t('zero_install_desc')}</div>
                 </div>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-accent text-xl">📱</span>
                 <div>
-                  <div className="text-white text-sm font-bold">{t('multi_tasking')}</div>
-                  <div className="text-muted text-xs mt-0.5">{t('multi_tasking_desc')}</div>
+                  <div className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('multi_tasking')}</div>
+                  <div className={`text-xs mt-0.5 ${isDark ? 'text-muted' : 'text-gray-600'}`}>{t('multi_tasking_desc')}</div>
                 </div>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-accent text-xl">☁️</span>
                 <div>
-                  <div className="text-white text-sm font-bold">{t('cloud_sync')}</div>
-                  <div className="text-muted text-xs mt-0.5">{t('cloud_sync_desc')}</div>
+                  <div className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('cloud_sync')}</div>
+                  <div className={`text-xs mt-0.5 ${isDark ? 'text-muted' : 'text-gray-600'}`}>{t('cloud_sync_desc')}</div>
                 </div>
               </li>
             </ul>
           </div>
 
           <div className="pt-8 border-t border-border">
-            <h3 className="text-white text-lg font-bold mb-4 text-center">{t('stay_connected')}</h3>
+            <h3 className={`text-lg font-bold mb-4 text-center ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('stay_connected')}</h3>
             <div className="flex justify-center gap-6">
               <button className="tap w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center text-xl">🌐</button>
               <button className="tap w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center text-xl">🐦</button>

@@ -2,8 +2,9 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function SearchScreen({ searchMode }) {
-  const { goBack, searchQ, setSearchQ, openDetail, liveApps, liveGames, t, recentSearches, updateSearchHistory, clearSearchHistory, launchApp } = useApp();
+  const { goBack, searchQ, setSearchQ, openDetail, liveApps, liveGames, t, recentSearches, updateSearchHistory, clearSearchHistory, launchApp, theme } = useApp();
   const inputRef = useRef(null);
+  const isDark = theme !== 'light';
 
   const isGamesMode = searchMode === 'games';
 
@@ -37,12 +38,18 @@ function SearchScreen({ searchMode }) {
   const secondaryLabel = isGamesMode ? t('all_apps') : t('all_games');
 
   return (
-    <div className="slide-up flex flex-col h-full bg-bg">
+    <div className={`slide-up flex flex-col h-full ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
 
       {/* ── Search Header ── */}
-      <div className="pt-safe px-4 py-3 border-b border-border bg-surface flex-shrink-0">
+      <div className={`pt-safe px-4 py-3 border-b border-border flex-shrink-0 ${
+        isDark 
+          ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
+          : 'bg-surface'
+      }`}>
         <div className="flex items-center gap-3">
-          <div className="flex-1 flex items-center gap-2 bg-card border border-border rounded-2xl px-4 py-2.5">
+          <div className={`flex-1 flex items-center gap-2 border rounded-2xl px-4 py-2.5 ${
+            isDark ? 'bg-[#171c2d] border-[#2a3043]' : 'bg-card border-border'
+          }`}>
             <span className="text-muted text-base flex-shrink-0">🔍</span>
             <input
               ref={inputRef}
@@ -51,7 +58,7 @@ function SearchScreen({ searchMode }) {
               onChange={e => setSearchQ(e.target.value)}
               placeholder={isGamesMode ? (t('search_games') || 'Search games...') : t('search_anything')}
               autoComplete="off"
-              className="flex-1 bg-transparent text-white text-sm placeholder-muted outline-none"
+              className={`flex-1 bg-transparent text-sm placeholder-muted outline-none ${isDark ? 'text-white' : 'text-gray-900'}`}
             />
             {searchQ && (
               <button onClick={() => setSearchQ('')} className="tap text-muted text-lg flex-shrink-0">×</button>

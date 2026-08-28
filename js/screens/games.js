@@ -257,36 +257,45 @@ function CommentsOverlay({ game, onClose }) {
 }
 
 function GamesScreen() {
-  const { greeting, openDetail, go, liveGames, launchApp, user, t, userProfile, settings } = useApp();
+  const { greeting, openDetail, go, liveGames, launchApp, user, t, userProfile, settings, theme } = useApp();
   const [viewMode, setViewMode] = useState('feed');
   const [commentGame, setCommentGame] = useState(null); // game whose comments overlay is open
+  const isDark = theme !== 'light';
 
-  let visibleGames = [...liveGames].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-  
-  if (settings && settings.play_scroll_games) {
-    try {
-      const selectedIds = JSON.parse(settings.play_scroll_games);
-      if (Array.isArray(selectedIds) && selectedIds.length > 0) {
-        visibleGames = selectedIds.map(id => liveGames.find(g => g.id === id)).filter(Boolean);
-      }
-    } catch (e) {}
-  }
+  const visibleGames = useMemo(() => {
+    if (settings && settings.play_scroll_games) {
+      try {
+        const selectedIds = JSON.parse(settings.play_scroll_games);
+        if (Array.isArray(selectedIds) && selectedIds.length > 0) {
+          const list = selectedIds.map(id => liveGames.find(g => String(g.id) === String(id))).filter(Boolean);
+          if (list.length > 0) return list;
+        }
+      } catch (e) {}
+    }
+    return [...liveGames].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  }, [settings, liveGames]);
 
   if (viewMode === 'discover') {
     return <GamesDiscoveryView onBack={() => setViewMode('feed')} />;
   }
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-[#050b19] font-sans">
-      <header className="flex-none px-5 pt-safe pt-4 pb-4 bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]">
+    <div className={`flex h-full w-full flex-col overflow-hidden font-sans ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
+      <header className={`flex-none px-5 pt-safe pt-4 pb-4 ${
+        isDark 
+          ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
+          : 'bg-bg border-b border-border'
+      }`}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="text-[24px] leading-none">⚡</span>
-            <span className="text-[#fff] font-black text-[24px] leading-none tracking-[-0.045em]">ZeroApp</span>
+            <span className={`font-black text-[24px] leading-none tracking-[-0.045em] ${isDark ? 'text-white' : 'text-gray-900'}`}>ZeroApp</span>
           </div>
           <div className="flex items-center gap-2 pointer-events-auto">
             <button onClick={() => setViewMode('discover')} aria-label={t('discover')}
-              className="tap w-10 h-10 rounded-xl bg-[#171c2d] backdrop-blur-md border border-[#2a3043] flex items-center justify-center text-base shadow-lg active:scale-95">
+              className={`tap w-10 h-10 rounded-xl backdrop-blur-md border flex items-center justify-center text-base shadow-lg active:scale-95 ${
+                isDark ? 'bg-[#171c2d] border-[#2a3043] text-white' : 'bg-surface border-border text-gray-900'
+              }`}>
               🔔
             </button>
             {!user && (
@@ -296,8 +305,8 @@ function GamesScreen() {
             )}
           </div>
         </div>
-        <h1 className="mt-5 text-[28px] font-black tracking-[-0.055em] leading-none text-[#fff]">{greeting} <span className="not-italic">👋</span></h1>
-        <p className="mt-2.5 text-[14px] font-medium leading-none text-[#b8bdd0]">{t('games_header')}</p>
+        <h1 className={`mt-5 text-[28px] font-black tracking-[-0.055em] leading-none ${isDark ? 'text-white' : 'text-gray-900'}`}>{greeting} <span className="not-italic">👋</span></h1>
+        <p className={`mt-2.5 text-[14px] font-medium leading-none ${isDark ? 'text-[#b8bdd0]' : 'text-gray-600'}`}>{t('games_header')}</p>
       </header>
 
       {/* Feed */}
@@ -318,7 +327,8 @@ function GamesScreen() {
 
 // ── DISCOVERY VIEW (The previous grid layout) ──────────────────────────────────
 function GamesDiscoveryView({ onBack }) {
-  const { openDetail, go, liveGames, liveCats, t, getPromoItems, launchApp, greeting, user, userProfile } = useApp();
+  const { openDetail, go, liveGames, liveCats, t, getPromoItems, launchApp, greeting, user, userProfile, theme } = useApp();
+  const isDark = theme !== 'light';
   const gameCategories = liveCats.filter(c => c.type === 'game');
 
   const [activeCategory, setActiveCategory] = useState('all');
@@ -381,25 +391,29 @@ function GamesDiscoveryView({ onBack }) {
   );
 
   return (
-    <div className="slide-up flex flex-col h-full bg-bg">
+    <div className={`slide-up flex flex-col h-full ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
       <div className="flex-1 overflow-y-auto no-sb pb-32">
         
-        {/* ── Rich Header (Same style as Play Screen) ── */}
-        <div className="pt-safe px-5 pt-5 pb-3 flex items-start justify-between flex-shrink-0 bg-bg border-b border-border">
+        {/* ── Header ── */}
+        <div className={`pt-safe px-5 pt-5 pb-3 flex items-start justify-between flex-shrink-0 border-b border-border ${
+          isDark 
+            ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
+            : 'bg-bg'
+        }`}>
           <div className="flex-1 text-left">
             <div className="flex items-center gap-2 mb-1">
               {onBack ? (
-                <button onClick={onBack} className="tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-white text-lg mr-1">←</button>
+                <button onClick={onBack} className={`tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-lg mr-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>←</button>
               ) : (
                 <span className="text-2xl">⚡</span>
               )}
-              <span className="text-white font-black text-xl tracking-tight font-sans">ZeroApp</span>
+              <span className={`font-black text-xl tracking-tight font-sans ${isDark ? 'text-white' : 'text-gray-900'}`}>ZeroApp</span>
             </div>
-            <p className="text-white text-2xl font-bold leading-tight">{greeting} 👋</p>
-            <p className="text-muted text-sm mt-0.5">{t('games_header')}</p>
+            <p className={`text-2xl font-bold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{greeting} 👋</p>
+            <p className={`text-sm mt-0.5 ${isDark ? 'text-muted' : 'text-gray-600'}`}>{t('games_header')}</p>
           </div>
           <div className="flex items-center gap-2 mt-1.5 flex-shrink-0 pointer-events-auto">
-            <button onClick={() => go('search', { searchMode: 'games' })} className="tap w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center text-white">
+            <button onClick={() => go('search', { searchMode: 'games' })} className={`tap w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
               <span className="text-xl">🔍</span>
             </button>
             {!user && (

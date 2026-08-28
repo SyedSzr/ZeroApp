@@ -4,7 +4,8 @@ const STRIPE_PUBLISHABLE_KEY = 'pk_test_51MEVoKCOQw8WFZIhxf51KqBy8SWoLJEHXnLPvM3
 function SubmitScreen(props) {
   const context = useApp();
   if (!context) return null;
-  var { supabase, liveCats, goBack, user, go, t } = context;
+  var { supabase, liveCats, goBack, user, go, t, theme } = context;
+  const isDark = theme !== 'light';
 
   const stripe = React.useMemo(() => {
     return (typeof window.Stripe !== 'undefined') ? window.Stripe(STRIPE_PUBLISHABLE_KEY) : null;
@@ -50,31 +51,20 @@ function SubmitScreen(props) {
         setIsProcessingPayment(false);
       }
 
-      const selectedCat = liveCats.find(c => c.id === fd.get('category'));
       const payload = {
         id,
-        user_id: user?.id,
         name,
-        url: fd.get('url'),
+        tagline: fd.get('tagline'),
         description: fd.get('description'),
-        long_description: fd.get('long_description'),
-        tags: fd.get('tags') ? fd.get('tags').split(',').map(t => t.trim()).filter(Boolean) : [],
-        region: fd.get('region') || 'Global',
-        rating: isEdit ? editItem.rating : (4.5 + (Math.random() * 0.5)),
-        emoji: selectedCat ? selectedCat.emoji : (itemType === 'game' ? '🎮' : '🌐'),
-        reviews: isEdit ? editItem.reviews : '1',
-        screenshots: isEdit ? (editItem.screenshots || []) : [],
-        featured_image: isEdit ? editItem.featured_image : null,
+        app_url: fd.get('app_url'),
+        developer: fd.get('developer') || (user?.user_metadata?.full_name || 'Anonymous'),
+        category: fd.get('category'),
+        homeCategory: fd.get('category'),
+        gameCategory: itemType === 'game' ? fd.get('category') : null,
+        user_id: user?.id,
         status: 'pending',
-        rejection_comment: null,
-        category: selectedCat ? selectedCat.label : '',
+        tags: fd.get('tags') ? fd.get('tags').split(',').map(t_tag => t_tag.trim()).filter(Boolean) : []
       };
-
-      if (itemType === 'game') {
-        payload.gameCategory = fd.get('category');
-      } else {
-        payload.homeCategory = fd.get('category');
-      }
 
       // 1. Handle Icon Upload
       const iconFile = document.getElementById('icon-input')?.files[0];
@@ -124,8 +114,8 @@ function SubmitScreen(props) {
   };
 
   const uploadToSupabase = async (file, folder) => {
-    const ext = file.name.split('.').pop();
-    const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
     
     var { data, error } = await supabase.storage
       .from('media')
@@ -142,12 +132,12 @@ function SubmitScreen(props) {
 
   if (success) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-bg p-8 text-center animate-in">
+      <div className={`flex flex-col items-center justify-center h-full p-8 text-center animate-in ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
         <div className="w-24 h-24 rounded-[40px] bg-emerald-500/20 flex items-center justify-center text-5xl mb-6 shadow-2xl shadow-emerald-500/20 border border-emerald-500/30">
           ✨
         </div>
-        <h2 className="text-white text-2xl font-black mb-3">Submission Received!</h2>
-        <p className="text-muted text-sm leading-relaxed">
+        <h2 className={`text-2xl font-black mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>Submission Received!</h2>
+        <p className={`text-sm leading-relaxed ${isDark ? 'text-muted' : 'text-gray-600'}`}>
           Your {itemType === 'game' ? 'game' : 'app'} has been submitted for review. <br/>
           It will appear live once approved by the admin.
         </p>
@@ -156,15 +146,15 @@ function SubmitScreen(props) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-bg slide-right-fast">
+    <div className={`flex flex-col h-full slide-right-fast ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
       <BackHeader title={isEdit ? (itemType === 'game' ? 'Resubmit Game' : 'Resubmit Web App') : (itemType === 'game' ? 'Submit Game' : 'Submit Web App')} />
       
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-8 pb-32 no-sb">
         <header className="mb-2">
-          <h1 className="text-white text-xl font-black mb-1">
+          <h1 className={`text-xl font-black mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
             {isEdit ? 'Edit & Resubmit' : (itemType === 'game' ? 'Add Game to Catalog' : 'Add App to Catalog')}
           </h1>
-          <p className="text-muted text-xs">
+          <p className={`text-xs ${isDark ? 'text-muted' : 'text-gray-600'}`}>
             {itemType === 'game' ? 'Contribute a new web game to the community.' : 'Contribute a new web app to the community.'}
           </p>
         </header>

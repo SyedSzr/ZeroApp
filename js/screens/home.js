@@ -2,7 +2,8 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function AppsScreen() {
-  const { greeting, recents, openDetail, go, liveApps, liveCats, t, getPromoItems, getSmartRecommendations, userProfile, launchApp } = useApp();
+  const { greeting, recents, openDetail, go, liveApps, liveCats, t, getPromoItems, getSmartRecommendations, userProfile, launchApp, theme } = useApp();
+  const isDark = theme !== 'light';
   
   const featuredApp = getPromoItems('featured_app', 'app')?.[0] || liveApps.find(a => a.is_featured) || liveApps[0];
   const recommended = getSmartRecommendations('app');
@@ -57,22 +58,26 @@ function AppsScreen() {
   );
 
   return (
-    <div className="slide-up flex flex-col h-full bg-bg">
+    <div className={`slide-up flex flex-col h-full ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
       <div className="flex-1 overflow-y-auto no-sb pb-32">
 
         {/* ── Header ── */}
-        <div className="pt-safe px-5 pt-5 pb-1 flex items-start justify-between">
+        <div className={`pt-safe px-5 pt-5 pb-1 flex items-start justify-between border-b border-border ${
+          isDark 
+            ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
+            : 'bg-bg'
+        }`}>
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-2xl">⚡</span>
-              <span className="text-white font-black text-xl tracking-tight">ZeroApp</span>
+              <span className={`font-black text-xl tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>ZeroApp</span>
             </div>
-            <p className="text-white text-2xl font-bold leading-tight">{greeting} 👋</p>
-            <p className="text-muted text-sm mt-0.5">{t('home_header')}</p>
+            <p className={`text-2xl font-bold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{greeting} 👋</p>
+            <p className={`text-sm mt-0.5 ${isDark ? 'text-muted' : 'text-gray-600'}`}>{t('home_header')}</p>
           </div>
           <div className="flex items-center gap-2 mt-1.5 flex-shrink-0">
-            <button className="tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-white">
-              <span className="text-xl">🔔</span>
+            <button onClick={() => go('search')} className={`tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <span className="text-xl">🔍</span>
             </button>
           </div>
         </div>

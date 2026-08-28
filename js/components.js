@@ -895,11 +895,18 @@ function ProfileIcon({ active }) {
 
 // ── BackHeader ────────────────────────────────────────────────────────────────
 function BackHeader({ title, right }) {
-  var { goBack } = useApp();
+  var { goBack, theme } = useApp();
+  const isDark = theme !== 'light';
   return (
-    <div className="pt-safe flex items-center gap-3 px-4 py-3 border-b border-border bg-surface/80 backdrop-blur-xl flex-shrink-0" style={{zIndex:40}}>
-      <button onClick={goBack} className="tap w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-white text-lg">←</button>
-      {title && <span className="flex-1 text-white font-bold text-base truncate">{title}</span>}
+    <div className={`pt-safe flex items-center gap-3 px-4 py-3 border-b border-border flex-shrink-0 ${
+      isDark 
+        ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
+        : 'bg-surface/80 backdrop-blur-xl'
+    }`} style={{zIndex:40}}>
+      <button onClick={goBack} className={`tap w-9 h-9 rounded-xl border flex items-center justify-center text-lg ${
+        isDark ? 'bg-[#171c2d] border-[#2a3043] text-white' : 'bg-card border-border text-gray-900'
+      }`}>←</button>
+      {title && <span className={`flex-1 font-bold text-base truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{title}</span>}
       {right}
     </div>
   );
