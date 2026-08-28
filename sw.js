@@ -1,22 +1,28 @@
-const CACHE_NAME = 'zeroapp-v17';
+const CACHE_NAME = 'zeroapp-v18';
 
 const STATIC_ASSETS = [
   './',
   './index.html',
   './style.css',
   './manifest.json',
-  './js/store.js',
   './js/data.js',
+  './js/store.js',
   './js/components.js',
+  './js/screens/auth.js',
+  './js/screens/submit.js',
   './js/screens/home.js',
-  './js/screens/search.js',
-  './js/screens/detail.js',
-  './js/screens/viewer.js',
-  './js/screens/profile.js',
   './js/screens/games.js',
   './js/screens/explore.js',
-  './js/screens/auth.js',
-  './js/screens/submit.js'
+  './js/screens/detail.js',
+  './js/screens/viewer.js',
+  './js/screens/search.js',
+  './js/screens/recent.js',
+  './js/screens/profile.js',
+  './js/screens/developer.js',
+  './js/screens/gamer-profile.js',
+  './js/seed.js',
+  './js/screens/onboarding.js',
+  './js/app.js'
 ];
 
 const EXTERNAL_ASSETS = [

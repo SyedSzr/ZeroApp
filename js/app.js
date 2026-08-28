@@ -165,10 +165,12 @@ function App() {
     );
   }
 
+  const OnboardComp = window.OnboardingScreen || (typeof OnboardingScreen !== 'undefined' ? OnboardingScreen : null);
+
   return (
     <AppProvider>
-      {showOnboarding && (
-        <OnboardingScreen onComplete={() => setShowOnboarding(false)} />
+      {showOnboarding && OnboardComp && (
+        <OnboardComp onComplete={() => setShowOnboarding(false)} />
       )}
       <AppShell />
     </AppProvider>

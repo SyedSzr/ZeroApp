@@ -460,3 +460,5 @@ function OnboardingScreen({ onComplete }) {
     </div>
   );
 }
+
+window.OnboardingScreen = OnboardingScreen;
