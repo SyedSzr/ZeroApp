@@ -7,62 +7,49 @@ function GameIframe({ src, className, onLoad, onError, hideSpinner, ...props }) 
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    let active = true;
-    const isPlayPage = src && (src.includes('//play.famobi.com') || src.startsWith('play.famobi.com'));
-    if (isPlayPage) {
-      let playUrl = src;
-      if (!playUrl.includes('/play')) {
-        const parts = playUrl.split('?');
-        const base = parts[0].replace(/\/$/, '') + '/play';
-        playUrl = parts[1] ? `${base}?${parts[1]}` : base;
-      }
+    if (!src) {
+      setIframeSrc('');
+      setLoading(false);
+      return;
+    }
 
-      setLoading(true);
+    let active = true;
+    const isPlayPage = (src.includes('//play.famobi.com') || src.startsWith('play.famobi.com'));
+    
+    let playUrl = src;
+    if (isPlayPage && !playUrl.includes('/play')) {
+      const parts = playUrl.split('?');
+      const base = parts[0].replace(/\/$/, '') + '/play';
+      playUrl = parts[1] ? `${base}?${parts[1]}` : base;
+    }
+
+    // Set initial source immediately so iframe begins loading with 0ms delay
+    setIframeSrc(playUrl);
+    setLoading(true);
+
+    if (isPlayPage) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500);
 
       const tryResolveGame = async () => {
-        // 1. Try CodeTabs CORS Proxy (Very fast)
         try {
-          const res = await fetch(`https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(playUrl)}`);
-          if (!res.ok) throw new Error('CodeTabs proxy failed');
+          const res = await fetch(`https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(playUrl)}`, {
+            signal: controller.signal
+          });
+          if (!res.ok) return;
           const html = await res.text();
           const match = html.match(/redirectUrl\s*=\s*["'](https:\/\/games\.cdn\.famobi\.com\/[^"']+)["']/);
-          if (match && match[1]) {
-            return match[1];
+          if (match && match[1] && active) {
+            setIframeSrc(match[1]);
           }
         } catch (e) {
-          console.warn('CodeTabs proxy failed, trying AllOrigins...', e);
+          // Keep direct playUrl on abort or error
+        } finally {
+          clearTimeout(timeoutId);
         }
-
-        // 2. Try AllOrigins CORS Proxy (Fallback)
-        try {
-          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(playUrl)}`);
-          if (!res.ok) throw new Error('AllOrigins proxy failed');
-          const data = await res.json();
-          const html = data.contents;
-          const match = html.match(/redirectUrl\s*=\s*["'](https:\/\/games\.cdn\.famobi\.com\/[^"']+)["']/);
-          if (match && match[1]) {
-            return match[1];
-          }
-        } catch (e) {
-          console.warn('AllOrigins proxy failed:', e);
-        }
-
-        return null;
       };
 
-      tryResolveGame().then(resolvedUrl => {
-        if (!active) return;
-        if (resolvedUrl) {
-          setIframeSrc(resolvedUrl);
-        } else {
-          // Fallback to standard URL if all proxies fail
-          setIframeSrc(playUrl);
-        }
-        setLoading(false);
-      });
-    } else {
-      setIframeSrc(src);
-      setLoading(false);
+      tryResolveGame();
     }
 
     return () => {
@@ -70,28 +57,38 @@ function GameIframe({ src, className, onLoad, onError, hideSpinner, ...props }) 
     };
   }, [src]);
 
+  const handleFrameLoad = (e) => {
+    setLoading(false);
+    if (onLoad) onLoad(e);
+  };
+
+  const handleFrameError = (e) => {
+    setLoading(false);
+    if (onError) onError(e);
+  };
+
   const combinedStyle = {
     opacity: (loading && !hideSpinner) ? 0 : 1,
-    transition: 'opacity .4s',
+    transition: 'opacity .3s',
     ...props.style
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full bg-black">
       {loading && !hideSpinner && (
         <div className="absolute inset-0 bg-bg flex flex-col items-center justify-center gap-4 z-10">
           <div className="spin" />
-          <p className="text-white/70 text-sm font-medium">Resolving game...</p>
+          <p className="text-white/70 text-sm font-medium">Loading game...</p>
         </div>
       )}
       {iframeSrc && (
         <iframe
           src={iframeSrc}
           className={className}
-          allow="autoplay; fullscreen"
+          allow="autoplay; fullscreen; geolocation; microphone; camera; midi; monetization"
           style={combinedStyle}
-          onLoad={onLoad}
-          onError={onError}
+          onLoad={handleFrameLoad}
+          onError={handleFrameError}
           {...props}
         />
       )}
@@ -334,7 +331,7 @@ function FloatingControlHub({ task, minimizeTask, closeTask }) {
 }
 
 function TaskLayer() {
-  var { tasks, activeTaskId, minimizeTask, closeTask } = useApp();
+  var { tasks, activeTaskId, minimizeTask, closeTask, goBack } = useApp();
   
   if (tasks.length === 0) return null;
 
@@ -344,9 +341,39 @@ function TaskLayer() {
         const isActive = task.id === activeTaskId && task.status === 'active';
         return (
           <div key={task.id} 
-               className={`absolute inset-0 bg-bg transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-auto ${isActive ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-full opacity-0 scale-95'}`}
+               className={`absolute inset-0 bg-bg transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${isActive ? 'translate-y-0 opacity-100 scale-100 pointer-events-auto' : 'translate-y-full opacity-0 scale-95 pointer-events-none'}`}
                style={{ zIndex: isActive ? 50 : 0 }}>
-            <GameIframe src={task.app.url} className="w-full h-full border-none" />
+            
+            {/* Top Bar for Instant Exit */}
+            {isActive && (
+              <div className="absolute top-0 left-0 right-0 pt-safe px-4 py-3 z-50 flex items-center justify-between pointer-events-none bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+                <button 
+                  onClick={() => closeTask(task.id)}
+                  className="pointer-events-auto tap w-10 h-10 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white text-lg font-bold shadow-lg active:scale-95"
+                  aria-label="Back to app"
+                >
+                  ←
+                </button>
+                <div className="flex items-center gap-2 pointer-events-auto bg-black/50 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full">
+                  <span className="text-sm">{task.app.emoji || '🎮'}</span>
+                  <span className="text-white text-xs font-bold truncate max-w-[140px]">{task.app.name}</span>
+                </div>
+                <button 
+                  onClick={() => closeTask(task.id)}
+                  className="pointer-events-auto tap w-10 h-10 rounded-xl bg-red-500/20 hover:bg-red-500/40 backdrop-blur-md border border-red-500/30 flex items-center justify-center text-red-400 text-lg font-bold shadow-lg active:scale-95"
+                  aria-label="Close game"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {isActive && (
+              <GameIframe 
+                src={task.app.url} 
+                className="w-full h-full border-none pt-14" 
+              />
+            )}
 
             <FloatingControlHub task={task} minimizeTask={minimizeTask} closeTask={closeTask} />
           </div>

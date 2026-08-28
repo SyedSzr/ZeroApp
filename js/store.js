@@ -2343,6 +2343,11 @@ function AppProvider({ children }) {
   }, [getUrlForFrame]);
 
   const goBack = useCallback((fromPopState = false) => {
+    if (activeTaskId) {
+      setActiveTaskId(null);
+      if (!fromPopState) window.history.back();
+      return;
+    }
     setHistory(h => {
       if (h.length <= 1) {
         // If we're at the root and user hits back, we can't pop React history
@@ -2354,11 +2359,16 @@ function AppProvider({ children }) {
       next.pop();
       return next;
     });
-  }, []);
+  }, [activeTaskId]);
 
   // ── Browser History Sync ──
   useEffect(() => {
     const handlePop = (e) => {
+      // If a task is active, close it instantly on back navigation
+      if (activeTaskId) {
+        setActiveTaskId(null);
+      }
+
       const hash = window.location.hash;
       const [idPart] = (hash.slice(1) || 'apps').split('?');
 
@@ -2379,7 +2389,7 @@ function AppProvider({ children }) {
     };
     window.addEventListener('popstate', handlePop);
     return () => window.removeEventListener('popstate', handlePop);
-  }, []);
+  }, [activeTaskId]);
 
   // ── Initial Hydration ──
   useEffect(() => {
@@ -2418,16 +2428,18 @@ function AppProvider({ children }) {
   }, []);
 
   const goHome = useCallback(() => {
+    if (activeTaskId) setActiveTaskId(null);
     setHistory([{ key: 'root-games', id: 'games', params: {} }]);
     setMainTab('games');
     setSearchQ('');
-  }, []);
+  }, [activeTaskId]);
 
   // ── Open app detail ──
   const openDetail = useCallback((app) => {
+    if (activeTaskId) setActiveTaskId(null);
     logActivity('detail_view', app.id, { name: app.name });
     go('detail', { detailApp: app });
-  }, [logActivity]);
+  }, [activeTaskId, logActivity, go]);
 
   // ── Multi-tasking Logic ──
   const launchApp = useCallback((app) => {
@@ -2442,7 +2454,9 @@ function AppProvider({ children }) {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|UniWebView/i.test(navigator.userAgent) || window.UniWebView;
 
     if (isGameItem || isMobile) {
-      // Games and all apps on mobile load in-app via TaskLayer iframe
+      // Push history state so back button/gesture dismisses the active task overlay
+      window.history.pushState({ isTask: true, taskId: app.id }, '', window.location.hash);
+
       setTasks(prev => {
         const existing = prev.find(t => t.id === app.id);
         if (existing) {
@@ -2465,7 +2479,7 @@ function AppProvider({ children }) {
       lsSet('zero_recents', next);
       return next;
     });
-  }, [rawGames, go]);
+  }, [rawGames, logActivity, go]);
 
   const minimizeTask = useCallback((id) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'minimized' } : t));
@@ -2474,7 +2488,7 @@ function AppProvider({ children }) {
 
   const closeTask = useCallback((id) => {
     setTasks(prev => prev.filter(t => t.id !== id));
-    setActiveTaskId(prev => prev === id ? null : prev);
+    setActiveTaskId(prev => (prev === id ? null : prev));
   }, []);
 
   const switchTask = useCallback((id) => {

@@ -915,13 +915,30 @@ async function saveSettings(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
   const updates = [
-    { key: 'app_name', value: fd.get('app_name') },
-    { key: 'maintenance', value: fd.get('maintenance') },
-    { key: 'greeting_override', value: fd.get('greeting_override') },
+    { key: 'app_name', value: fd.get('app_name') || '' },
+    { key: 'maintenance', value: fd.get('maintenance') || 'off' },
+    { key: 'greeting_override', value: fd.get('greeting_override') || '' },
   ];
-  const { error } = await sb.from('settings').upsert(updates);
-  if (error) alert('Error: ' + error.message);
-  else alert('Settings saved!');
+
+  try {
+    for (const item of updates) {
+      const { data: updated, error: updateError } = await sb
+        .from('settings')
+        .update({ value: item.value })
+        .eq('key', item.key)
+        .select();
+
+      if (updateError || !updated || updated.length === 0) {
+        const { error: upsertError } = await sb.from('settings').upsert(item);
+        if (upsertError) throw (updateError || upsertError);
+      }
+      data.settings[item.key] = item.value;
+    }
+    alert('Settings saved!');
+  } catch (err) {
+    console.error('Error saving settings:', err);
+    alert('Error: ' + err.message);
+  }
 }
 
 async function deleteItem(id, type) {
@@ -1555,11 +1572,21 @@ window.savePlayScroll = async () => {
   try {
     const val = data.settings.play_scroll_games || '[]';
     
-    const { error } = await sb.from('settings').upsert({ key: 'play_scroll_games', value: val });
-    if (error) throw error;
+    // Attempt update first to avoid INSERT RLS checks on existing rows
+    const { data: updated, error: updateError } = await sb
+      .from('settings')
+      .update({ value: val })
+      .eq('key', 'play_scroll_games')
+      .select();
+
+    if (updateError || !updated || updated.length === 0) {
+      const { error: upsertError } = await sb.from('settings').upsert({ key: 'play_scroll_games', value: val });
+      if (upsertError) throw (updateError || upsertError);
+    }
     
     alert('Play Scroll Feed saved successfully!');
   } catch (err) {
+    console.error('Error saving play scroll feed:', err);
     alert('Error saving: ' + err.message);
   }
 };
