@@ -392,37 +392,39 @@ function GamesDiscoveryView({ onBack }) {
 
   return (
     <div className={`slide-up flex flex-col h-full ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
-      <div className="flex-1 overflow-y-auto no-sb pb-32">
-        
-        {/* ── Header ── */}
-        <div className={`pt-safe px-5 pt-5 pb-3 flex items-start justify-between flex-shrink-0 border-b border-border ${
-          isDark 
-            ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
-            : 'bg-bg'
-        }`}>
-          <div className="flex-1 text-left">
-            <div className="flex items-center gap-2 mb-1">
-              {onBack ? (
-                <button onClick={onBack} className={`tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-lg mr-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>←</button>
-              ) : (
-                <span className="text-2xl">⚡</span>
-              )}
-              <span className={`font-black text-xl tracking-tight font-sans ${isDark ? 'text-white' : 'text-gray-900'}`}>ZeroApp</span>
-            </div>
-            <p className={`text-2xl font-bold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{greeting} 👋</p>
-            <p className={`text-sm mt-0.5 ${isDark ? 'text-muted' : 'text-gray-600'}`}>{t('games_header')}</p>
-          </div>
-          <div className="flex items-center gap-2 mt-1.5 flex-shrink-0 pointer-events-auto">
-            <button onClick={() => go('search', { searchMode: 'games' })} className={`tap w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              <span className="text-xl">🔍</span>
-            </button>
-            {!user && (
-              <button onClick={() => go('auth')} className="tap bg-[#6b4eff] text-[#fff] text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(107,78,255,0.4)] whitespace-nowrap">
-                {t('sign_in')}
-              </button>
+      
+      {/* ── Fixed Header ── */}
+      <header className={`pt-safe px-5 pt-5 pb-3 flex items-start justify-between flex-shrink-0 border-b border-border z-20 ${
+        isDark 
+          ? 'bg-[radial-gradient(circle_at_88%_0%,rgba(104,66,255,0.18),transparent_40%),linear-gradient(180deg,#050817_0%,#071024_100%)]' 
+          : 'bg-bg'
+      }`}>
+        <div className="flex-1 text-left">
+          <div className="flex items-center gap-2 mb-1">
+            {onBack ? (
+              <button onClick={onBack} className={`tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-lg mr-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>←</button>
+            ) : (
+              <span className="text-2xl">⚡</span>
             )}
+            <span className={`font-black text-xl tracking-tight font-sans ${isDark ? 'text-white' : 'text-gray-900'}`}>ZeroApp</span>
           </div>
+          <p className={`text-2xl font-bold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{greeting} 👋</p>
+          <p className={`text-sm mt-0.5 ${isDark ? 'text-muted' : 'text-gray-600'}`}>{t('games_header')}</p>
         </div>
+        <div className="flex items-center gap-2 mt-1.5 flex-shrink-0 pointer-events-auto">
+          <button onClick={() => go('search', { searchMode: 'games' })} className={`tap w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <span className="text-xl">🔍</span>
+          </button>
+          {!user && (
+            <button onClick={() => go('auth')} className="tap bg-[#6b4eff] text-[#fff] text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-[0_0_20px_rgba(107,78,255,0.4)] whitespace-nowrap">
+              {t('sign_in')}
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* ── Scrollable Body ── */}
+      <div className="flex-1 overflow-y-auto no-sb pb-32">
 
         {/* ── 1. Featured Game (Large Image) ── */}
         {featuredGame && (
