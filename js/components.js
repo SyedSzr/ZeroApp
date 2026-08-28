@@ -803,12 +803,12 @@ function BottomNav({ active }) {
   ];
 
   return (
-    <nav className="pb-safe absolute bottom-0 left-0 right-0 flex items-end justify-around bg-surface/95 backdrop-blur-xl border-t border-border px-1 pt-2" style={{zIndex:50}}>
+    <nav className="pb-safe absolute bottom-0 left-0 right-0 flex items-end justify-around bg-[#0f172a] border-t border-white/5 px-1 pt-2" style={{zIndex:50}}>
       {items.map(it => {
         if (it.id === 'plus') return (
           <button key="plus" onClick={it.action}
-            className="tap -mt-5 w-14 h-14 rounded-full glow-purple flex items-center justify-center shadow-xl"
-            style={{background:'linear-gradient(135deg,#9b84ff,#7c6af7)'}}>
+            className="tap -mt-5 w-14 h-14 rounded-full flex items-center justify-center shadow-[0_8px_22px_rgba(107,61,255,0.42)]"
+            style={{background:'linear-gradient(to right, #703cff, #a04cff)'}}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
@@ -832,12 +832,9 @@ function BottomNav({ active }) {
 function GamesNavIcon({ active }) {
   const c = active ? '#7c6af7' : '#5a5a7a';
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <rect x="2" y="6" width="20" height="13" rx="4" stroke={c} strokeWidth="2"/>
-      <path d="M8 12h4M10 10v4" stroke={c} strokeWidth="2" strokeLinecap="round"/>
-      <circle cx="16" cy="11" r="1" fill={c}/>
-      <circle cx="18" cy="13" r="1" fill={c}/>
-      <path d="M7 3l1 3M17 3l-1 3" stroke={c} strokeWidth="1.5" strokeLinecap="round"/>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? c : "none"} stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      <polyline points="9 22 9 12 15 12 15 22"></polyline>
     </svg>
   );
 }

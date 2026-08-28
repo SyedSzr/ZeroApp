@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zeroapp-v9';
+const CACHE_NAME = 'zeroapp-v17';
 
 const STATIC_ASSETS = [
   './',

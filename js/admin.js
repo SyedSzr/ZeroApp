@@ -15,6 +15,7 @@ let filterCategory = null;
 let filterStatus = 'all'; // 'all', 'pending', 'approved', 'rejected'
 let filterRegion = 'all'; 
 let filterSearchQuery = '';
+let playScrollSearchQuery = '';
 
 const EMOJI_LIST = [
   '🤖','🎮','👶','🛒','💼','💄','🎨','💰','📚','🎬','🔧','🏃','💬','🧩','⚔️','♟️','🕹️','📝','🎲','⚽','🗺️','🖼️','🧠',
@@ -113,6 +114,7 @@ function showSyncStatus(msg, colorClass) {
 function setRoute(route) {
   currentRoute = route;
   filterSearchQuery = '';
+  playScrollSearchQuery = '';
   if (route !== 'apps' && route !== 'games') {
     filterCategory = null; 
     filterStatus = 'all';
@@ -134,6 +136,10 @@ function setRoute(route) {
   switch(route) {
     case 'dashboard':
       if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Command Center</h2><p class="text-muted text-xs">Overview of your platform</p>`;
+      if (addBtn) addBtn.classList.add('hidden');
+      break;
+    case 'playscroll':
+      if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Play Scroll Feed</h2><p class="text-muted text-xs">Select and order games for the main feed</p>`;
       if (addBtn) addBtn.classList.add('hidden');
       break;
     case 'apps':
@@ -197,6 +203,7 @@ function renderCurrentView() {
           <div class="space-y-3">
              <button onclick="setRoute('apps')" class="w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-left text-sm transition-all border border-white/5">Manage Applications</button>
              <button onclick="setRoute('games')" class="w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-left text-sm transition-all border border-white/5">Manage Games Feed</button>
+             <button onclick="setRoute('playscroll')" class="w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-left text-sm transition-all border border-emerald-500/20 text-emerald-400">Play Scroll Feed</button>
              <button onclick="setRoute('promotions')" class="w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-left text-sm transition-all border border-white/5">Spotlight & Promotions</button>
              <button onclick="setRoute('categories')" class="w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-left text-sm transition-all border border-white/5">Edit Categories</button>
           </div>
@@ -224,8 +231,9 @@ function renderCurrentView() {
     ];
 
     const ALL_SECTIONS = [
+      { key: 'play_scroll_feed',        label: 'Play Scroll Screen (Main Feed)', type: 'game', icon: '📱' },
       { key: 'featured_app',            label: 'Featured App',                  type: 'app',  icon: '⭐' },
-      { key: 'recommended_for_you',     label: 'Recommended For You',           type: 'app',  icon: '💡' },
+      { key: 'recommended_for_you',     label: 'Recommended For You',           type: 'app',  icon: '👍' },
       { key: 'trending',                label: 'Trending',                      type: 'app',  icon: '🔥' },
       { key: 'featured_apps',           label: 'Featured Apps (Small)',         type: 'app',  icon: '📌' },
       { key: 'hot_right_now',           label: 'Hot Right Now',                 type: 'app',  icon: '⚡' },
@@ -647,7 +655,6 @@ function renderCurrentView() {
   } else if (currentRoute === 'settings') {
      container.innerHTML = `
       <div class="max-w-2xl mx-auto glass p-10 rounded-[40px]">
-        <h3 class="text-xl font-black mb-8">System Parameters</h3>
         <form id="settings-form" class="space-y-8" onsubmit="saveSettings(event)">
            <div>
               <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-3">Platform Name</label>
@@ -661,15 +668,72 @@ function renderCurrentView() {
               </select>
            </div>
            <div>
-              <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-3">System Greeting</label>
+              <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-3">Greeting Override (e.g. "Merry Christmas")</label>
               <input type="text" name="greeting_override" value="${data.settings.greeting_override || ''}" class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm" />
            </div>
            <button type="submit" class="w-full py-5 bg-accent text-white font-black rounded-3xl shadow-lg glow-purple active:scale-95 transition-all">
-              SAVE CONFIGURATION
+             SAVE SETTINGS
            </button>
         </form>
       </div>
-     `;
+    `;
+  } else if (currentRoute === 'playscroll') {
+    let selectedIds = [];
+    try { selectedIds = JSON.parse(data.settings.play_scroll_games || '[]'); } catch(e) {}
+    
+    const selectedGames = selectedIds.map(id => data.games.find(g => g.id === id)).filter(Boolean);
+    const unselectedGames = data.games.filter(g => !selectedIds.includes(g.id)).sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    
+    container.innerHTML = `
+      <div class="max-w-5xl mx-auto grid grid-cols-2 gap-8">
+        <div class="glass p-8 rounded-[32px]">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-white font-black text-xl">Selected Games (${selectedGames.length})</h3>
+            <button onclick="savePlayScroll()" class="bg-emerald-500 hover:bg-emerald-400 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition-all">Save Changes</button>
+          </div>
+          <div class="space-y-3 max-h-[600px] overflow-y-auto no-sb pr-2" id="ps-selected-list">
+            ${selectedGames.length === 0 ? '<div class="text-muted text-sm text-center py-10">No games selected. Feed will show all games by default.</div>' : ''}
+            ${selectedGames.map((g, idx) => `
+              <div class="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/10 group">
+                <img src="${g.icon_url || g.icon || g.featured_image}" class="w-12 h-12 rounded-xl object-cover bg-black flex-shrink-0" />
+                <div class="flex-1 overflow-hidden">
+                  <div class="text-white font-bold text-sm truncate">${g.name}</div>
+                  <div class="text-muted text-[10px] uppercase tracking-widest truncate">${g.developer || 'ZeroApp'}</div>
+                </div>
+                <div class="flex flex-col gap-1 px-1">
+                  <button onclick="movePlayScroll('${g.id}', -1)" class="w-7 h-7 rounded-lg flex items-center justify-center bg-white/10 hover:bg-white/20 text-white ${idx === 0 ? 'opacity-30 pointer-events-none' : ''}">▲</button>
+                  <button onclick="movePlayScroll('${g.id}', 1)" class="w-7 h-7 rounded-lg flex items-center justify-center bg-white/10 hover:bg-white/20 text-white ${idx === selectedGames.length - 1 ? 'opacity-30 pointer-events-none' : ''}">▼</button>
+                </div>
+                <button onclick="togglePlayScroll('${g.id}')" class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all ml-1 flex-shrink-0">✕</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        
+        <div class="glass p-8 rounded-[32px]">
+          <div class="flex flex-col gap-4 mb-6">
+            <h3 class="text-white font-black text-xl">Available Games</h3>
+            <div class="relative">
+              <input type="text" id="play-scroll-search" onkeyup="filterPlayScroll(this.value)" value="${playScrollSearchQuery}" placeholder="Search games..." class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/40 focus:border-accent outline-none">
+            </div>
+          </div>
+          <div class="space-y-3 max-h-[600px] overflow-y-auto no-sb pr-2" id="ps-available-list">
+            ${unselectedGames.map(g => {
+              const matches = !playScrollSearchQuery || (g.name||'').toLowerCase().includes(playScrollSearchQuery.toLowerCase());
+              return `
+              <div class="ps-avail-item flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 transition-colors rounded-2xl border border-transparent hover:border-white/10 group cursor-pointer" data-name="${(g.name||'').toLowerCase()}" style="display: ${matches ? 'flex' : 'none'};" onclick="togglePlayScroll('${g.id}')">
+                <img src="${g.icon_url || g.icon || g.featured_image}" class="w-12 h-12 rounded-xl object-cover bg-black flex-shrink-0" />
+                <div class="flex-1 overflow-hidden">
+                  <div class="text-white font-bold text-sm truncate">${g.name}</div>
+                  <div class="text-muted text-[10px] uppercase tracking-widest truncate">${g.developer || 'ZeroApp'}</div>
+                </div>
+                <button class="px-4 py-2 rounded-xl bg-white/10 text-white text-xs font-bold group-hover:bg-accent transition-all">+ Add</button>
+              </div>
+            `}).join('')}
+          </div>
+        </div>
+      </div>
+    `;
   }
 }
 
@@ -1151,7 +1215,7 @@ function openPromoModal(promoId = null, presetSection = null) {
   const gameOptions = data.games.map(g => `<option value="${g.id}" ${promo && promo.item_id === g.id ? 'selected' : ''}>${g.name}</option>`).join('');
   
   const sectionKeys = [
-    'featured_app', 'recommended_for_you', 'trending', 'featured_apps', 
+    'play_scroll_feed', 'featured_app', 'recommended_for_you', 'trending', 'featured_apps', 
     'hot_right_now', 'top_pick_for_you', 'editors_picks', 'popular_apps', 
     'new_experience', 'super_apps', 'apps_might_like', 'personalize_recommendations', 
     'crowd_favorites', 'this_month_best', 'featured_game', 'recommended_games',
@@ -1444,6 +1508,62 @@ window.deleteItem = deleteItem;
 window.handleModalDelete = handleModalDelete;
 window.deleteCategory = deleteCategory;
 window.seedSupabase = seedSupabase;
+window.togglePlayScroll = (id) => {
+  let selected = [];
+  try { selected = JSON.parse(data.settings.play_scroll_games || '[]'); } catch(e) {}
+  
+  if (selected.includes(id)) {
+    selected = selected.filter(i => i !== id);
+  } else {
+    selected.push(id);
+  }
+  data.settings.play_scroll_games = JSON.stringify(selected);
+  renderCurrentView();
+};
+
+window.filterPlayScroll = (query) => {
+  playScrollSearchQuery = query; // Save state so it persists if view re-renders
+  const lowerq = query.toLowerCase();
+  document.querySelectorAll('.ps-avail-item').forEach(el => {
+    const name = el.getAttribute('data-name');
+    if (name.includes(lowerq)) {
+      el.style.display = 'flex';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+};
+
+window.movePlayScroll = (id, dir) => {
+  let selected = [];
+  try { selected = JSON.parse(data.settings.play_scroll_games || '[]'); } catch(e) {}
+  
+  const idx = selected.indexOf(id);
+  if (idx < 0) return;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= selected.length) return;
+  
+  const temp = selected[idx];
+  selected[idx] = selected[newIdx];
+  selected[newIdx] = temp;
+  
+  data.settings.play_scroll_games = JSON.stringify(selected);
+  renderCurrentView();
+};
+
+window.savePlayScroll = async () => {
+  try {
+    const val = data.settings.play_scroll_games || '[]';
+    
+    const { error } = await sb.from('settings').upsert({ key: 'play_scroll_games', value: val });
+    if (error) throw error;
+    
+    alert('Play Scroll Feed saved successfully!');
+  } catch (err) {
+    alert('Error saving: ' + err.message);
+  }
+};
+
 window.saveSettings = saveSettings;
 window.closeModal = closeModal;
 window.openItemModal = openItemModal;
