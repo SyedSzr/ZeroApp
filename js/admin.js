@@ -24,13 +24,92 @@ const EMOJI_LIST = [
   '🚴','🥗','🌿','🐦','✈️','🐘','🔥','⚡','✨','🌟','🍀','🍎','🍔','🍕','🍦','🍺','🍹','🏠','🏢','🏥','🏫','🏛️'
 ];
 
+// ── ADMIN CREDENTIALS & AUTH ──────────────────────────────────────────────────
+const ADMIN_AUTH_KEY = 'zeroapp_admin_session_v1';
+const VALID_ADMIN_USER = 'SyedZia1';
+const VALID_ADMIN_PASS = 'Zia@123#';
+let isInitialized = false;
+
+function isAdminAuthenticated() {
+  return localStorage.getItem(ADMIN_AUTH_KEY) === 'true' || sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true';
+}
+
+function checkAdminAuth() {
+  const authScreen = document.getElementById('admin-auth-screen');
+  const appRoot = document.getElementById('admin-app-root');
+  
+  if (isAdminAuthenticated()) {
+    if (authScreen) authScreen.classList.add('hidden');
+    if (appRoot) appRoot.classList.remove('hidden');
+    if (!isInitialized) {
+      isInitialized = true;
+      init();
+    }
+  } else {
+    if (authScreen) authScreen.classList.remove('hidden');
+    if (appRoot) appRoot.classList.add('hidden');
+  }
+}
+
+function handleAdminLogin(e) {
+  if (e) e.preventDefault();
+  const userInput = document.getElementById('admin-username');
+  const passInput = document.getElementById('admin-password');
+  const rememberInput = document.getElementById('admin-remember');
+  const errorMsg = document.getElementById('auth-error-msg');
+  const errorText = document.getElementById('auth-error-text');
+
+  const username = userInput ? userInput.value.trim() : '';
+  const password = passInput ? passInput.value : '';
+  const remember = rememberInput ? rememberInput.checked : false;
+
+  if (username === VALID_ADMIN_USER && password === VALID_ADMIN_PASS) {
+    if (errorMsg) errorMsg.classList.add('hidden');
+    
+    if (remember) {
+      localStorage.setItem(ADMIN_AUTH_KEY, 'true');
+    } else {
+      sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+    }
+
+    checkAdminAuth();
+  } else {
+    if (errorMsg) {
+      if (errorText) errorText.textContent = 'Invalid username or password. Please try again.';
+      errorMsg.classList.remove('hidden');
+    }
+    if (passInput) passInput.value = '';
+  }
+}
+
+function adminLogout() {
+  localStorage.removeItem(ADMIN_AUTH_KEY);
+  sessionStorage.removeItem(ADMIN_AUTH_KEY);
+  
+  const authScreen = document.getElementById('admin-auth-screen');
+  const appRoot = document.getElementById('admin-app-root');
+  const passInput = document.getElementById('admin-password');
+  const errorMsg = document.getElementById('auth-error-msg');
+
+  if (passInput) passInput.value = '';
+  if (errorMsg) errorMsg.classList.add('hidden');
+  if (authScreen) authScreen.classList.remove('hidden');
+  if (appRoot) appRoot.classList.add('hidden');
+}
+
+function togglePasswordVisibility() {
+  const passInput = document.getElementById('admin-password');
+  if (!passInput) return;
+  passInput.type = passInput.type === 'password' ? 'text' : 'password';
+}
+
 // ── INITIALIZATION ─────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof window.supabase === 'undefined') {
     alert('Critical Error: Supabase SDK failed to load. Please check your internet connection.');
     return;
   }
-  init();
+  checkAdminAuth();
 });
 
 async function init() {
