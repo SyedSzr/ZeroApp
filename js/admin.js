@@ -24,10 +24,8 @@ const EMOJI_LIST = [
   '🚴','🥗','🌿','🐦','✈️','🐘','🔥','⚡','✨','🌟','🍀','🍎','🍔','🍕','🍦','🍺','🍹','🏠','🏢','🏥','🏫','🏛️'
 ];
 
-// ── ADMIN CREDENTIALS & AUTH ──────────────────────────────────────────────────
+// ── ADMIN CREDENTIALS & AUTH (SUPABASE-BACKED) ──────────────────────────────
 const ADMIN_AUTH_KEY = 'zeroapp_admin_session_v1';
-const VALID_ADMIN_USER = 'SyedZia1';
-const VALID_ADMIN_PASS = 'Zia@123#';
 let isInitialized = false;
 
 function isAdminAuthenticated() {
@@ -51,34 +49,72 @@ function checkAdminAuth() {
   }
 }
 
-function handleAdminLogin(e) {
+async function handleAdminLogin(e) {
   if (e) e.preventDefault();
   const userInput = document.getElementById('admin-username');
   const passInput = document.getElementById('admin-password');
   const rememberInput = document.getElementById('admin-remember');
   const errorMsg = document.getElementById('auth-error-msg');
   const errorText = document.getElementById('auth-error-text');
+  const loginBtn = document.getElementById('admin-login-btn');
 
   const username = userInput ? userInput.value.trim() : '';
   const password = passInput ? passInput.value : '';
   const remember = rememberInput ? rememberInput.checked : false;
 
-  if (username === VALID_ADMIN_USER && password === VALID_ADMIN_PASS) {
-    if (errorMsg) errorMsg.classList.add('hidden');
-    
-    if (remember) {
-      localStorage.setItem(ADMIN_AUTH_KEY, 'true');
-    } else {
-      sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+  const originalBtnContent = loginBtn ? loginBtn.innerHTML : '';
+  if (loginBtn) {
+    loginBtn.disabled = true;
+    loginBtn.innerHTML = '<span>⏳</span> <span>Verifying with Database...</span>';
+  }
+
+  try {
+    // Fetch live admin credentials from Supabase settings table
+    const { data: dbSettings, error } = await sb
+      .from('settings')
+      .select('key, value')
+      .in('key', ['admin_username', 'admin_password']);
+
+    if (error) throw error;
+
+    let validUser = 'SyedZia1';
+    let validPass = 'Zia@123#';
+
+    if (dbSettings && dbSettings.length > 0) {
+      const userRow = dbSettings.find(s => s.key === 'admin_username');
+      const passRow = dbSettings.find(s => s.key === 'admin_password');
+      if (userRow && userRow.value) validUser = userRow.value.trim();
+      if (passRow && passRow.value) validPass = passRow.value;
     }
 
-    checkAdminAuth();
-  } else {
+    if (username === validUser && password === validPass) {
+      if (errorMsg) errorMsg.classList.add('hidden');
+      
+      if (remember) {
+        localStorage.setItem(ADMIN_AUTH_KEY, 'true');
+      } else {
+        sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+      }
+
+      checkAdminAuth();
+    } else {
+      if (errorMsg) {
+        if (errorText) errorText.textContent = 'Invalid username or password. Please try again.';
+        errorMsg.classList.remove('hidden');
+      }
+      if (passInput) passInput.value = '';
+    }
+  } catch (err) {
+    console.error('Database auth error:', err);
     if (errorMsg) {
-      if (errorText) errorText.textContent = 'Invalid username or password. Please try again.';
+      if (errorText) errorText.textContent = 'Failed to verify with database. Check connection: ' + err.message;
       errorMsg.classList.remove('hidden');
     }
-    if (passInput) passInput.value = '';
+  } finally {
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = originalBtnContent;
+    }
   }
 }
 
@@ -713,9 +749,9 @@ function renderCurrentView() {
                `}).join('')}
              </tbody>
            </table>
-         </div>
-       `;
-    }
+          </div>
+        `;
+     }
   } else if (currentRoute === 'sync') {
     container.innerHTML = `
       <div class="max-w-2xl mx-auto text-center py-10">
@@ -732,26 +768,49 @@ function renderCurrentView() {
       </div>
     `;
   } else if (currentRoute === 'settings') {
-     container.innerHTML = `
+    container.innerHTML = `
       <div class="max-w-2xl mx-auto glass p-10 rounded-[40px]">
         <form id="settings-form" class="space-y-8" onsubmit="saveSettings(event)">
+           <!-- Platform Settings -->
            <div>
-              <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-3">Platform Name</label>
-              <input type="text" name="app_name" value="${data.settings.app_name || 'ZeroApp'}" class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm" />
+              <h3 class="text-white font-black text-lg mb-4 flex items-center gap-2"><span>⚙️</span> Platform Settings</h3>
+              <div class="space-y-5">
+                <div>
+                   <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Platform Name</label>
+                   <input type="text" name="app_name" value="${data.settings.app_name || 'ZeroApp'}" class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm" />
+                </div>
+                <div>
+                   <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-3">Maintenance Mode</label>
+                   <select name="maintenance" class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm">
+                     <option value="off" ${data.settings.maintenance === 'off' ? 'selected' : ''}>Active / Public</option>
+                     <option value="on" ${data.settings.maintenance === 'on' ? 'selected' : ''}>Under Maintenance</option>
+                   </select>
+                </div>
+                <div>
+                   <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-3">Greeting Override (e.g. "Merry Christmas")</label>
+                   <input type="text" name="greeting_override" value="${data.settings.greeting_override || ''}" class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm" />
+                </div>
+              </div>
            </div>
-           <div>
-              <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-3">Maintenance Mode</label>
-              <select name="maintenance" class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm">
-                <option value="off" ${data.settings.maintenance === 'off' ? 'selected' : ''}>Active / Public</option>
-                <option value="on" ${data.settings.maintenance === 'on' ? 'selected' : ''}>Under Maintenance</option>
-              </select>
+
+           <!-- Admin Security Credentials -->
+           <div class="pt-6 border-t border-border">
+              <h3 class="text-white font-black text-lg mb-2 flex items-center gap-2"><span>🔐</span> Admin Portal Security</h3>
+              <p class="text-muted text-xs mb-4">Credentials stored securely in Supabase database (<code class="text-accent text-[11px]">settings</code> table).</p>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                   <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Admin Username</label>
+                   <input type="text" name="admin_username" value="${data.settings.admin_username || 'SyedZia1'}" required class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm" />
+                </div>
+                <div>
+                   <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Admin Password</label>
+                   <input type="text" name="admin_password" value="${data.settings.admin_password || 'Zia@123#'}" required class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm" />
+                </div>
+              </div>
            </div>
-           <div>
-              <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-3">Greeting Override (e.g. "Merry Christmas")</label>
-              <input type="text" name="greeting_override" value="${data.settings.greeting_override || ''}" class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm" />
-           </div>
-           <button type="submit" class="w-full py-5 bg-accent text-white font-black rounded-3xl shadow-lg glow-purple active:scale-95 transition-all">
-             SAVE SETTINGS
+
+           <button type="submit" class="w-full py-5 bg-accent hover:bg-accent/90 text-white font-black rounded-3xl shadow-lg glow-purple active:scale-95 transition-all">
+             SAVE SETTINGS TO DATABASE
            </button>
         </form>
       </div>
@@ -997,10 +1056,13 @@ async function saveSettings(e) {
     { key: 'app_name', value: fd.get('app_name') || '' },
     { key: 'maintenance', value: fd.get('maintenance') || 'off' },
     { key: 'greeting_override', value: fd.get('greeting_override') || '' },
+    { key: 'admin_username', value: (fd.get('admin_username') || '').trim() },
+    { key: 'admin_password', value: fd.get('admin_password') || '' },
   ];
 
   try {
     for (const item of updates) {
+      if (!item.key) continue;
       const { data: updated, error: updateError } = await sb
         .from('settings')
         .update({ value: item.value })
@@ -1013,7 +1075,7 @@ async function saveSettings(e) {
       }
       data.settings[item.key] = item.value;
     }
-    alert('Settings saved!');
+    alert('Settings saved to database successfully!');
   } catch (err) {
     console.error('Error saving settings:', err);
     alert('Error: ' + err.message);
