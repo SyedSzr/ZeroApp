@@ -1,15 +1,28 @@
 // ── SUBMIT SCREEN ───────────────────────────────────────────────────────────
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_51MEVoKCOQw8WFZIhxf51KqBy8SWoLJEHXnLPvM3LXCUTnyKNAAH9t9MiH40Hu78vUhUZ3Q97ipAg1GCTXfPH2HwI00W4aWWdgh';
+const DEFAULT_STRIPE_KEY = 'pk_test_51MEVoKCOQw8WFZIhxf51KqBy8SWoLJEHXnLPvM3LXCUTnyKNAAH9t9MiH40Hu78vUhUZ3Q97ipAg1GCTXfPH2HwI00W4aWWdgh';
 
 function SubmitScreen(props) {
   const context = useApp();
   if (!context) return null;
-  var { supabase, liveCats, goBack, user, go, t, theme } = context;
+  var { supabase, liveCats, goBack, user, go, t, theme, settings } = context;
   const isDark = theme !== 'light';
 
+  // Dynamic Dashboard Settings
+  const freeAppLimit = (settings && settings.free_app_limit !== undefined && settings.free_app_limit !== '')
+    ? parseInt(settings.free_app_limit, 10)
+    : 3;
+
+  const submissionCost = (settings && settings.submission_cost !== undefined && settings.submission_cost !== '')
+    ? parseFloat(settings.submission_cost)
+    : 1.00;
+
+  const stripeKey = (settings && settings.stripe_publishable_key && settings.stripe_publishable_key.trim())
+    ? settings.stripe_publishable_key.trim()
+    : DEFAULT_STRIPE_KEY;
+
   const stripe = React.useMemo(() => {
-    return (typeof window.Stripe !== 'undefined') ? window.Stripe(STRIPE_PUBLISHABLE_KEY) : null;
-  }, []);
+    return (typeof window.Stripe !== 'undefined' && stripeKey) ? window.Stripe(stripeKey) : null;
+  }, [stripeKey]);
 
   const editItem = props?.editItem;
   const isEdit = !!editItem;
@@ -19,7 +32,40 @@ function SubmitScreen(props) {
   const [error, setError]     = React.useState(null);
   const [itemType, setItemType] = React.useState(editItem ? (editItem.gameCategory ? 'game' : 'app') : 'app'); // 'app' or 'game'
   
-  // Payment State
+  // Free Upload Quota State (Configurable from Admin Dashboard)
+  const [submissionCount, setSubmissionCount] = React.useState(0);
+  const [loadingCount, setLoadingCount] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchUserSubmissionCount() {
+      if (!user || !supabase) {
+        const localGuestCount = parseInt(localStorage.getItem('zeroapp_guest_uploads') || '0', 10);
+        setSubmissionCount(localGuestCount);
+        setLoadingCount(false);
+        return;
+      }
+      try {
+        const [resApps, resGames] = await Promise.all([
+          supabase.from('apps').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+          supabase.from('games').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        ]);
+        const total = (resApps.count || 0) + (resGames.count || 0);
+        setSubmissionCount(total);
+      } catch (err) {
+        console.error('Error fetching user submissions count:', err);
+        setSubmissionCount(0);
+      } finally {
+        setLoadingCount(false);
+      }
+    }
+    fetchUserSubmissionCount();
+  }, [user, supabase]);
+
+  const isFreeUpload = isEdit || submissionCost <= 0 || submissionCount < freeAppLimit;
+  const remainingFree = Math.max(0, freeAppLimit - submissionCount);
+  const formattedCost = `$${(submissionCost || 0).toFixed(2)} USD`;
+
+  // Payment State (only needed after free quota is exhausted)
   const [paymentMethod, setPaymentMethod] = React.useState('google_pay'); // 'google_pay' or 'card'
   const [cardName, setCardName] = React.useState('');
   const [cardNumber, setCardNumber] = React.useState('');
@@ -42,8 +88,8 @@ function SubmitScreen(props) {
     const id = isEdit ? editItem.id : (name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.random().toString(36).substring(7));
 
     try {
-      // Direct $1 Stripe Payment check for new items
-      if (!isEdit && !paymentSuccess) {
+      // Payment only required if free upload quota has been exceeded
+      if (!isFreeUpload && !paymentSuccess) {
         setIsProcessingPayment(true);
         // Simulate Stripe Payment Gateway Verification ($1.00 USD Charge)
         await new Promise(res => setTimeout(res, 1200));
@@ -51,17 +97,21 @@ function SubmitScreen(props) {
         setIsProcessingPayment(false);
       }
 
+      const rawUrl = fd.get('url') || fd.get('app_url');
       const payload = {
         id,
         name,
-        tagline: fd.get('tagline'),
+        tagline: fd.get('tagline') || '',
         description: fd.get('description'),
-        app_url: fd.get('app_url'),
+        long_description: fd.get('long_description') || '',
+        url: rawUrl,
+        app_url: rawUrl,
+        region: fd.get('region') || 'Global',
         developer: fd.get('developer') || (user?.user_metadata?.full_name || 'Anonymous'),
         category: fd.get('category'),
         homeCategory: fd.get('category'),
         gameCategory: itemType === 'game' ? fd.get('category') : null,
-        user_id: user?.id,
+        user_id: user?.id || null,
         status: 'pending',
         tags: fd.get('tags') ? fd.get('tags').split(',').map(t_tag => t_tag.trim()).filter(Boolean) : []
       };
@@ -102,6 +152,11 @@ function SubmitScreen(props) {
       var { error: sbErr } = await supabase.from(itemType === 'game' ? 'games' : 'apps').upsert(payload);
       if (sbErr) throw sbErr;
       
+      // Update guest upload counter if no user logged in
+      if (!user) {
+        localStorage.setItem('zeroapp_guest_uploads', (submissionCount + 1).toString());
+      }
+
       setSuccess(true);
       setTimeout(() => goBack(), 2000);
     } catch (err) {
@@ -368,115 +423,169 @@ function SubmitScreen(props) {
           </div>
         </div>
 
-        {/* ── Direct $1 Stripe Payment Section ── */}
+        {/* ── Fee / Payment Section ── */}
         {!isEdit && (
-          <div className="p-5 rounded-3xl bg-surface border border-accent/30 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">💳</span>
-                <div>
-                  <h3 className="text-white text-sm font-black">Submission Fee</h3>
-                  <p className="text-muted text-[11px]">Direct Payment via Stripe</p>
+          isFreeUpload ? (
+            /* 🎁 FREE Upload Promo Box */
+            <div className="p-5 rounded-3xl bg-gradient-to-br from-emerald-500/15 via-accent/10 to-transparent border border-emerald-500/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-2xl shadow-lg shadow-emerald-500/10">
+                    🎁
+                  </div>
+                  <div>
+                    <h3 className="text-white text-sm font-black flex items-center gap-2">
+                      <span>Free Developer Upload</span>
+                      {freeAppLimit > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                          {remainingFree} of {freeAppLimit} Free Left
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-muted text-[11px]">
+                      {submissionCost <= 0 
+                        ? 'All submissions are currently free for all developers' 
+                        : `First ${freeAppLimit} submission${freeAppLimit === 1 ? '' : 's'} ${freeAppLimit === 1 ? 'is' : 'are'} 100% free`}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  {submissionCost > 0 && (
+                    <div className="text-muted text-xs line-through">{formattedCost}</div>
+                  )}
+                  <div className="text-emerald-400 font-black text-base leading-none">FREE</div>
                 </div>
               </div>
-              <div className="px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-black text-sm rounded-full">
-                $1.00 USD
-              </div>
-            </div>
 
-            {/* Payment Method Selector */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('google_pay')}
-                className={`py-3 px-4 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 ${
-                  paymentMethod === 'google_pay'
-                    ? 'bg-accent/20 border-accent text-white'
-                    : 'bg-card border-border text-muted hover:text-white'
-                }`}
-              >
-                <span className="text-base">🟢</span>
-                <span>Google Pay</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('card')}
-                className={`py-3 px-4 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 ${
-                  paymentMethod === 'card'
-                    ? 'bg-accent/20 border-accent text-white'
-                    : 'bg-card border-border text-muted hover:text-white'
-                }`}
-              >
-                <span className="text-base">💳</span>
-                <span>Credit Card</span>
-              </button>
-            </div>
-
-            {paymentMethod === 'card' ? (
-              <div className="space-y-3 pt-2">
-                <input
-                  type="text"
-                  placeholder="Cardholder Name"
-                  value={cardName}
-                  onChange={e => setCardName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white text-xs outline-none focus:border-accent"
-                />
-                <input
-                  type="text"
-                  placeholder="Card Number (e.g. 4242 4242 4242 4242)"
-                  value={cardNumber}
-                  onChange={e => setCardNumber(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white text-xs outline-none focus:border-accent"
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    placeholder="MM/YY"
-                    value={cardExp}
-                    onChange={e => setCardExp(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white text-xs outline-none focus:border-accent"
-                  />
-                  <input
-                    type="text"
-                    placeholder="CVC"
-                    value={cardCvc}
-                    onChange={e => setCardCvc(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white text-xs outline-none focus:border-accent"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 rounded-2xl bg-card border border-border text-center space-y-1">
-                <div className="text-xs font-bold text-white flex items-center justify-center gap-1.5">
-                  <span>Google Pay Selected</span>
-                </div>
-                <p className="text-[11px] text-muted">
-                  Stripe Payment Request will pop up to complete the $1 charge via Google Pay.
+              <div className="p-3.5 rounded-2xl bg-black/30 border border-white/5 flex items-center gap-3">
+                <span className="text-lg">✨</span>
+                <p className="text-[11px] text-gray-300 leading-relaxed">
+                  {freeAppLimit > 0 ? (
+                    <>You are publishing item <b>#{submissionCount + 1}</b> of your <b>{freeAppLimit} free uploads</b>. No payment required.</>
+                  ) : (
+                    <>Submission is free. No payment required.</>
+                  )}
                 </p>
               </div>
-            )}
-
-            <div className="flex flex-col items-center justify-center gap-1 text-[10px] text-muted">
-              <span>🔒 256-bit SSL Encrypted & Secured by Stripe</span>
-              <span className="text-[9px] text-emerald-400 font-mono">Connected: pk_test_...Wdgh</span>
             </div>
-          </div>
+          ) : (
+            /* 💳 Paid Submission Section after free quota is reached */
+            <div className="p-5 rounded-3xl bg-surface border border-accent/30 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">💳</span>
+                  <div>
+                    <h3 className="text-white text-sm font-black">Submission Fee</h3>
+                    <p className="text-muted text-[11px]">Free tier used ({submissionCount}/{freeAppLimit}) • Standard fee</p>
+                  </div>
+                </div>
+                <div className="px-3 py-1 bg-accent/20 border border-accent/40 text-accent font-black text-sm rounded-full">
+                  {formattedCost}
+                </div>
+              </div>
+
+              {/* Payment Method Selector */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('google_pay')}
+                  className={`py-3 px-4 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 ${
+                    paymentMethod === 'google_pay'
+                      ? 'bg-accent/20 border-accent text-white'
+                      : 'bg-card border-border text-muted hover:text-white'
+                  }`}
+                >
+                  <span className="text-base">🟢</span>
+                  <span>Google Pay</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('card')}
+                  className={`py-3 px-4 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 ${
+                    paymentMethod === 'card'
+                      ? 'bg-accent/20 border-accent text-white'
+                      : 'bg-card border-border text-muted hover:text-white'
+                  }`}
+                >
+                  <span className="text-base">💳</span>
+                  <span>Credit Card</span>
+                </button>
+              </div>
+
+              {paymentMethod === 'card' ? (
+                <div className="space-y-3 pt-2">
+                  <input
+                    type="text"
+                    placeholder="Cardholder Name"
+                    value={cardName}
+                    onChange={e => setCardName(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white text-xs outline-none focus:border-accent"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Card Number (e.g. 4242 4242 4242 4242)"
+                    value={cardNumber}
+                    onChange={e => setCardNumber(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white text-xs outline-none focus:border-accent"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="MM/YY"
+                      value={cardExp}
+                      onChange={e => setCardExp(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white text-xs outline-none focus:border-accent"
+                    />
+                    <input
+                      type="text"
+                      placeholder="CVC"
+                      value={cardCvc}
+                      onChange={e => setCardCvc(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white text-xs outline-none focus:border-accent"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-card border border-border text-center space-y-1">
+                  <div className="text-xs font-bold text-white flex items-center justify-center gap-1.5">
+                    <span>Google Pay Selected</span>
+                  </div>
+                  <p className="text-[11px] text-muted">
+                    Stripe Payment Request will pop up to complete the {formattedCost} charge via Google Pay.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex flex-col items-center justify-center gap-1 text-[10px] text-muted">
+                <span>🔒 256-bit SSL Encrypted & Secured by Stripe</span>
+                <span className="text-[9px] text-emerald-400 font-mono truncate max-w-[300px]">Connected: {stripeKey.substring(0, 14)}...</span>
+              </div>
+            </div>
+          )
         )}
 
         <div className="pt-2">
           <button 
             type="submit" 
             disabled={loading || isProcessingPayment}
-            className="tap w-full py-5 bg-accent text-white font-black rounded-3xl shadow-xl glow-purple disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center gap-3"
+            className={`tap w-full py-5 text-white font-black rounded-3xl shadow-xl disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center gap-3 ${
+              isFreeUpload ? 'bg-gradient-to-r from-emerald-500 to-accent shadow-emerald-500/20' : 'bg-accent glow-purple'
+            }`}
           >
             {loading || isProcessingPayment ? (
               <>
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>{isProcessingPayment ? 'PROCESSING $1.00 PAYMENT...' : 'UPLOADING...'}</span>
+                <span>{isProcessingPayment ? `PROCESSING ${formattedCost} PAYMENT...` : 'UPLOADING TO CATALOG...'}</span>
               </>
             ) : (
               <>
-                <span>{isEdit ? 'RESUBMIT ITEM' : (itemType === 'game' ? 'PAY $1.00 & SUBMIT GAME' : 'PAY $1.00 & SUBMIT APP')}</span>
+                <span>
+                  {isEdit 
+                    ? 'RESUBMIT ITEM' 
+                    : isFreeUpload 
+                      ? (itemType === 'game' ? 'SUBMIT GAME FOR FREE' : 'SUBMIT APP FOR FREE')
+                      : (itemType === 'game' ? `PAY ${formattedCost} & SUBMIT GAME` : `PAY ${formattedCost} & SUBMIT APP`)}
+                </span>
                 <span className="text-xl">🚀</span>
               </>
             )}

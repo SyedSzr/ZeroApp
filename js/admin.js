@@ -793,6 +793,31 @@ function renderCurrentView() {
               </div>
            </div>
 
+           <!-- Monetization & Upload Policy Settings -->
+           <div class="pt-6 border-t border-border">
+              <h3 class="text-white font-black text-lg mb-2 flex items-center gap-2"><span>💳</span> Submission & Monetization Policy</h3>
+              <p class="text-muted text-xs mb-4">Configure free upload allowances, submission pricing, and Stripe payment gateway.</p>
+              
+              <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                   <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Free Apps Allowed Per User</label>
+                   <input type="number" min="0" name="free_app_limit" value="${data.settings.free_app_limit !== undefined ? data.settings.free_app_limit : '3'}" required class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm" placeholder="e.g. 3" />
+                   <p class="text-muted text-[10px] mt-1.5">Number of apps each user can publish for free.</p>
+                </div>
+                <div>
+                   <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Submission Fee (USD)</label>
+                   <input type="number" step="0.01" min="0" name="submission_cost" value="${data.settings.submission_cost !== undefined ? data.settings.submission_cost : '1.00'}" required class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm" placeholder="1.00" />
+                   <p class="text-muted text-[10px] mt-1.5">Fee per submission once free quota is exceeded.</p>
+                </div>
+              </div>
+
+              <div>
+                 <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Stripe Publishable Key</label>
+                 <input type="text" name="stripe_publishable_key" value="${data.settings.stripe_publishable_key || 'pk_test_51MEVoKCOQw8WFZIhxf51KqBy8SWoLJEHXnLPvM3LXCUTnyKNAAH9t9MiH40Hu78vUhUZ3Q97ipAg1GCTXfPH2HwI00W4aWWdgh'}" class="w-full px-5 py-4 rounded-2xl bg-card border border-border text-white text-sm font-mono text-xs" placeholder="pk_live_... or pk_test_..." />
+                 <p class="text-muted text-[10px] mt-1.5">Your public Stripe API key for processing submission payments.</p>
+              </div>
+           </div>
+
            <!-- Admin Security Credentials -->
            <div class="pt-6 border-t border-border">
               <h3 class="text-white font-black text-lg mb-2 flex items-center gap-2"><span>🔐</span> Admin Portal Security</h3>
@@ -1056,6 +1081,9 @@ async function saveSettings(e) {
     { key: 'app_name', value: fd.get('app_name') || '' },
     { key: 'maintenance', value: fd.get('maintenance') || 'off' },
     { key: 'greeting_override', value: fd.get('greeting_override') || '' },
+    { key: 'free_app_limit', value: (fd.get('free_app_limit') !== null ? fd.get('free_app_limit') : '3').toString() },
+    { key: 'submission_cost', value: (fd.get('submission_cost') !== null ? fd.get('submission_cost') : '1.00').toString() },
+    { key: 'stripe_publishable_key', value: (fd.get('stripe_publishable_key') || '').trim() },
     { key: 'admin_username', value: (fd.get('admin_username') || '').trim() },
     { key: 'admin_password', value: fd.get('admin_password') || '' },
   ];
