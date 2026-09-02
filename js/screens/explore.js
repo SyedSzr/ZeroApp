@@ -55,7 +55,7 @@ function ExploreScreen({ exploreCategory }) {
         <div className="flex items-center justify-between px-4 pt-3 pb-2">
           <button onClick={() => go('apps')} className={`tap w-9 h-9 rounded-xl border border-border flex items-center justify-center text-lg ${isDark ? 'bg-surface text-white' : 'bg-card text-gray-900'}`}>←</button>
           <span className={`font-extrabold text-base tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{headerLabel}</span>
-          <button onClick={() => go('search')} className={`tap w-9 h-9 rounded-xl border border-border flex items-center justify-center text-lg ${isDark ? 'bg-surface text-white' : 'bg-card text-gray-900'}`}>🔍</button>
+          <button onClick={() => go('search', { searchMode: 'games' })} className={`tap w-9 h-9 rounded-xl border border-border flex items-center justify-center text-lg ${isDark ? 'bg-surface text-white' : 'bg-card text-gray-900'}`}>🔍</button>
         </div>
 
         {/* ── Tab Strip: All + categories ── */}

@@ -75,7 +75,7 @@ function AppsScreen() {
           <p className={`text-sm mt-0.5 ${isDark ? 'text-muted' : 'text-gray-600'}`}>{t('home_header')}</p>
         </div>
         <div className="flex items-center gap-2 mt-1.5 flex-shrink-0">
-          <button onClick={() => go('search')} className={`tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          <button onClick={() => go('search', { searchMode: 'games' })} className={`tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
             <span className="text-xl">🔍</span>
           </button>
         </div>
@@ -85,10 +85,10 @@ function AppsScreen() {
       <div className="flex-1 overflow-y-auto no-sb pb-32">
 
         {/* ── Search Bar ── */}
-        <div className="px-5 mt-4" onClick={() => go('search')}>
+        <div className="px-5 mt-4" onClick={() => go('search', { searchMode: 'games' })}>
           <div className="flex items-center gap-3 bg-surface border border-border rounded-2xl py-3 px-4 cursor-pointer">
             <span className="text-muted">🔍</span>
-            <span className="text-muted text-sm flex-1">{t('search_apps')}</span>
+            <span className="text-muted text-sm flex-1">{t('search_games') || 'Search games...'}</span>
             <span className="text-[10px] text-muted opacity-40">⌘K</span>
           </div>
         </div>

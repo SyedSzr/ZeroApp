@@ -2,11 +2,13 @@
 var { useState, useEffect, useMemo, useRef } = React;
 
 function SearchScreen({ searchMode }) {
-  const { goBack, searchQ, setSearchQ, openDetail, liveApps, liveGames, t, recentSearches, updateSearchHistory, clearSearchHistory, launchApp, theme } = useApp();
+  const { goBack, searchQ, setSearchQ, openDetail, liveGames, liveApps, t, recentSearches, updateSearchHistory, clearSearchHistory, launchApp, theme } = useApp();
   const inputRef = useRef(null);
   const isDark = theme !== 'light';
 
-  const isGamesMode = searchMode === 'games';
+  // In the current games-only version of ZeroApp, search always defaults to games
+  const isAppsMode = searchMode === 'apps';
+  const targetCatalog = isAppsMode ? (liveApps || []) : (liveGames || []);
 
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 150); }, []);
 
@@ -14,28 +16,24 @@ function SearchScreen({ searchMode }) {
 
   const results = useMemo(() => {
     if (!q) return [];
-    const all = isGamesMode
-      ? [...(liveGames || []), ...(liveApps || [])]
-      : [...(liveApps || []), ...(liveGames || [])];
-    return all.filter(a => {
+    return targetCatalog.filter(a => {
       const name = (a.name || '').toLowerCase();
       const cat  = (a.category || a.homeCategory || a.gameCategory || '').toLowerCase();
       const tags = Array.isArray(a.tags) ? a.tags : [];
+      const dev  = (a.developer || '').toLowerCase();
       
       return name.includes(q) || 
              cat.includes(q) || 
+             dev.includes(q) ||
              tags.some(t_tag => String(t_tag).toLowerCase().includes(q));
     });
-  }, [q, liveApps, liveGames, isGamesMode]);
+  }, [q, targetCatalog]);
 
   const topResults = results.slice(0, 4);
   const moreResults = results.slice(4);
 
-  // Determine which list to show first in empty state
-  const primaryList = isGamesMode ? liveGames : liveApps;
-  const secondaryList = isGamesMode ? liveApps : liveGames;
-  const primaryLabel = isGamesMode ? t('all_games') : t('all_apps');
-  const secondaryLabel = isGamesMode ? t('all_apps') : t('all_games');
+  const catalogLabel = isAppsMode ? (t('all_apps') || 'All Apps') : (t('all_games') || 'All Games');
+  const searchPlaceholder = isAppsMode ? (t('search_apps') || 'Search apps...') : (t('search_games') || 'Search games...');
 
   return (
     <div className={`slide-up flex flex-col h-full ${isDark ? 'bg-[#050b19]' : 'bg-bg'}`}>
@@ -56,7 +54,7 @@ function SearchScreen({ searchMode }) {
               type="search"
               value={searchQ}
               onChange={e => setSearchQ(e.target.value)}
-              placeholder={isGamesMode ? (t('search_games') || 'Search games...') : t('search_anything')}
+              placeholder={searchPlaceholder}
               autoComplete="off"
               className={`flex-1 bg-transparent text-sm placeholder-muted outline-none ${isDark ? 'text-white' : 'text-gray-900'}`}
             />
@@ -71,7 +69,7 @@ function SearchScreen({ searchMode }) {
       {/* ── Results ── */}
       <div className="flex-1 overflow-y-auto no-sb pb-28">
 
-        {/* Empty state - show recent searches + primary list first */}
+        {/* Empty state - show recent searches + all games */}
         {!q && (
           <div className="px-5 pt-6">
             {recentSearches.length > 0 && (
@@ -94,32 +92,14 @@ function SearchScreen({ searchMode }) {
               </div>
             )}
 
-            {primaryList.length > 0 && (
+            {targetCatalog.length > 0 && (
               <div className="mb-6">
-                <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{primaryLabel} ({primaryList.length})</p>
+                <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{catalogLabel} ({targetCatalog.length})</p>
                 <div className="flex flex-col gap-2">
-                  {primaryList.map(app => (
+                  {targetCatalog.map(app => (
                     <ListAppRow key={app.id} app={app} onPress={(a) => {
                       updateSearchHistory(a.name);
-                      if (a.gameCategory) {
-                        launchApp(a);
-                      } else {
-                        openDetail(a);
-                      }
-                    }} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {secondaryList.length > 0 && (
-              <div className="mb-6">
-                <p className="text-muted text-xs font-bold uppercase tracking-widest mb-4">{secondaryLabel} ({secondaryList.length})</p>
-                <div className="flex flex-col gap-2">
-                  {secondaryList.map(app => (
-                    <ListAppRow key={app.id} app={app} onPress={(a) => {
-                      updateSearchHistory(a.name);
-                      if (a.gameCategory) {
+                      if (a.gameCategory || !isAppsMode) {
                         launchApp(a);
                       } else {
                         openDetail(a);
@@ -135,8 +115,8 @@ function SearchScreen({ searchMode }) {
         {/* No results */}
         {q && results.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <span className="text-5xl">😕</span>
-            <p className="text-muted text-sm">{t('no_results')} "{searchQ}"</p>
+            <span className="text-5xl">🎮</span>
+            <p className="text-muted text-sm">{t('no_results') || 'No games found for'} "{searchQ}"</p>
           </div>
         )}
 
@@ -148,7 +128,7 @@ function SearchScreen({ searchMode }) {
               {topResults.map(app => (
                 <ListAppRow key={app.id} app={app} onPress={(a) => {
                   updateSearchHistory(searchQ);
-                  if (a.gameCategory) {
+                  if (a.gameCategory || !isAppsMode) {
                     launchApp(a);
                   } else {
                     openDetail(a);
@@ -163,12 +143,12 @@ function SearchScreen({ searchMode }) {
         {/* More Results */}
         {moreResults.length > 0 && (
           <div className="px-4 pt-5">
-            <p className="text-muted text-xs font-bold uppercase tracking-widest mb-3">{t('more_apps')}</p>
+            <p className="text-muted text-xs font-bold uppercase tracking-widest mb-3">{t('more_games') || t('more_apps') || 'More Games'}</p>
             <div className="flex flex-col gap-2">
               {moreResults.map(app => (
                 <ListAppRow key={app.id} app={app} onPress={(a) => {
                   updateSearchHistory(searchQ);
-                  if (a.gameCategory) {
+                  if (a.gameCategory || !isAppsMode) {
                     launchApp(a);
                   } else {
                     openDetail(a);
