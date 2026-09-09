@@ -2129,13 +2129,33 @@ function AppProvider({ children }) {
   // ── Analytics & Identity Logic ──
   const logActivity = useCallback(async (action, itemId = null, metadata = {}) => {
     if (!supabase) return;
-    const entry = {
-      action,
-      item_id: itemId ? String(itemId) : null,
-      user_id: user?.id || null,
-      metadata
-    };
-    await supabase.from('activity_log').insert(entry);
+    try {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|UniWebView/i.test(navigator.userAgent) || window.UniWebView;
+      const isTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk|(puffin(?!.*(IP|AP|WP))))/i.test(navigator.userAgent);
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      
+      let device = 'Desktop Web';
+      if (isTablet) device = 'Tablet';
+      else if (isIOS) device = 'iOS Mobile';
+      else if (isAndroid) device = 'Android Mobile';
+      else if (isMobile) device = 'Mobile Web';
+
+      const entry = {
+        action,
+        item_id: itemId ? String(itemId) : null,
+        user_id: user?.id || null,
+        metadata: {
+          ...metadata,
+          device,
+          user_email: user?.email || null,
+          timestamp: new Date().toISOString()
+        }
+      };
+      await supabase.from('activity_log').insert(entry);
+    } catch (err) {
+      console.warn('logActivity warning (expected if activity_log table pending):', err);
+    }
   }, [supabase, user]);
 
   const uploadAvatar = useCallback(async (file) => {
@@ -2454,11 +2474,14 @@ function AppProvider({ children }) {
   const launchApp = useCallback((app) => {
     if (!app || !app.url) return;
 
-    logActivity('app_open', app.id, { name: app.name });
-
     // Determine if this is a game (games still use in-app iframe TaskLayer)
     const isGameItem = (rawGames.length > 0 ? rawGames : (typeof GAMES !== 'undefined' ? GAMES : []))
       .some(g => String(g.id) === String(app.id));
+
+    logActivity(isGameItem ? 'game_open' : 'app_open', app.id, {
+      name: app.name,
+      category: app.gameCategory || app.homeCategory || app.category || 'General'
+    });
 
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|UniWebView/i.test(navigator.userAgent) || window.UniWebView;
 
@@ -2593,12 +2616,19 @@ function AppProvider({ children }) {
 
     setGamerStats(updated);
 
+    const allGames = (rawGames.length > 0 ? rawGames : (typeof GAMES !== 'undefined' ? GAMES : []));
+    const game = allGames.find(g => String(g.id) === String(gameId));
+
+    logActivity('game_play_session', gameId, {
+      name: game?.name || 'Game',
+      category: game?.category || game?.gameCategory || 'Game',
+      durationSeconds
+    });
+
     if (user && supabase) {
       const { error: profileError } = await supabase.from('profiles').update({ game_stats: updated }).eq('id', user.id);
       if (profileError) console.warn('Database profiles game_stats update failed (expected if column missing):', profileError);
 
-      const allGames = (rawGames.length > 0 ? rawGames : (typeof GAMES !== 'undefined' ? GAMES : []));
-      const game = allGames.find(g => String(g.id) === String(gameId));
       if (game) {
         const { data: dbGame } = await supabase.from('games').select('total_play_time').eq('id', gameId).single();
         const prevTotal = dbGame?.total_play_time || game.total_play_time || 0;
@@ -2607,7 +2637,7 @@ function AppProvider({ children }) {
         if (gameError) console.warn('Database games total_play_time update failed (expected if column missing):', gameError);
       }
     }
-  }, [recordGamePlaySessionSync, user, supabase, rawGames]);
+  }, [recordGamePlaySessionSync, user, supabase, rawGames, logActivity]);
 
   // Effect to handle state change and session logging
   useEffect(() => {
@@ -2649,7 +2679,7 @@ function AppProvider({ children }) {
     } else {
       sessionRef.current = { activeId: null, startTime: null };
     }
-  }, [activeTaskId, rawGames, recordGamePlaySession]);
+  }, [activeTaskId, rawGames, recordGamePlaySession, user, supabase]);
 
   // Effect to handle browser close/unload
   useEffect(() => {
@@ -2669,8 +2699,13 @@ function AppProvider({ children }) {
 
   // ── Saved Apps ──
   const toggleSaveApp = useCallback((app) => {
+    if (!app || !app.id) return;
     setSavedApps(prev => {
       const has = prev.find(s => s.id === app.id);
+      logActivity(has ? 'remove_favorite' : 'add_favorite', app.id, {
+        name: app.name,
+        category: app.homeCategory || app.gameCategory || app.category || 'General'
+      });
       if (has) {
         // If un-saving, also remove from any folders
         setFolders(oldFolders => {
@@ -2683,7 +2718,7 @@ function AppProvider({ children }) {
       lsSet('zero_saved_apps', next);
       return next;
     });
-  }, []);
+  }, [logActivity]);
   const isSaved = useCallback((id) => savedApps.some(s => s.id === id), [savedApps]);
 
   // ── Folders ──
