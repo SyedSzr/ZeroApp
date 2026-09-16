@@ -54,7 +54,7 @@ function GameCard({ game, onCommentOpen }) {
   };
 
   const handleShare = () => {
-    const deepLink = `${window.location.origin}/#detail?id=${game.id}`;
+    const deepLink = `${window.location.origin}/?shared=1#detail?id=${game.id}`;
     if (navigator.share) {
       navigator.share({ title: game.name, text: `Check out ${game.name} on ZeroApp!`, url: deepLink }).catch(() => {});
     } else {
