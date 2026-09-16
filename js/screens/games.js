@@ -288,8 +288,8 @@ function GamesScreen() {
       }`}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-[24px] leading-none">⚡</span>
-            <span className={`font-black text-[24px] leading-none tracking-[-0.045em] ${isDark ? 'text-white' : 'text-gray-900'}`}>ZeroApp</span>
+            <img src="Logo/Logo%20Icon.png" alt="Icon" className="w-12 h-12 object-contain" />
+            <img src="Logo/header.png" alt="ZeroApp" className="h-9 object-contain" />
           </div>
           <div className="flex items-center gap-2 pointer-events-auto">
             <button onClick={() => setViewMode('discover')} aria-label={t('discover')}
@@ -400,14 +400,13 @@ function GamesDiscoveryView({ onBack }) {
           : 'bg-bg'
       }`}>
         <div className="flex-1 text-left">
-          <div className="flex items-center gap-2 mb-1">
-            {onBack ? (
-              <button onClick={onBack} className={`tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-lg mr-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>←</button>
-            ) : (
-              <span className="text-2xl">⚡</span>
-            )}
-            <span className={`font-black text-xl tracking-tight font-sans ${isDark ? 'text-white' : 'text-gray-900'}`}>ZeroApp</span>
-          </div>
+            <div className="flex items-center gap-2">
+              {onBack && (
+                <button onClick={onBack} className={`tap w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-lg mr-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>⬅️</button>
+              )}
+              <img src="Logo/Logo%20Icon.png" alt="Icon" className="w-10 h-10 object-contain" />
+              <img src="Logo/header.png" alt="ZeroApp" className="h-7 object-contain" />
+            </div>
           <p className={`text-2xl font-bold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{greeting} 👋</p>
           <p className={`text-sm mt-0.5 ${isDark ? 'text-muted' : 'text-gray-600'}`}>{t('games_header')}</p>
         </div>
