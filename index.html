@@ -20,15 +20,16 @@
         var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         var hash = window.location.hash; // e.g. #detail?id=123
         var host = window.location.host;
+        var pathname = window.location.pathname;
         var protocol = window.location.protocol.replace(':', '');
 
         if (isAndroid) {
           // Intent URL without fallback will automatically open Google Play if not installed
-          var intentUrl = 'intent://' + host + '/' + hash + '#Intent;scheme=' + protocol + ';package=com.ownGames.zeroapp;end';
+          var intentUrl = 'intent://' + host + pathname + hash + '#Intent;scheme=' + protocol + ';package=com.OwnGames.ZeroApp;end';
           window.location.replace(intentUrl);
         } else if (isIOS) {
           // Attempt to open iOS custom scheme, fallback to App Store after 1.5s
-          window.location.replace('zeroapp://' + host + '/' + hash);
+          window.location.replace('zeroapp://' + host + pathname + hash);
           setTimeout(function() {
             window.location.replace('https://apps.apple.com/app/idYOUR_APP_ID_HERE');
           }, 1500);

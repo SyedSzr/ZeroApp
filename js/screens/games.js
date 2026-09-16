@@ -53,13 +53,21 @@ function GameCard({ game, onCommentOpen }) {
     setLovePending(false);
   };
 
-  const handleShare = () => {
-    const deepLink = `${window.location.origin}/?shared=1#detail?id=${game.id}`;
-    if (navigator.share) {
-      navigator.share({ title: game.name, text: `Check out ${game.name} on ZeroApp!`, url: deepLink }).catch(() => {});
-    } else {
-      navigator.clipboard?.writeText(deepLink);
-      alert((t('link_copied') || 'Link copied to clipboard!') + '\n' + deepLink);
+  const handleShare = async () => {
+    try {
+      const baseUrl = window.location.origin + window.location.pathname;
+      const longUrl = `${baseUrl}?shared=1#detail?id=${game.id}`;
+      
+      const res = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`);
+      const data = await res.json();
+      const wrappedLink = data.shorturl || longUrl;
+      
+      window.location.href = `uniwebview://share?title=${encodeURIComponent(game.name)}&url=${encodeURIComponent(wrappedLink)}`;
+    } catch (e) {
+      console.error('Shortener failed', e);
+      const baseUrl = window.location.origin + window.location.pathname;
+      const longUrl = `${baseUrl}?shared=1#detail?id=${game.id}`;
+      window.location.href = `uniwebview://share?title=${encodeURIComponent(game.name)}&url=${encodeURIComponent(longUrl)}`;
     }
   };
 
