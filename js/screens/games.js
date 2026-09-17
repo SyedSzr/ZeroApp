@@ -53,22 +53,10 @@ function GameCard({ game, onCommentOpen }) {
     setLovePending(false);
   };
 
-  const handleShare = async () => {
-    try {
-      const baseUrl = window.location.origin + window.location.pathname;
-      const longUrl = `${baseUrl}?shared=1#detail?id=${game.id}`;
-      
-      const res = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`);
-      const data = await res.json();
-      const wrappedLink = data.shorturl || longUrl;
-      
-      window.location.href = `uniwebview://share?title=${encodeURIComponent(game.name)}&url=${encodeURIComponent(wrappedLink)}`;
-    } catch (e) {
-      console.error('Shortener failed', e);
-      const baseUrl = window.location.origin + window.location.pathname;
-      const longUrl = `${baseUrl}?shared=1#detail?id=${game.id}`;
-      window.location.href = `uniwebview://share?title=${encodeURIComponent(game.name)}&url=${encodeURIComponent(longUrl)}`;
-    }
+  const handleShare = () => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const longUrl = `${baseUrl}?shared=1#detail?id=${game.id}`;
+    window.location.href = `uniwebview://share?title=${encodeURIComponent(game.name)}&url=${encodeURIComponent(longUrl)}`;
   };
 
   const tags = game.tags ? (Array.isArray(game.tags) ? game.tags : game.tags.split(',').map(t => t.trim())) : [];
