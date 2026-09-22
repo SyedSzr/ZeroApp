@@ -91,7 +91,7 @@ function GameCard({ game, onCommentOpen }) {
         <div className="flex flex-col items-center gap-1" onClick={handleLove} style={{ cursor: 'pointer' }}>
           <svg width="25" height="25" viewBox="0 0 24 24"
             fill={loved ? '#FF2D55' : 'none'}
-            stroke={loved ? '#FF2D55' : '#fff'}
+            stroke="#FF2D55"
             strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
             className={`drop-shadow-md transition-transform ${lovePending ? 'scale-90' : 'hover:scale-110'}`}>
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -109,18 +109,11 @@ function GameCard({ game, onCommentOpen }) {
 
         {/* Save */}
         <div className="flex flex-col items-center gap-1 mt-1" onClick={() => toggleSaveApp(game)} style={{ cursor: 'pointer' }}>
-          <svg width="25" height="25" viewBox="0 0 24 24" fill={isSaved(game.id) ? '#fff' : 'none'} stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform">
+          <svg width="25" height="25" viewBox="0 0 24 24" fill={isSaved(game.id) ? '#FFD43B' : 'none'} stroke="#FFD43B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
           </svg>
         </div>
 
-        {/* Share */}
-        <div className="flex flex-col items-center gap-1 mt-1" onClick={handleShare} style={{ cursor: 'pointer' }}>
-          <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md hover:scale-110 transition-transform">
-            <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-          </svg>
-        </div>
       </div>
 
       {/* Bottom Info */}
