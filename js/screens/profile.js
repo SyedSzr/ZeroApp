@@ -551,6 +551,22 @@ function SettingsScreen() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (confirm(t('delete_account_confirm') || 'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.')) {
+      try {
+        const { error: rpcError } = await window.supabase.rpc('delete_user');
+        if (rpcError) {
+           await window.supabase.from('profiles').delete().eq('id', user.id);
+        }
+        await signOut();
+        alert(t('account_deleted') || 'Your account has been successfully deleted.');
+      } catch (e) {
+        console.error('Delete account failed', e);
+        alert(t('delete_error') || 'Error deleting account. Please contact support.');
+      }
+    }
+  };
+
   const languages = [
     { code: 'en', label: 'English' },
     { code: 'es', label: 'Español' },
@@ -663,9 +679,12 @@ function SettingsScreen() {
           ))}
 
           {user && (
-            <div className="pt-4">
-              <button onClick={signOut} className="tap w-full py-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold text-sm">
+            <div className="pt-4 space-y-3">
+              <button onClick={signOut} className="tap w-full py-4 rounded-2xl bg-surface border border-border text-text font-bold text-sm">
                 {t('sign_out')}
+              </button>
+              <button onClick={handleDeleteAccount} className="tap w-full py-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold text-sm">
+                {t('delete_account') || 'Delete Account'}
               </button>
             </div>
           )}
