@@ -1,4 +1,4 @@
-// ── HOME SCREEN — Redesigned ──────────────────────────────────────────────────
+﻿// ── HOME SCREEN — Redesigned ──────────────────────────────────────────────────
 var { useState, useEffect, useMemo, useRef } = React;
 
 function AppsScreen() {
@@ -111,7 +111,7 @@ function AppsScreen() {
                 {featuredApp.gameCategory && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); openDetail(featuredApp); }}
-                    className="absolute top-4 right-4 w-9 h-9 rounded-xl bg-black/60 border border-white/20 flex items-center justify-center text-white text-lg font-bold hover:bg-black transition-all tap z-10"
+                    className="absolute top-4 end-4 w-9 h-9 rounded-xl bg-black/60 border border-white/20 flex items-center justify-center text-white text-lg font-bold hover:bg-black transition-all tap z-10"
                     title="View Details"
                   >
                     ›
@@ -125,7 +125,7 @@ function AppsScreen() {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
+                <div className="absolute bottom-4 inset-x-4 flex items-center gap-3">
                    <AppIcon app={featuredApp} size="sm" />
                    <div className="flex-1 text-left">
                       <div className="font-bold text-lg leading-tight" style={{color:'#fff'}}>{featuredApp.name}</div>

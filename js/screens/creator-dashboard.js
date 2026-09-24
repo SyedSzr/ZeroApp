@@ -3,6 +3,7 @@ var { useState, useEffect, useRef } = React;
 function CreatorDashboardScreen() {
   const { user, go, goBack, t, theme, liveGames, liveApps } = useApp();
   const isDark = theme !== 'light';
+  const supabase = window.supabase;
 
   const [myItems, setMyItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -413,3 +414,4 @@ function CreatorDashboardScreen() {
 }
 
 window.CreatorDashboardScreen = CreatorDashboardScreen;
+

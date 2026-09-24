@@ -1,4 +1,4 @@
-// ── SHARED COMPONENTS ─────────────────────────────────────────────────────────
+﻿// ── SHARED COMPONENTS ─────────────────────────────────────────────────────────
 
 // ── ZeroOS Multi-tasking System ──────────────────────────────────────────────
 
@@ -346,7 +346,7 @@ function TaskLayer() {
             
             {/* Top Bar for Instant Exit */}
             {isActive && (
-              <div className="absolute top-0 left-0 right-0 pt-safe px-4 py-3 z-50 flex items-center justify-between pointer-events-none bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+              <div className="absolute top-0 inset-x-0 pt-safe px-4 py-3 z-50 flex items-center justify-between pointer-events-none bg-gradient-to-b from-black/80 via-black/40 to-transparent">
                 <button 
                   onClick={() => closeTask(task.id)}
                   className="pointer-events-auto tap w-10 h-10 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white text-lg font-bold shadow-lg active:scale-95"
@@ -441,9 +441,9 @@ function FloatingBubble({ task, index, onDragStart, onDragEnd, targetPos }) {
     >
       <div className="w-full h-full rounded-[22px] bg-card border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden active:scale-90 transition-transform">
          <AppLogo app={task.app} size="xs" />
-         <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent border border-card shadow-sm"></div>
+         <div className="absolute top-1 end-1 w-2 h-2 rounded-full bg-accent border border-card shadow-sm"></div>
       </div>
-      <div className="absolute -bottom-4 left-0 right-0 text-center">
+      <div className="absolute -bottom-4 inset-x-0 text-center">
          <span className="text-white text-[7px] font-black uppercase tracking-tighter opacity-40 truncate px-1 block">{task.app.name}</span>
       </div>
     </div>
@@ -781,7 +781,7 @@ function CategoryPill({ cat, active, onPress }) {
       <span style={{
         fontSize: 10,
         fontWeight: 600,
-        color: active ? '#fff' : '#5a5a7a',
+        color: active ? '#fff' : 'var(--muted)',
         maxWidth: 56,
         textAlign: 'center',
         overflow: 'hidden',
@@ -830,7 +830,7 @@ function BottomNav({ active }) {
   ];
 
   return (
-    <nav className="pb-safe absolute bottom-0 left-0 right-0 flex items-end justify-around bg-[#0f172a] border-t border-white/5 px-1 pt-2" style={{zIndex:50}}>
+    <nav className="pb-safe absolute bottom-0 inset-x-0 flex items-end justify-around bg-surface border-t border-border px-1 pt-2" style={{zIndex:50}}>
       {items.map(it => {
         if (it.id === 'plus') return (
           <button key="plus" onClick={it.action}
@@ -845,9 +845,9 @@ function BottomNav({ active }) {
         return (
           <button key={it.id} onClick={it.action}
             className="flex flex-col items-center gap-1 px-3 pb-1.5 pt-1 rounded-xl transition-colors"
-            style={{color: isActive ? '#7c6af7' : '#5a5a7a'}}>
+            style={{color: isActive ? 'var(--accent)' : 'var(--muted)'}}>
             <it.icon active={isActive} />
-            <span className="text-[10px] font-semibold" style={{color: isActive ? '#7c6af7' : '#5a5a7a'}}>{it.label}</span>
+            <span className="text-[10px] font-semibold" style={{color: isActive ? 'var(--accent)' : 'var(--muted)'}}>{it.label}</span>
           </button>
         );
       })}
@@ -857,7 +857,7 @@ function BottomNav({ active }) {
 
 // ── SVG Icons ───────────────────────────────────────────────────────────────────
 function GamesNavIcon({ active }) {
-  const c = active ? '#7c6af7' : '#5a5a7a';
+  const c = active ? 'var(--accent)' : 'var(--muted)';
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? c : "none"} stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -866,7 +866,7 @@ function GamesNavIcon({ active }) {
   );
 }
 function AppsNavIcon({ active }) {
-  const c = active ? '#7c6af7' : '#5a5a7a';
+  const c = active ? 'var(--accent)' : 'var(--muted)';
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
       <rect x="3" y="3" width="7" height="7" rx="2" stroke={c} strokeWidth="2"/>
@@ -877,7 +877,7 @@ function AppsNavIcon({ active }) {
   );
 }
 function ExploreIcon({ active }) {
-  const c = active ? '#7c6af7' : '#5a5a7a';
+  const c = active ? 'var(--accent)' : 'var(--muted)';
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -885,7 +885,7 @@ function ExploreIcon({ active }) {
   );
 }
 function ProfileIcon({ active }) {
-  const c = active ? '#7c6af7' : '#5a5a7a';
+  const c = active ? 'var(--accent)' : 'var(--muted)';
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -973,7 +973,7 @@ function PersonalizedCard({ type, data, t, openDetail }) {
             className="w-full bg-black/40 border border-white/10 rounded-2xl py-3 px-4 text-white text-sm focus:outline-none focus:border-accent/50 transition-colors"
           />
           {query && (
-            <button onClick={() => setQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted text-xs font-bold">CLEAR</button>
+            <button onClick={() => setQuery('')} className="absolute end-4 top-1/2 -translate-y-1/2 text-muted text-xs font-bold">CLEAR</button>
           )}
         </div>
 
@@ -1008,7 +1008,7 @@ function PersonalizedCard({ type, data, t, openDetail }) {
                       openDetail(item);
                     }
                   }}
-                  className="tap flex items-center gap-3 p-2.5 bg-black/20 rounded-2xl border border-white/5 hover:border-accent/30 transition-all cursor-pointer relative"
+                  className="tap flex items-center gap-3 p-2.5 bg-black/20 rounded-2xl border border-border hover:border-accent/30 transition-all cursor-pointer relative"
                 >
                   <AppIcon app={item} size="xs" />
                   <div className="flex-1 min-w-0 text-left">

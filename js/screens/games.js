@@ -1,4 +1,4 @@
-// ── GAMES SCREEN — PlayScroll Immersive Feed ─────────────────────────────────
+﻿// ── GAMES SCREEN — PlayScroll Immersive Feed ─────────────────────────────────
 var { useState, useRef, useEffect, useCallback } = React;
 
 const getCleanImage = (url) => {
@@ -83,9 +83,9 @@ function GameCard({ game, onCommentOpen }) {
       <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, zIndex:1, background:'linear-gradient(to top, rgba(4,8,21,0.92) 0%, rgba(4,8,21,0.35) 45%, rgba(4,8,21,0.05) 100%)' }} />
 
       {/* Right Action Stack */}
-      <div className="absolute right-2.5 bottom-4 flex w-10 flex-col items-center gap-3 z-20 pointer-events-auto">
+      <div className="absolute end-2.5 bottom-4 flex w-10 flex-col items-center gap-3 z-20 pointer-events-auto">
         {/* Avatar */}
-        <div className="absolute right-0 top-[-207px] rounded-full bg-[#07101f]/75 px-2 py-1 text-[10px] font-extrabold text-white shadow-lg backdrop-blur-md"><span className="text-[#ffbf2f]">★</span> {game.rating || '4.8'}</div>
+        <div className="absolute end-0 top-[-207px] rounded-full bg-[#07101f]/75 px-2 py-1 text-[10px] font-extrabold text-white shadow-lg backdrop-blur-md"><span className="text-[#ffbf2f]">★</span> {game.rating || '4.8'}</div>
 
         {/* Love */}
         <div className="flex flex-col items-center gap-1" onClick={handleLove} style={{ cursor: 'pointer' }}>
@@ -425,7 +425,7 @@ function GamesDiscoveryView({ onBack }) {
               <div className="w-full aspect-[16/9] rounded-3xl overflow-hidden relative border border-border bg-surface">
                 <button 
                   onClick={(e) => { e.stopPropagation(); openDetail(featuredGame); }}
-                  className="absolute top-4 right-4 w-9 h-9 rounded-xl bg-black/60 border border-white/20 flex items-center justify-center text-white text-lg font-bold hover:bg-black transition-all tap z-10"
+                  className="absolute top-4 end-4 w-9 h-9 rounded-xl bg-black/60 border border-white/20 flex items-center justify-center text-white text-lg font-bold hover:bg-black transition-all tap z-10"
                   title="View Details"
                 >
                   ›
@@ -438,7 +438,7 @@ function GamesDiscoveryView({ onBack }) {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
+                <div className="absolute bottom-4 inset-x-4 flex items-center gap-3">
                    <AppIcon app={featuredGame} size="sm" />
                    <div className="flex-1 text-left">
                       <div className="font-bold text-lg leading-tight" style={{color:'#fff'}}>{featuredGame.name}</div>
@@ -635,7 +635,7 @@ function GamesDiscoveryView({ onBack }) {
                     </div>
                   )}
                   {/* Rating Badge Overlay */}
-                  <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] font-bold text-amber-400 flex items-center gap-0.5">
+                  <div className="absolute top-2 end-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] font-bold text-amber-400 flex items-center gap-0.5">
                     <span>★</span> {game.rating}
                   </div>
                 </div>

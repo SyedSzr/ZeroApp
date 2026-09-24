@@ -37,8 +37,7 @@ function ProfileScreen() {
   const personalStats = [
     { label: t('my_apps'), count: savedApps.length, icon: '📦' },
     { label: t('new_folder'), count: folders.length, icon: '📁' },
-    { label: t('my_submissions'), count: mySubmissions.length, icon: '🚀' },
-  ];
+    ];
 
   const { liveApps, liveGames } = useApp();
   const platformStats = [
@@ -218,7 +217,7 @@ function ProfileScreen() {
         </div>
 
         {/* ── Quick Stats ── */}
-        <div className="px-5 grid grid-cols-3 gap-3 mb-6">
+        <div className={"px-5 grid gap-3 mb-6 " + (user ? "grid-cols-2" : "grid-cols-3")}>
           {(user ? personalStats : platformStats).map(s => (
             <div key={s.label} className="bg-card border border-border p-3 rounded-2xl text-center shadow-sm">
               <div className="text-xl mb-1">{s.icon}</div>
@@ -226,73 +225,6 @@ function ProfileScreen() {
               <div className="text-muted text-[9px] uppercase tracking-tighter font-bold">{s.label}</div>
             </div>
           ))}
-        </div>
-
-        {/* ── My Submissions (My Games) ── */}
-        <div className="px-5 mt-2 mb-8">
-          <h2 className="text-white text-lg font-bold mb-4">{t('my_submissions')}</h2>
-          
-          {!user ? (
-            <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center text-center">
-              <span className="text-4xl mb-3">🔒</span>
-              <div className="text-white font-bold text-sm mb-1">{t('login_required')}</div>
-              <div className="text-muted text-xs mb-4">{t('login_sub')}</div>
-              <button onClick={() => go('auth')} className="tap bg-accent text-white font-bold text-sm px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(124,106,247,0.4)]">
-                {t('login_signup')}
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {mySubmissions.length === 0 ? (
-                <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center text-center">
-                  <span className="text-3xl mb-2">🚀</span>
-                  <div className="text-white font-bold text-sm">{t('no_submissions')}</div>
-                  <div className="text-muted text-xs mt-1">{t('no_submissions_sub')}</div>
-                </div>
-              ) : (
-                mySubmissions.map(sub => (
-                  <div 
-                    key={sub.id} 
-                    onClick={() => setSelectedSub(sub)}
-                    className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:border-white/10 transition-all active:scale-[0.99] tap"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-surface flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {sub.icon_url || sub.featured_image ? <img src={sub.icon_url || sub.featured_image} className="w-full h-full object-cover" /> : <span className="text-xl">{sub.emoji || '🎮'}</span>}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-white font-bold text-sm truncate">{sub.name}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-muted text-[10px] uppercase tracking-widest">{sub.region || 'Global'}</span>
-                        <button 
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            const newRegion = prompt('Enter Region (Global, PK, US, UK, AE):', sub.region || 'Global');
-                            if (newRegion && newRegion !== sub.region) {
-                              const { error } = await supabase.from(sub.gameCategory ? 'games' : 'apps').update({ region: newRegion }).eq('id', sub.id);
-                              if (!error) window.location.reload();
-                            }
-                          }}
-                          className="text-accent text-[9px] font-bold hover:underline">
-                          Change
-                        </button>
-                      </div>
-                      {(sub.status === 'rejected' || sub.status === 'deleted') && sub.rejection_comment && (
-                        <div className="text-red-400 text-[10px] mt-0.5 leading-tight line-clamp-2">{sub.rejection_comment}</div>
-                      )}
-                    </div>
-                    <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                      sub.status === 'approved' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
-                      sub.status === 'rejected' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
-                      sub.status === 'deleted' ? 'bg-red-500/15 text-red-400 border border-red-500/30' :
-                      'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                    }`}>
-                      {sub.status || 'pending'}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
         </div>
 
         {/* ── Menu Items (Horizontal) ── */}

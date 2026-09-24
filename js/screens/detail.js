@@ -1,4 +1,4 @@
-// ── APP DETAIL SCREEN ─────────────────────────────────────────────────────────
+﻿// ── APP DETAIL SCREEN ─────────────────────────────────────────────────────────
 function AppDetailScreen({ detailApp: initialApp }) {
   const { liveApps, liveGames, launchApp, toggleSaveApp, isSaved, goBack, t, fetchComments, postComment, submitRating, user, supabase, gamerStats, theme } = useApp();
   const isDark = theme !== 'light';
@@ -166,14 +166,14 @@ function AppDetailScreen({ detailApp: initialApp }) {
               onClick={() => setActiveTab('reviews')}
               className={`pb-3 text-sm font-black uppercase tracking-widest transition-all relative ${activeTab === 'reviews' ? 'text-white' : 'text-muted'}`}>
               {t('reviews')}
-              {activeTab === 'reviews' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-accent rounded-t-full shadow-[0_-2px_10px_rgba(124,106,247,0.5)]" />}
+              {activeTab === 'reviews' && <div className="absolute bottom-0 inset-x-0 h-1 bg-accent rounded-t-full shadow-[0_-2px_10px_rgba(124,106,247,0.5)]" />}
             </button>
             {isGame && (
               <button 
                 onClick={() => setActiveTab('leaderboard')}
                 className={`pb-3 text-sm font-black uppercase tracking-widest transition-all relative ${activeTab === 'leaderboard' ? 'text-white' : 'text-muted'}`}>
                 {t('leaderboard')}
-                {activeTab === 'leaderboard' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-accent rounded-t-full shadow-[0_-2px_10px_rgba(124,106,247,0.5)]" />}
+                {activeTab === 'leaderboard' && <div className="absolute bottom-0 inset-x-0 h-1 bg-accent rounded-t-full shadow-[0_-2px_10px_rgba(124,106,247,0.5)]" />}
               </button>
             )}
           </div>
@@ -340,7 +340,7 @@ function AppDetailScreen({ detailApp: initialApp }) {
     {/* ── Fullscreen Screenshot Viewer ── */}
     {activeScreenshot !== null && (
       <div className="fixed inset-0 z-50 bg-black flex flex-col slide-up">
-        <div className="pt-safe flex items-center px-4 py-3 absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/80 to-transparent">
+        <div className="pt-safe flex items-center px-4 py-3 absolute top-0 inset-x-0 z-10 bg-gradient-to-b from-black/80 to-transparent">
           <button onClick={() => setActiveScreenshot(null)} className="tap w-10 h-10 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-white text-xl">
             ←
           </button>
