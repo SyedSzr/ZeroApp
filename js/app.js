@@ -109,6 +109,7 @@ function AppShell() {
       case 'settings':  return <SettingsScreen {...props} />;
       case 'help':      return <HelpSupportScreen {...props} />;
       case 'about':     return <AboutScreen {...props} />;
+      case 'creator-dashboard': return <CreatorDashboardScreen {...props} />;
       default:          return <AppsScreen {...props} />;
     }
   };

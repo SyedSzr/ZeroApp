@@ -312,6 +312,10 @@ function setRoute(route) {
       if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Spotlight Manager</h2><p class="text-muted text-xs">Manage ${data.promotions.length} active promotions</p>`;
       if (addBtn) addBtn.onclick = () => openPromoModal();
       break;
+    case 'promotion-pricing':
+      if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Promotion Pricing</h2><p class="text-muted text-xs">Manage spotlight section pricing</p>`;
+      if (addBtn) addBtn.classList.add('hidden');
+      break;
     case 'settings':
       if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Configuration</h2><p class="text-muted text-xs">Global parameters</p>`;
       if (addBtn) addBtn.classList.add('hidden');
@@ -436,6 +440,8 @@ function renderCurrentView() {
     renderAnalyticsView(container);
   } else if (currentRoute === 'tools') {
     renderToolsView(container);
+  } else if (currentRoute === 'promotion-pricing') {
+    renderPromotionPricingView(container);
   } else if (currentRoute === 'promotions') {
     const selectedSection = window._selectedPromoSection || null;
     const activeRegion = window._promoRegion || 'All';
@@ -2931,6 +2937,178 @@ async function bulkApprovePending() {
     alert('Failed to bulk approve: ' + err.message);
   }
 }
+
+// ── PROMOTION PRICING ──
+let promotionPricingData = [];
+
+async function renderPromotionPricingView(container) {
+  container.innerHTML = '<div class="flex justify-center items-center h-64 text-accent animate-pulse font-bold">Loading Pricing Data...</div>';
+  const { data, error } = await sb.from('promotion_pricing').select('*').order('created_at', { ascending: false });
+  if (error) {
+    container.innerHTML = '<div class="text-red-500 p-8">Error loading data: ' + error.message + '</div>';
+    return;
+  }
+  promotionPricingData = data || [];
+  
+  container.innerHTML = `
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h2 class="text-white font-black text-2xl">Promotion Pricing</h2>
+        <p class="text-muted text-sm mt-1">Manage pricing and rules for creator promotions</p>
+      </div>
+      <button onclick="openPromoPricingModal()" class="bg-accent hover:bg-accent/80 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all shadow-lg glow-purple active:scale-95">
+        + Add Section
+      </button>
+    </div>
+    
+    <div class="glass rounded-[32px] overflow-hidden">
+      <table class="w-full text-left">
+        <thead>
+          <tr class="text-muted text-[11px] font-black uppercase tracking-widest border-b border-white/5 bg-card/50">
+            <th class="px-8 py-4">Section</th>
+            <th class="px-8 py-4">Price (USD)</th>
+            <th class="px-8 py-4">Duration (Days)</th>
+            <th class="px-8 py-4 text-center">Auto-Approve</th>
+            <th class="px-8 py-4 text-center">Active</th>
+            <th class="px-8 py-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          ${promotionPricingData.length === 0 ? '<tr><td colspan="6" class="text-center py-10 text-muted">No pricing sections found.</td></tr>' : promotionPricingData.map(item => `
+            <tr class="hover:bg-white/5 transition-colors">
+              <td class="px-8 py-4">
+                <p class="text-white font-bold text-sm">${item.section_label}</p>
+                <p class="text-muted text-[10px] font-mono mt-0.5">${item.section_key}</p>
+              </td>
+              <td class="px-8 py-4 text-white text-sm font-bold">$${Number(item.price).toFixed(2)}</td>
+              <td class="px-8 py-4 text-muted text-sm">${item.duration_days}</td>
+              <td class="px-8 py-4 text-center">
+                <button onclick="togglePromoPricingField('${item.id}', 'auto_approve', ${!item.auto_approve})" class="text-xl transition-transform active:scale-90">
+                  ${item.auto_approve ? '<span class="text-emerald-500" title="Auto-Approve On">✅</span>' : '<span class="text-red-500/50" title="Auto-Approve Off">❌</span>'}
+                </button>
+              </td>
+              <td class="px-8 py-4 text-center">
+                <button onclick="togglePromoPricingField('${item.id}', 'is_active', ${!item.is_active})" class="text-[9px] font-black uppercase px-3 py-1 rounded-lg ${item.is_active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'} transition-all">
+                  ${item.is_active ? 'Live' : 'Inactive'}
+                </button>
+              </td>
+              <td class="px-8 py-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button onclick="editPromoPricing('${item.id}')" class="px-3 py-1.5 bg-accent/20 hover:bg-accent/30 text-accent rounded-lg text-xs font-bold transition-all">Edit</button>
+                  <button onclick="deletePromoPricing('${item.id}')" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg text-xs font-bold transition-all">Delete</button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+window.togglePromoPricingField = async function(id, field, value) {
+  try {
+    const update = {};
+    update[field] = value;
+    const { error } = await sb.from('promotion_pricing').update(update).eq('id', id);
+    if (error) throw error;
+    if (currentRoute === 'promotion-pricing') renderCurrentView();
+  } catch (err) {
+    alert('Error updating: ' + err.message);
+  }
+};
+
+window.editPromoPricing = function(id) {
+  const item = promotionPricingData.find(i => i.id === id);
+  if (item) window.openPromoPricingModal(item);
+};
+
+window.deletePromoPricing = async function(id) {
+  if (!confirm('Are you sure you want to delete this pricing section?')) return;
+  try {
+    const { error } = await sb.from('promotion_pricing').delete().eq('id', id);
+    if (error) throw error;
+    if (currentRoute === 'promotion-pricing') renderCurrentView();
+  } catch (err) {
+    alert('Error deleting: ' + err.message);
+  }
+};
+
+window.openPromoPricingModal = function(item = null) {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md';
+  modal.id = 'promo-pricing-modal';
+  
+  modal.innerHTML = `
+    <div class="glass w-full max-w-lg p-8 rounded-[40px] animate-in slide-up border border-white/10 shadow-2xl relative">
+      <button onclick="document.getElementById('promo-pricing-modal').remove()" class="absolute top-6 right-6 text-muted hover:text-white transition-colors text-xl">×</button>
+      <h3 class="text-white text-2xl font-black mb-6">${item ? 'Edit Pricing Section' : 'Add Pricing Section'}</h3>
+      <form id="promo-pricing-form" class="space-y-5">
+        ${item ? `<input type="hidden" name="id" value="${item.id}"/>` : ''}
+        
+        <div>
+          <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Section Key</label>
+          <input type="text" name="section_key" required value="${item ? item.section_key : ''}" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none" placeholder="e.g. featured_game" />
+        </div>
+        
+        <div>
+          <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Section Label</label>
+          <input type="text" name="section_label" required value="${item ? item.section_label : ''}" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none" placeholder="e.g. Featured Game" />
+        </div>
+        
+        <div class="grid grid-cols-2 gap-5">
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Price (USD)</label>
+            <input type="number" step="0.01" min="0" name="price" required value="${item ? item.price : '2.00'}" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none" />
+          </div>
+          <div>
+            <label class="block text-muted text-[10px] font-black uppercase tracking-widest mb-2">Duration (Days)</label>
+            <input type="number" min="1" name="duration_days" required value="${item ? item.duration_days : '7'}" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-accent outline-none" />
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4 pt-2">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="auto_approve" ${(!item || item.auto_approve) ? 'checked' : ''} class="w-4 h-4 rounded bg-white/5 border-border text-accent focus:ring-0"/>
+            <span class="text-white text-sm font-bold">Auto-Approve</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="is_active" ${(!item || item.is_active) ? 'checked' : ''} class="w-4 h-4 rounded bg-white/5 border-border text-accent focus:ring-0"/>
+            <span class="text-white text-sm font-bold">Is Active</span>
+          </label>
+        </div>
+        
+        <button type="submit" class="w-full py-4 bg-accent text-white font-black rounded-2xl shadow-lg glow-purple active:scale-95 transition-all mt-4">
+          SAVE SECTION
+        </button>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById('promo-pricing-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const payload = {
+      section_key: fd.get('section_key'),
+      section_label: fd.get('section_label'),
+      price: parseFloat(fd.get('price')),
+      duration_days: parseInt(fd.get('duration_days')),
+      auto_approve: fd.get('auto_approve') === 'on',
+      is_active: fd.get('is_active') === 'on'
+    };
+    if (fd.get('id')) payload.id = fd.get('id');
+
+    try {
+      const { error } = await sb.from('promotion_pricing').upsert(payload);
+      if (error) throw error;
+      document.getElementById('promo-pricing-modal').remove();
+      if (currentRoute === 'promotion-pricing') renderCurrentView();
+    } catch (err) {
+      alert('Error saving: ' + err.message);
+    }
+  };
+};
 
 // Global window registrations
 window.getPlatformAnalytics = getPlatformAnalytics;

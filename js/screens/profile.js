@@ -200,6 +200,23 @@ function ProfileScreen() {
           </button>
         </div>
 
+        {/* 🚀 Creator Dashboard Banner */}
+        <div className="px-5 mb-6">
+          <button 
+            onClick={() => go('creator-dashboard')}
+            className="tap w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl flex items-center justify-between px-6 shadow-lg shadow-orange-500/20 border border-white/10 active:scale-95 transition-transform"
+          >
+            <div className="flex items-center gap-4">
+              <span className="text-3xl filter drop-shadow-md">🚀</span>
+              <div className="text-left">
+                <div className="text-white font-black text-lg tracking-wide">Creator Dashboard</div>
+                <div className="text-white/70 text-xs font-bold mt-0.5">Manage & promote your apps</div>
+              </div>
+            </div>
+            <div className="text-white/50 text-xl font-bold">→</div>
+          </button>
+        </div>
+
         {/* ── Quick Stats ── */}
         <div className="px-5 grid grid-cols-3 gap-3 mb-6">
           {(user ? personalStats : platformStats).map(s => (
@@ -567,6 +584,10 @@ function SettingsScreen() {
     }
   };
 
+  const openExternalLink = (url) => {
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const languages = [
     { code: 'en', label: 'English' },
     { code: 'es', label: 'Español' },
@@ -630,8 +651,16 @@ function SettingsScreen() {
     {
       title: t('account'),
       items: [
-        { label: t('privacy_policy'), value: '', action: () => {} },
-        { label: t('terms_service'), value: '', action: () => {} },
+        {
+          label: t('privacy_policy'),
+          value: 'View',
+          action: () => openExternalLink('https://sites.google.com/view/zero-app/privacy-policy')
+        },
+        {
+          label: t('terms_service'),
+          value: 'View',
+          action: () => openExternalLink('https://sites.google.com/view/zero-app/terms-and-conditions')
+        },
       ]
     }
   ];
