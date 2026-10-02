@@ -101,20 +101,21 @@ function SubmitScreen(props) {
       const payload = {
         id,
         name,
-        tagline: fd.get('tagline') || '',
         description: fd.get('description'),
         long_description: fd.get('long_description') || '',
         url: rawUrl,
-        app_url: rawUrl,
         region: fd.get('region') || 'Global',
-        developer: fd.get('developer') || (user?.user_metadata?.full_name || 'Anonymous'),
         category: fd.get('category'),
-        homeCategory: fd.get('category'),
-        gameCategory: itemType === 'game' ? fd.get('category') : null,
         user_id: user?.id || null,
         status: 'pending',
         tags: fd.get('tags') ? fd.get('tags').split(',').map(t_tag => t_tag.trim()).filter(Boolean) : []
       };
+
+      if (itemType === 'game') {
+        payload.gameCategory = fd.get('category');
+      } else {
+        payload.homeCategory = fd.get('category');
+      }
 
       // 1. Handle Icon Upload
       const iconFile = document.getElementById('icon-input')?.files[0];
