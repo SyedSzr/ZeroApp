@@ -1,4 +1,4 @@
-﻿// ── SUPABASE CONFIG ───────────────────────────────────────────────────────────
+// ── SUPABASE CONFIG ───────────────────────────────────────────────────────────
 const SB_URL = 'https://sjotifqahfcylcooaqxm.supabase.co';
 const SB_KEY = 'sb_publishable_3h4-HTzlMANQA-T2FMaavQ_uso2rIGj';
 
@@ -195,9 +195,10 @@ async function fetchAllData() {
 
     let resActivity = { data: [] };
     try {
-      resActivity = await sb.from('activity_log').select('*').order('created_at', { ascending: false }).limit(400);
+      const actRes = await sb.from('activity_log').select('*').order('created_at', { ascending: false }).limit(400);
+      if (!actRes.error) resActivity = actRes; // silently ignore 404 / table-not-found
     } catch(e) {
-      console.warn('activity_log fetch notice:', e);
+      console.warn('activity_log not available:', e);
     }
 
     if (resApps.error) throw resApps.error;
@@ -209,7 +210,7 @@ async function fetchAllData() {
     data.categories = resCats.data || [];
     data.profiles = resProfiles.data || [];
     data.promotions = (resPromos && resPromos.data) || [];
-    data.activityLog = (resActivity && resActivity.data) || [];
+    data.activityLog = resActivity.data || [];
     lastAnalyticsSyncTime = Date.now();
     
     const sMap = {};
