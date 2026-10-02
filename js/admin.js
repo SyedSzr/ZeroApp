@@ -3253,8 +3253,14 @@ window.quickApproveItem = async (id, table) => {
   try {
     const { error } = await sb.from(table).update({ status: 'approved' }).eq('id', id);
     if (error) throw error;
-    await fetchAllData();
+    // Optimistically update local data so UI reflects change instantly
+    const list = table === 'apps' ? data.apps : data.games;
+    const item = list.find(i => i.id === id);
+    if (item) item.status = 'approved';
+    updatePendingBadge();
     renderCurrentView();
+    // Then sync in background
+    fetchAllData();
   } catch (err) { alert('Error: ' + err.message); }
 };
 
@@ -3265,8 +3271,14 @@ window.quickRejectItem = async (id, table) => {
   try {
     const { error } = await sb.from(table).update({ status: 'rejected', rejection_comment: comment.trim() }).eq('id', id);
     if (error) throw error;
-    await fetchAllData();
+    // Optimistically update local data so UI reflects change instantly
+    const list = table === 'apps' ? data.apps : data.games;
+    const item = list.find(i => i.id === id);
+    if (item) { item.status = 'rejected'; item.rejection_comment = comment.trim(); }
+    updatePendingBadge();
     renderCurrentView();
+    // Then sync in background
+    fetchAllData();
   } catch (err) { alert('Error: ' + err.message); }
 };
 
