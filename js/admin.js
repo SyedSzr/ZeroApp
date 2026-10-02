@@ -193,13 +193,8 @@ async function fetchAllData() {
     let resProfiles = { data: [] };
     try { resProfiles = await sb.from('profiles').select('*'); } catch(e) {}
 
-    let resActivity = { data: [] };
-    try {
-      const actRes = await sb.from('activity_log').select('*').order('created_at', { ascending: false }).limit(400);
-      if (!actRes.error) resActivity = actRes; // silently ignore 404 / table-not-found
-    } catch(e) {
-      console.warn('activity_log not available:', e);
-    }
+    // activity_log table is optional (used for analytics). Skip fetch if not created yet.
+    data.activityLog = data.activityLog || [];
 
     if (resApps.error) throw resApps.error;
     if (resGames.error) throw resGames.error;
@@ -210,7 +205,7 @@ async function fetchAllData() {
     data.categories = resCats.data || [];
     data.profiles = resProfiles.data || [];
     data.promotions = (resPromos && resPromos.data) || [];
-    data.activityLog = resActivity.data || [];
+    // data.activityLog is preserved from initialization above
     lastAnalyticsSyncTime = Date.now();
     
     const sMap = {};
