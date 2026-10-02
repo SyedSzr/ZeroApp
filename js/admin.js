@@ -285,6 +285,10 @@ function setRoute(route) {
       if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Power Tools & Health Inspector</h2><p class="text-muted text-xs">Broken link scanner, catalog backup/restore & bulk maintenance</p>`;
       if (addBtn) addBtn.classList.add('hidden');
       break;
+    case 'submissions':
+      if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">📥 Submissions</h2><p class="text-muted text-xs">Review, approve or reject user-submitted apps & games</p>`;
+      if (addBtn) addBtn.classList.add('hidden');
+      break;
     case 'playscroll':
       if (header) header.innerHTML = `<h2 class="text-white font-bold text-lg">Play Scroll Feed</h2><p class="text-muted text-xs">Select and order games for the main feed</p>`;
       if (addBtn) addBtn.classList.add('hidden');
@@ -950,7 +954,115 @@ function renderCurrentView() {
         </form>
       </div>
     `;
+  } else if (currentRoute === 'submissions') {
+    const allPending = [
+      ...(data.apps || []).filter(a => a.status === 'pending').map(a => ({ ...a, _table: 'apps' })),
+      ...(data.games || []).filter(g => g.status === 'pending').map(g => ({ ...g, _table: 'games' })),
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    const allReviewed = [
+      ...(data.apps || []).filter(a => a.status !== 'pending').map(a => ({ ...a, _table: 'apps' })),
+      ...(data.games || []).filter(g => g.status !== 'pending').map(g => ({ ...g, _table: 'games' })),
+    ].filter(i => i.user_id).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
+
+    // Update badge
+    const badge = document.getElementById('pending-badge');
+    if (badge) {
+      if (allPending.length > 0) { badge.textContent = allPending.length; badge.classList.remove('hidden'); }
+      else badge.classList.add('hidden');
+    }
+
+    const renderRow = (item) => `
+      <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+        <td class="px-6 py-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-bg flex items-center justify-center overflow-hidden flex-shrink-0 border border-white/10">
+              ${item.icon_url || item.featured_image ? `<img src="${item.icon_url || item.featured_image}" class="w-full h-full object-cover"/>` : `<span class="text-xl">${item.emoji || '📦'}</span>`}
+            </div>
+            <div>
+              <p class="text-white font-bold text-sm">${item.name}</p>
+              <p class="text-muted text-[10px]">${item.developer || item.author || 'Unknown'}</p>
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-4">
+          <span class="pill ${item._table === 'games' ? 'bg-purple-500/10 text-purple-400' : 'bg-blue-500/10 text-blue-400'} text-[10px] px-2 py-1 font-bold uppercase border ${item._table === 'games' ? 'border-purple-500/20' : 'border-blue-500/20'}">
+            ${item._table === 'games' ? '🎮 Game' : '📱 App'}
+          </span>
+        </td>
+        <td class="px-6 py-4">
+          <p class="text-muted text-[11px]">${item.url ? `<a href="${item.url}" target="_blank" class="hover:text-accent transition-colors truncate block max-w-[180px]">${item.url}</a>` : '—'}</p>
+        </td>
+        <td class="px-6 py-4 text-center">${renderStatusBadge(item.status)}</td>
+        <td class="px-6 py-4 text-center">
+          <p class="text-muted text-[10px]">${item.created_at ? new Date(item.created_at).toLocaleDateString() : '—'}</p>
+        </td>
+        <td class="px-6 py-4 text-right">
+          <div class="flex items-center justify-end gap-2">
+            ${item.status === 'pending' ? `
+              <button onclick="quickApproveItem('${item.id}', '${item._table}')" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold rounded-lg transition-all">✓ Approve</button>
+              <button onclick="quickRejectItem('${item.id}', '${item._table}')" class="px-3 py-1.5 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white text-xs font-bold rounded-lg transition-all border border-red-500/30">✗ Reject</button>
+            ` : ''}
+            <button onclick="editItem('${item.id}', '${item._table}')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-muted hover:text-white text-xs font-bold rounded-lg transition-all">Edit</button>
+          </div>
+        </td>
+      </tr>`;
+
+    container.innerHTML = `
+      <div class="space-y-8">
+        <!-- Pending Section -->
+        <div class="glass rounded-[32px] overflow-hidden">
+          <div class="px-8 py-5 border-b border-white/5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm">⏳</div>
+              <h3 class="text-white font-black text-lg">Pending Review <span class="text-amber-400">(${allPending.length})</span></h3>
+            </div>
+            ${allPending.length > 0 ? `<button onclick="bulkApprovePending()" class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500 border border-emerald-500/30 text-emerald-400 hover:text-white text-xs font-bold rounded-xl transition-all">✓ Approve All (${allPending.length})</button>` : ''}
+          </div>
+          <table class="w-full text-left">
+            <thead>
+              <tr class="text-muted text-[10px] font-black uppercase tracking-widest border-b border-white/5">
+                <th class="px-6 py-3">Item</th>
+                <th class="px-6 py-3">Type</th>
+                <th class="px-6 py-3">URL</th>
+                <th class="px-6 py-3 text-center">Status</th>
+                <th class="px-6 py-3 text-center">Submitted</th>
+                <th class="px-6 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${allPending.length === 0
+                ? `<tr><td colspan="6" class="text-center py-12 text-muted text-sm">🎉 No pending submissions! All caught up.</td></tr>`
+                : allPending.map(renderRow).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Recently Reviewed Section -->
+        ${allReviewed.length > 0 ? `
+        <div class="glass rounded-[32px] overflow-hidden">
+          <div class="px-8 py-5 border-b border-white/5 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-white/5 text-muted flex items-center justify-center text-sm">📋</div>
+            <h3 class="text-white font-black text-lg">Recently Reviewed <span class="text-muted text-sm font-normal">(last 50)</span></h3>
+          </div>
+          <table class="w-full text-left">
+            <thead>
+              <tr class="text-muted text-[10px] font-black uppercase tracking-widest border-b border-white/5">
+                <th class="px-6 py-3">Item</th>
+                <th class="px-6 py-3">Type</th>
+                <th class="px-6 py-3">URL</th>
+                <th class="px-6 py-3 text-center">Status</th>
+                <th class="px-6 py-3 text-center">Date</th>
+                <th class="px-6 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>${allReviewed.map(renderRow).join('')}</tbody>
+          </table>
+        </div>` : ''}
+      </div>
+    `;
   } else if (currentRoute === 'playscroll') {
+
     let selectedIds = [];
     try { selectedIds = JSON.parse(data.settings.play_scroll_games || '[]'); } catch(e) {}
     
@@ -1249,7 +1361,9 @@ async function deleteCategory(id) { if (confirm('Delete category?')) await sb.fr
 // ── MODALS ─────────────────────────────────────────────────────────────────────
 function openItemModal(item = null) {
   editingId = item ? item.id : null;
-  editingType = item ? (item.gameCategory ? 'games' : 'apps') : (currentRoute === 'games' ? 'games' : 'apps');
+  editingType = item
+    ? (item._table || (item.gameCategory ? 'games' : ((data.games || []).find(g => g.id === item.id) ? 'games' : 'apps')))
+    : (currentRoute === 'games' ? 'games' : 'apps');
   const form = document.getElementById('item-form');
   const select = document.getElementById('item-category-select');
   const catType = editingType === 'apps' ? 'app' : 'game';
@@ -3137,3 +3251,35 @@ window.setPlayScrollIndex = (id, newIdx) => {
   data.settings.play_scroll_games = JSON.stringify(selected);
   renderCurrentView();
 };
+
+window.quickApproveItem = async (id, table) => {
+  if (!confirm('Approve this submission? It will go live immediately.')) return;
+  try {
+    const { error } = await sb.from(table).update({ status: 'approved' }).eq('id', id);
+    if (error) throw error;
+    await fetchAllData();
+    renderCurrentView();
+  } catch (err) { alert('Error: ' + err.message); }
+};
+
+window.quickRejectItem = async (id, table) => {
+  const comment = prompt('Enter rejection reason (required):');
+  if (comment === null) return;
+  if (!comment.trim()) return alert('Please enter a rejection reason.');
+  try {
+    const { error } = await sb.from(table).update({ status: 'rejected', rejection_comment: comment.trim() }).eq('id', id);
+    if (error) throw error;
+    await fetchAllData();
+    renderCurrentView();
+  } catch (err) { alert('Error: ' + err.message); }
+};
+
+// Update pending badge in sidebar on every data refresh
+function updatePendingBadge() {
+  const pendingCount = ((data.apps||[]).filter(a=>a.status==='pending').length) + ((data.games||[]).filter(g=>g.status==='pending').length);
+  const badge = document.getElementById('pending-badge');
+  if (badge) {
+    badge.textContent = pendingCount;
+    badge.classList.toggle('hidden', pendingCount === 0);
+  }
+}
