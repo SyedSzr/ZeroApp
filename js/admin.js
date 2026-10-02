@@ -1,4 +1,4 @@
-// ── SUPABASE CONFIG ───────────────────────────────────────────────────────────
+﻿// ── SUPABASE CONFIG ───────────────────────────────────────────────────────────
 const SB_URL = 'https://sjotifqahfcylcooaqxm.supabase.co';
 const SB_KEY = 'sb_publishable_3h4-HTzlMANQA-T2FMaavQ_uso2rIGj';
 
@@ -973,11 +973,10 @@ function renderCurrentView() {
                   <div class="text-white font-bold text-sm truncate">${g.name}</div>
                   <div class="text-muted text-[10px] uppercase tracking-widest truncate">${g.developer || 'ZeroApp'}</div>
                 </div>
-                <div class="flex flex-col gap-1 px-1">
+                <div class="flex items-center gap-2"><input type="number" value="${idx + 1}" min="1" max="${selectedGames.length}" onchange="setPlayScrollIndex('${g.id}', this.value - 1)" title="Change rank" class="w-14 h-10 bg-white/5 border border-white/10 rounded-xl text-center text-white text-sm font-bold focus:border-accent outline-none" /><div class="flex flex-col gap-1 px-1">
                   <button onclick="movePlayScroll('${g.id}', -1)" class="w-7 h-7 rounded-lg flex items-center justify-center bg-white/10 hover:bg-white/20 text-white ${idx === 0 ? 'opacity-30 pointer-events-none' : ''}">▲</button>
                   <button onclick="movePlayScroll('${g.id}', 1)" class="w-7 h-7 rounded-lg flex items-center justify-center bg-white/10 hover:bg-white/20 text-white ${idx === selectedGames.length - 1 ? 'opacity-30 pointer-events-none' : ''}">▼</button>
-                </div>
-                <button onclick="togglePlayScroll('${g.id}')" class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all ml-1 flex-shrink-0">✕</button>
+                </div></div><button onclick="togglePlayScroll('${g.id}')" class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all ml-1 flex-shrink-0">✕</button>
               </div>
             `).join('')}
           </div>
@@ -1811,7 +1810,7 @@ window.togglePlayScroll = (id) => {
   if (selected.includes(id)) {
     selected = selected.filter(i => i !== id);
   } else {
-    selected.push(id);
+    selected.unshift(id);
   }
   data.settings.play_scroll_games = JSON.stringify(selected);
   renderCurrentView();
@@ -3125,3 +3124,16 @@ window.setAnalyticsFilter = setAnalyticsFilter;
 window.sendTestAnalyticsEvent = sendTestAnalyticsEvent;
 window.showAnalyticsSqlModal = showAnalyticsSqlModal;
 
+
+window.setPlayScrollIndex = (id, newIdx) => {
+  let selected = [];
+  try { selected = JSON.parse(data.settings.play_scroll_games || '[]'); } catch(e) {}
+  const oldIdx = selected.indexOf(id);
+  if (oldIdx < 0) return;
+  newIdx = Math.max(0, Math.min(newIdx, selected.length - 1));
+  if (newIdx === oldIdx) return;
+  selected.splice(oldIdx, 1);
+  selected.splice(newIdx, 0, id);
+  data.settings.play_scroll_games = JSON.stringify(selected);
+  renderCurrentView();
+};
